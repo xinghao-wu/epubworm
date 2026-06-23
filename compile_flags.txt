@@ -1,0 +1,9 @@
+-std=c++23
+-g3
+-fsanitize=address
+-Wall
+-Wextra
+-Wpedantic
+-Wconversion
+-Wsign-conversion
+-Weffc++
