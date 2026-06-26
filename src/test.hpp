@@ -9,5 +9,4 @@ namespace test {
     extern const fs::path parasiteRoot;
     extern const fs::path spiceWolfRoot;
     extern const fs::path zuttomoRoot;
-    extern const fs::path relContainerXML;
 }

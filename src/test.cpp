@@ -13,5 +13,4 @@ namespace test {
         projectRoot / "test_epubs/spice_and_wolf_vol_1_unzipped"};
     extern const fs::path zuttomoRoot {
         projectRoot / "test_epubs/zuttomo_vol_1_unzipped"};
-    extern const fs::path relContainerXML {"META-INF/container.xml"};
 }
