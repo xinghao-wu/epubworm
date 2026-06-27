@@ -4,7 +4,7 @@
 
 namespace fs = std::filesystem;
 
-void unzip(const fs::path& archive, const fs::path& destination) {
-    miniz_cpp::zip_file loadedArchive {archive.string()};
-    loadedArchive.extractall(destination.string());
+void unzip(const fs::path& archiveAbs, const fs::path& destinationAbs) {
+    miniz_cpp::zip_file archive {archiveAbs.string()};
+    archive.extractall(destinationAbs.string());
 }
