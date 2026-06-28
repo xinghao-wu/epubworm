@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <iostream>
 #include "data_management.hpp"
+#include "epub_parser.hpp"
 #include "test.hpp"
 
 namespace fs = std::filesystem;
@@ -54,5 +55,24 @@ namespace test {
         ::unzip(zuttomoZippedAbs, shareAbs / "zuttomo_vol_1_unzipped");
         std::cout << "test::unzip() success cases did not error, "
                      "check testing share dir to verify correct result\n";
+    }
+
+    void getOPFRel() {
+        try {
+            ::getOPFRel("/nonexistant epub root");
+            assert(false);
+        }
+        catch (const std::runtime_error& e) {
+            assert(std::string_view{e.what()} == 
+                "Error=XML_ERROR_FILE_NOT_FOUND ErrorID=3 (0x3) Line number=0: "
+                "filename=/nonexistant epub root/META-INF/container.xml");
+        }
+        std::cout << "test::getOPFRel failure cases passed\n";
+
+        assert(::getOPFRel(mysteriesRootAbs) == "content.opf");
+        assert(::getOPFRel(parasiteRootAbs) == "OEBPS/content.opf");
+        assert(::getOPFRel(spiceWolfRootAbs) == "content.opf");
+        assert(::getOPFRel(zuttomoRootAbs) == "content.opf");
+        std::cout << "test::getOPFRel() success cases passed\n";
     }
 }
