@@ -13,7 +13,7 @@ namespace test {
     const fs::path projectRootAbs {fs::current_path().parent_path()};
 
     const fs::path epubsAbs {projectRootAbs / "test_epubs"};
-    const fs::path mysteriesRootAbs {epubsAbs / "lord_of_mysteries_unzipped"};
+    const fs::path mysteriesRootAbs {epubsAbs / "lord_of_mysteries_vol_1_unzipped"};
     const fs::path parasiteRootAbs {epubsAbs / "parasite_in_love_unzipped"};
     const fs::path spiceWolfRootAbs {epubsAbs / "spice_and_wolf_vol_1_unzipped"};
     const fs::path zuttomoRootAbs {epubsAbs / "zuttomo_vol_1_unzipped"};
@@ -24,7 +24,7 @@ namespace test {
     const fs::path shareAbs {xdgDirsAbs / "share"};
 
     void unzip() {
-        const fs::path mysteriesZippedAbs {epubsAbs / "lord_of_mysteries.epub"};
+        const fs::path mysteriesZippedAbs {epubsAbs / "lord_of_mysteries_vol_1.epub"};
         const fs::path parasiteZippedAbs {epubsAbs / "parasite_in_love.epub"};
         const fs::path spiceWolfZippedAbs {
             epubsAbs / "spice_and_wolf_vol_1.epub"};
@@ -49,7 +49,7 @@ namespace test {
         }
         std::cout << "test::unzip() failure cases passed\n";
 
-        ::unzip(mysteriesZippedAbs, shareAbs / "lord_of_mysteries_unzipped");
+        ::unzip(mysteriesZippedAbs, shareAbs / "lord_of_mysteries_vol_1_unzipped");
         ::unzip(parasiteZippedAbs, shareAbs / "parasite_in_love_unzipped");
         ::unzip(spiceWolfZippedAbs, shareAbs / "spice_and_wolf_vol_1_unzipped");
         ::unzip(zuttomoZippedAbs, shareAbs / "zuttomo_vol_1_unzipped");
