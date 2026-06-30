@@ -4,9 +4,11 @@
 #include <iostream>
 #include "data_management.hpp"
 #include "epub_parser.hpp"
+#include "tinyxml2.hpp"
 #include "test.hpp"
 
 namespace fs = std::filesystem;
+using namespace tinyxml2;
 
 namespace test {
     // assumes executable is ran with the working directory being build/
@@ -74,5 +76,28 @@ namespace test {
         assert(::getOPFRel(spiceWolfRootAbs) == "content.opf");
         assert(::getOPFRel(zuttomoRootAbs) == "content.opf");
         std::cout << "test::getOPFRel() success cases passed\n";
+    }
+
+    void getMetadata() {
+        XMLDocument mysteriesOPF {};
+        mysteriesOPF.LoadFile(
+            (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
+            .c_str());
+        XMLDocument parasiteOPF {};
+        parasiteOPF.LoadFile(
+            (parasiteRootAbs / ::getOPFRel(parasiteRootAbs))
+            .c_str());
+
+        const XMLElement* mysteriesMetadata {::getMetadata(mysteriesOPF)};
+        const XMLElement* parasiteMetadata {::getMetadata(parasiteOPF)};
+
+        assert(std::string_view{
+               mysteriesMetadata->FirstChildElement("dc:language")->GetText()}
+               == "en");
+        assert(std::string_view{
+               parasiteMetadata->FirstChildElement("dc:publisher")->GetText()}
+               == "ASCII Media Works");
+
+        std::cout << "test::getMetadata() all cases passed\n";
     }
 }
