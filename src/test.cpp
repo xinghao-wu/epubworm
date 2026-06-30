@@ -91,13 +91,58 @@ namespace test {
         const XMLElement* mysteriesMetadata {::getMetadata(mysteriesOPF)};
         const XMLElement* parasiteMetadata {::getMetadata(parasiteOPF)};
 
+        std::cout << "test::getMetadata() no failure cases\n";
+
         assert(std::string_view{
                mysteriesMetadata->FirstChildElement("dc:language")->GetText()}
                == "en");
         assert(std::string_view{
                parasiteMetadata->FirstChildElement("dc:publisher")->GetText()}
                == "ASCII Media Works");
+        std::cout << "test::getMetadata() success cases passed\n";
+    }
 
-        std::cout << "test::getMetadata() all cases passed\n";
+    void getTitle() {
+        XMLDocument mysteriesOPF {};
+        mysteriesOPF.LoadFile(
+            (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
+            .c_str());
+        XMLDocument spiceWolfOPF {};
+        spiceWolfOPF.LoadFile(
+            (spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs))
+            .c_str());
+
+        const XMLElement* mysteriesMetadata {::getMetadata(mysteriesOPF)};
+        const XMLElement* spiceWolfMetadata {::getMetadata(spiceWolfOPF)};
+
+        std::cout << "test::getTitle() no failure cases\n";
+
+        assert(::getTitle(mysteriesMetadata) 
+               == "Lord of Mysteries Volume 1: Clown");
+        assert(::getTitle(spiceWolfMetadata) 
+               == "Spice and Wolf, Vol. 1");
+        std::cout << "test::getTitle() success cases passed\n";
+    }
+
+    void getAuthor() {
+        XMLDocument mysteriesOPF {};
+        mysteriesOPF.LoadFile(
+            (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
+            .c_str());
+        XMLDocument spiceWolfOPF {};
+        spiceWolfOPF.LoadFile(
+            (spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs))
+            .c_str());
+
+        const XMLElement* mysteriesMetadata {::getMetadata(mysteriesOPF)};
+        const XMLElement* spiceWolfMetadata {::getMetadata(spiceWolfOPF)};
+
+        std::cout << "test::getAuthor() no failure cases\n";
+
+        assert(::getAuthor(mysteriesMetadata) 
+               == "Cuttlefish That Loves Diving (爱潜水的乌贼)");
+        assert(::getAuthor(spiceWolfMetadata) 
+               == "Isuna Hasekura");
+        std::cout << "test::getAuthor() success cases passed\n";
     }
 }
