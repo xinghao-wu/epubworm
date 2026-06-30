@@ -12,3 +12,7 @@ using namespace tinyxml2;
 fs::path getOPFRel(const fs::path& epubRootAbs);
 
 const XMLElement* getMetadata(const XMLDocument& opf);
+
+std::string getTitle(const XMLElement* metadata);
+
+std::string getAuthor(const XMLElement* metadata);

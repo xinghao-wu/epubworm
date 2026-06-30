@@ -1,5 +1,6 @@
 #include <filesystem>
 #include <stdexcept>
+#include <string>
 #include "tinyxml2.hpp"
 #include "epub_parser.hpp"
 
@@ -24,4 +25,12 @@ fs::path getOPFRel(const fs::path& epubRootAbs) {
 
 const XMLElement* getMetadata(const XMLDocument& opf) {
     return opf.FirstChildElement("package")->FirstChildElement("metadata");
+}
+
+std::string getTitle(const XMLElement* metadata) {
+    return metadata->FirstChildElement("dc:title")->GetText();
+}
+
+std::string getAuthor(const XMLElement* metadata) {
+    return metadata->FirstChildElement("dc:creator")->GetText();
 }
