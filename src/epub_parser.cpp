@@ -16,14 +16,12 @@ fs::path getOPFRel(const fs::path& epubRootAbs) {
         throw std::runtime_error{container.ErrorStr()};
     }
 
-    const char* opfRelPath {container.FirstChildElement("container")
-                                     ->FirstChildElement("rootfiles")
-                                     ->FirstChildElement("rootfile")
-                                     ->Attribute("full-path")};
-    if (!opfRelPath) {
-        throw std::runtime_error{
-            "relative opf path not at expected location in container.xml"};
-    }
-    
-    return opfRelPath;
+    return container.FirstChildElement("container")
+                   ->FirstChildElement("rootfiles")
+                   ->FirstChildElement("rootfile")
+                   ->Attribute("full-path");
+}
+
+const XMLElement* getMetadata(const XMLDocument& opf) {
+    return opf.FirstChildElement("package")->FirstChildElement("metadata");
 }

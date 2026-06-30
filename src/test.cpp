@@ -67,7 +67,7 @@ namespace test {
                 "Error=XML_ERROR_FILE_NOT_FOUND ErrorID=3 (0x3) Line number=0: "
                 "filename=/nonexistant epub root/META-INF/container.xml");
         }
-        std::cout << "test::getOPFRel failure cases passed\n";
+        std::cout << "test::getOPFRel() failure cases passed\n";
 
         assert(::getOPFRel(mysteriesRootAbs) == "content.opf");
         assert(::getOPFRel(parasiteRootAbs) == "OEBPS/content.opf");
