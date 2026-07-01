@@ -6,4 +6,5 @@ namespace test {
     void getMetadata();
     void getTitle();
     void getAuthor();
+    void findAndReplaceAll();
 }

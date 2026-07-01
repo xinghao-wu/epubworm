@@ -2,9 +2,11 @@
 #include <cassert>
 #include <stdexcept>
 #include <iostream>
+#include <string>
+#include "tinyxml2.hpp"
 #include "data_management.hpp"
 #include "epub_parser.hpp"
-#include "tinyxml2.hpp"
+#include "tui.hpp"
 #include "test.hpp"
 
 namespace fs = std::filesystem;
@@ -144,5 +146,19 @@ namespace test {
         assert(::getAuthor(spiceWolfMetadata) 
                == "Isuna Hasekura");
         std::cout << "test::getAuthor() success cases passed\n";
+    }
+
+    void findAndReplaceAll() {
+        std::cout << "test::findAndReplaceAll() no failure cases\n";
+
+        std::string hasTarget {"target, target on the wall,"};
+        ::findAndReplaceAll(hasTarget, "target", "mirror");
+        assert(hasTarget == "mirror, mirror on the wall,");
+
+        std::string noTarget {"am I the fairest of them all?"};
+        ::findAndReplaceAll(noTarget, "target", "mirror");
+        assert(noTarget == "am I the fairest of them all?");
+
+        std::cout << "test::findAndReplaceAll() all success cases passed\n";
     }
 }
