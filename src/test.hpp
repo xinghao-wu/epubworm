@@ -7,4 +7,5 @@ namespace test {
     void getTitle();
     void getAuthor();
     void findAndReplaceAll();
+    void wrapForTmuxPassthrough();
 }

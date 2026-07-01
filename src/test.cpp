@@ -159,6 +159,21 @@ namespace test {
         ::findAndReplaceAll(noTarget, "target", "mirror");
         assert(noTarget == "am I the fairest of them all?");
 
-        std::cout << "test::findAndReplaceAll() all success cases passed\n";
+        std::cout << "test::findAndReplaceAll() success cases passed\n";
+    }
+
+    void wrapForTmuxPassthrough() {
+        std::cout << "test::wrapForTmuxPassthrough() no failure cases\n";
+
+        std::string notEmpty {"\033]1337;SetProfile=NewProfileName\007"};
+        ::wrapForTmuxPassthrough(notEmpty);
+        assert(notEmpty == 
+               "\033Ptmux;\033\033]1337;SetProfile=NewProfileName\007\033\\");
+
+        std::string empty {""};
+        ::wrapForTmuxPassthrough(empty);
+        assert(empty == "\033Ptmux;\033\\");
+
+        std::cout << "test::wrapForTmuxPassthrough() success cases passed\n";
     }
 }
