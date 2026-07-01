@@ -6,3 +6,5 @@
 // in `str`, replace all occurences of `target` with `replacement`
 void findAndReplaceAll(std::string& str, std::string_view target, 
                        std::string_view replacement);
+
+void wrapForTmuxPassthrough(std::string& str);
