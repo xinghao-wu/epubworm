@@ -2,8 +2,7 @@
 
 #include <array>
 
-inline constexpr std::array rowColDiacritics {
-                                              "\U00000305",
+inline constexpr std::array rowColDiacritics {"\U00000305",
                                               "\U0000030D",
                                               "\U0000030E",
                                               "\U00000310",

@@ -17,7 +17,8 @@ namespace test {
     const fs::path projectRootAbs {fs::current_path().parent_path()};
 
     const fs::path epubsAbs {projectRootAbs / "test_epubs"};
-    const fs::path mysteriesRootAbs {epubsAbs / "lord_of_mysteries_vol_1_unzipped"};
+    const fs::path mysteriesRootAbs 
+            {epubsAbs / "lord_of_mysteries_vol_1_unzipped"};
     const fs::path parasiteRootAbs {epubsAbs / "parasite_in_love_unzipped"};
     const fs::path spiceWolfRootAbs {epubsAbs / "spice_and_wolf_vol_1_unzipped"};
     const fs::path zuttomoRootAbs {epubsAbs / "zuttomo_vol_1_unzipped"};
@@ -28,32 +29,33 @@ namespace test {
     const fs::path shareAbs {xdgDirsAbs / "share"};
 
     void unzip() {
-        const fs::path mysteriesZippedAbs {epubsAbs / "lord_of_mysteries_vol_1.epub"};
+        const fs::path mysteriesZippedAbs 
+                {epubsAbs / "lord_of_mysteries_vol_1.epub"};
         const fs::path parasiteZippedAbs {epubsAbs / "parasite_in_love.epub"};
-        const fs::path spiceWolfZippedAbs {
-            epubsAbs / "spice_and_wolf_vol_1.epub"};
+        const fs::path spiceWolfZippedAbs 
+                {epubsAbs / "spice_and_wolf_vol_1.epub"};
         const fs::path zuttomoZippedAbs {epubsAbs / "zuttomo_vol_1.epub"};
 
         try {
-            ::unzip("/problematic archive path", shareAbs);
+            ::unzip("/bad archive path", shareAbs);
             assert(false);
         }
         catch (const std::runtime_error& e) {
             assert(std::string_view{e.what()} == "bad zip");
         }
         try {
-            ::unzip(parasiteZippedAbs, "/problematic destination path");
+            ::unzip(parasiteZippedAbs, "/bad destination path");
             assert(false);
         }
         catch (const fs::filesystem_error& e) {
-            assert(std::string_view{e.what()} == 
-                "filesystem error: "
-                "cannot create directories: "
-                "Permission denied [/problematic destination path/META-INF]");
+            assert(std::string_view{e.what()} 
+                   == "filesystem error: cannot create directories: "
+                      "Permission denied [/bad destination path/META-INF]");
         }
         std::cout << "test::unzip() failure cases passed\n";
 
-        ::unzip(mysteriesZippedAbs, shareAbs / "lord_of_mysteries_vol_1_unzipped");
+        ::unzip(mysteriesZippedAbs, 
+                shareAbs / "lord_of_mysteries_vol_1_unzipped");
         ::unzip(parasiteZippedAbs, shareAbs / "parasite_in_love_unzipped");
         ::unzip(spiceWolfZippedAbs, shareAbs / "spice_and_wolf_vol_1_unzipped");
         ::unzip(zuttomoZippedAbs, shareAbs / "zuttomo_vol_1_unzipped");
@@ -63,13 +65,14 @@ namespace test {
 
     void getOPFRel() {
         try {
-            ::getOPFRel("/nonexistant epub root");
+            ::getOPFRel("/bad epub root");
             assert(false);
         }
         catch (const std::runtime_error& e) {
-            assert(std::string_view{e.what()} == 
-                "Error=XML_ERROR_FILE_NOT_FOUND ErrorID=3 (0x3) Line number=0: "
-                "filename=/nonexistant epub root/META-INF/container.xml");
+            assert(std::string_view{e.what()} 
+                   == "Error=XML_ERROR_FILE_NOT_FOUND "
+                      "ErrorID=3 (0x3) Line number=0: "
+                      "filename=/bad epub root/META-INF/container.xml");
         }
         std::cout << "test::getOPFRel() failure cases passed\n";
 
@@ -82,37 +85,33 @@ namespace test {
 
     void getMetadata() {
         XMLDocument mysteriesOPF {};
-        mysteriesOPF.LoadFile(
-            (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
-            .c_str());
+        mysteriesOPF.LoadFile((mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
+                              .c_str());
         XMLDocument parasiteOPF {};
-        parasiteOPF.LoadFile(
-            (parasiteRootAbs / ::getOPFRel(parasiteRootAbs))
-            .c_str());
+        parasiteOPF.LoadFile((parasiteRootAbs / ::getOPFRel(parasiteRootAbs))
+                             .c_str());
 
         const XMLElement* mysteriesMetadata {::getMetadata(mysteriesOPF)};
         const XMLElement* parasiteMetadata {::getMetadata(parasiteOPF)};
 
         std::cout << "test::getMetadata() no failure cases\n";
 
-        assert(std::string_view{
-               mysteriesMetadata->FirstChildElement("dc:language")->GetText()}
+        assert(std::string_view
+               {mysteriesMetadata->FirstChildElement("dc:language")->GetText()}
                == "en");
-        assert(std::string_view{
-               parasiteMetadata->FirstChildElement("dc:publisher")->GetText()}
+        assert(std::string_view
+               {parasiteMetadata->FirstChildElement("dc:publisher")->GetText()}
                == "ASCII Media Works");
         std::cout << "test::getMetadata() success cases passed\n";
     }
 
     void getTitle() {
         XMLDocument mysteriesOPF {};
-        mysteriesOPF.LoadFile(
-            (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
-            .c_str());
+        mysteriesOPF.LoadFile((mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
+                              .c_str());
         XMLDocument spiceWolfOPF {};
-        spiceWolfOPF.LoadFile(
-            (spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs))
-            .c_str());
+        spiceWolfOPF.LoadFile((spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs))
+                              .c_str());
 
         const XMLElement* mysteriesMetadata {::getMetadata(mysteriesOPF)};
         const XMLElement* spiceWolfMetadata {::getMetadata(spiceWolfOPF)};
@@ -128,13 +127,11 @@ namespace test {
 
     void getAuthor() {
         XMLDocument mysteriesOPF {};
-        mysteriesOPF.LoadFile(
-            (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
-            .c_str());
+        mysteriesOPF.LoadFile((mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
+                              .c_str());
         XMLDocument spiceWolfOPF {};
-        spiceWolfOPF.LoadFile(
-            (spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs))
-            .c_str());
+        spiceWolfOPF.LoadFile((spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs))
+                              .c_str());
 
         const XMLElement* mysteriesMetadata {::getMetadata(mysteriesOPF)};
         const XMLElement* spiceWolfMetadata {::getMetadata(spiceWolfOPF)};
@@ -143,8 +140,7 @@ namespace test {
 
         assert(::getAuthor(mysteriesMetadata) 
                == "Cuttlefish That Loves Diving (爱潜水的乌贼)");
-        assert(::getAuthor(spiceWolfMetadata) 
-               == "Isuna Hasekura");
+        assert(::getAuthor(spiceWolfMetadata) == "Isuna Hasekura");
         std::cout << "test::getAuthor() success cases passed\n";
     }
 
@@ -167,8 +163,8 @@ namespace test {
 
         std::string notEmpty {"\033]1337;SetProfile=NewProfileName\007"};
         ::wrapForTmuxPassthrough(notEmpty);
-        assert(notEmpty == 
-               "\033Ptmux;\033\033]1337;SetProfile=NewProfileName\007\033\\");
+        assert(notEmpty 
+               == "\033Ptmux;\033\033]1337;SetProfile=NewProfileName\007\033\\");
 
         std::string empty {""};
         ::wrapForTmuxPassthrough(empty);

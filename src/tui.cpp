@@ -20,16 +20,16 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     int channels {};
     constexpr int noRequiredChannelNum {0};
 
-    unsigned char* pixelData {stbi_load(imgAbs.c_str(),
-            &xPixels, &yPixels, &channels, noRequiredChannelNum)};
+    unsigned char* pixelData {stbi_load(imgAbs.c_str(), &xPixels, &yPixels,
+                              &channels, noRequiredChannelNum)};
     if (!pixelData) {
         throw std::runtime_error {"unable to decode image pixel data"};
     }
 
     const int pixelDataSize {xPixels * yPixels * channels};
-    const std::string_view pixelDataView {
-            reinterpret_cast<const char*>(pixelData),
-            static_cast<std::size_t>(pixelDataSize)};
+    const std::string_view pixelDataView 
+            {reinterpret_cast<const char*>(pixelData),
+             static_cast<std::size_t>(pixelDataSize)};
 
     const fs::path tempDataFileAbs 
             {"/dev/shm/mnc-img-data-tty-graphics-protocol"};
@@ -53,10 +53,8 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols) {
     const std::uint32_t idGreen {(id >> 8) & 255};
     const std::uint32_t idBlue {id & 255};
 
-    const std::string idInFGColor {esc + "[38;2;" 
-                                       + std::to_string(idRed) + ';'
-                                       + std::to_string(idGreen) + ';' 
-                                       + std::to_string(idBlue) + 'm'};
+    const std::string idInFGColor {esc + "[38;2;" + std::to_string(idRed) + ';'
+            + std::to_string(idGreen) + ';' + std::to_string(idBlue) + 'm'};
     const std::string resetFGColor {esc + "[39m"};
     const std::string placeholderChar {"\U0010EEEE"};
 

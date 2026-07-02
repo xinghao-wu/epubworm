@@ -18,9 +18,9 @@ fs::path getOPFRel(const fs::path& epubRootAbs) {
     }
 
     return container.FirstChildElement("container")
-                   ->FirstChildElement("rootfiles")
-                   ->FirstChildElement("rootfile")
-                   ->Attribute("full-path");
+                    ->FirstChildElement("rootfiles")
+                    ->FirstChildElement("rootfile")
+                    ->Attribute("full-path");
 }
 
 const XMLElement* getMetadata(const XMLDocument& opf) {

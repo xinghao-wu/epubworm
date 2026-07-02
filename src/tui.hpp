@@ -33,7 +33,7 @@ constexpr void wrapForTmuxPassthrough(std::string& str) {
 }
 
 constexpr std::string getGraphicsEscCode(const fs::path& tempDataFileAbs,
-                                         int channels, int xPixels, int yPixels, 
+                                         int channels, int xPixels, int yPixels,
                                          std::uint32_t id, int rows, int cols) {
     std::string ctrlData {""};
     ctrlData += "f=" + std::to_string(channels * 8) + ',';
