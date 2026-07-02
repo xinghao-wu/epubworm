@@ -1,11 +1,11 @@
 #include <cstring>
+#include <cstdint>
 #include <fstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <filesystem>
 #include <iostream>
-#include "base64.hpp"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.hpp"
 #include "row_col_diacritics.hpp"
@@ -13,45 +13,7 @@
 
 namespace fs = std::filesystem;
 
-constexpr std::string esc {'\033'};
-constexpr std::string escEnd {esc + '\\'};
-
-constexpr void findAndReplaceAll(std::string& str, std::string_view target, 
-                                 std::string_view replacement) {
-    std::size_t pos = str.find(target);
-    while (pos != std::string::npos) {
-        str.replace(pos, target.size(), replacement);
-        pos = str.find(target, pos + replacement.size());
-    }
-}
-
-constexpr void wrapForTmuxPassthrough(std::string& str) {
-    findAndReplaceAll(str, esc, esc + esc);
-    str = esc + "Ptmux;" + str + escEnd;
-}
-
-constexpr std::string getGraphicsEscCode(const fs::path& tempDataFileAbs,
-                                         int channels, int xPixels,
-                                         int yPixels, int rows, int cols) {
-    std::string ctrlData {""};
-    ctrlData += "f=" + std::to_string(channels * 8) + ',';
-    ctrlData += "s=" + std::to_string(xPixels) + ',';
-    ctrlData += "v=" + std::to_string(yPixels) + ',';
-    ctrlData += "r=" + std::to_string(rows) + ',';
-    ctrlData += "c=" + std::to_string(cols) + ',';
-    ctrlData += "t=t,";
-    ctrlData += "i=1,";
-    ctrlData += "U=1,";
-    ctrlData += "a=T,";
-    ctrlData += "q=2";
-
-    const std::string tempDataFileAbsEncoded 
-            {base64::to_base64(tempDataFileAbs.string())};
-
-    return esc + "_G" + ctrlData + ';' + tempDataFileAbsEncoded + escEnd;
-}
-
-void loadImg(const fs::path& imgAbs, int rows, int cols) {
+void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     int xPixels {};
     int yPixels {};
     int channels {};
@@ -80,23 +42,39 @@ void loadImg(const fs::path& imgAbs, int rows, int cols) {
     stbi_image_free(pixelData);
 
     std::string graphicsEscCode {getGraphicsEscCode(
-            tempDataFileAbs, channels, xPixels, yPixels, rows, cols)};
+            tempDataFileAbs, channels, xPixels, yPixels, id, rows, cols)};
     wrapForTmuxPassthrough(graphicsEscCode);
     std::cout << graphicsEscCode;
 }
 
-void displayLoadedImg(int rows, int cols) {
-    const std::string idInfoInFGColor {esc + "[38;5;" + '1' + 'm'};
+void displayLoadedImg(std::uint32_t id, int rows, int cols) {
+    const std::uint32_t idRed {(id >> 16) & 255};
+    const std::uint32_t idGreen {(id >> 8) & 255};
+    const std::uint32_t idBlue {id & 255};
+
+    const std::string idInFGColor {esc + "[38;2;" 
+                                       + std::to_string(idRed) + ';'
+                                       + std::to_string(idGreen) + ';' 
+                                       + std::to_string(idBlue) + 'm'};
     const std::string resetFGColor {esc + "[39m"};
     const std::string placeholderChar {"\U0010EEEE"};
 
-    for (int curRow {0}; curRow < rows; ++curRow) {
-        std::string placeholders {""};
-        for (int curCol {0}; curCol < cols; ++curCol) {
-            placeholders += placeholderChar + rowColDiacritics.data()[curRow] 
-                                            + rowColDiacritics.data()[curCol];
+    for (int r {0}; r < rows; ++r) {
+        std::string placeholders {placeholderChar + rowColDiacritics.data()[r]};
+        for (int c {1}; c < cols; ++c) {
+            placeholders += placeholderChar;
         }
 
-        std::cout << idInfoInFGColor << placeholders << resetFGColor << '\n';
+        std::cout << idInFGColor << placeholders << '\n';
     }
+    std::cout << resetFGColor;
+}
+
+void displayImg(const fs::path& imgAbs, int rows, int cols) {
+    constexpr std::uint32_t minID {1};
+    constexpr std::uint32_t maxID {(1 << 24) - 1};
+    std::uint32_t id {mtRandInt(minID, maxID)};
+
+    loadImg(imgAbs, id, rows, cols);
+    displayLoadedImg(id, rows, cols);
 }
