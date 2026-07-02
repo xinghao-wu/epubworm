@@ -4,7 +4,6 @@
 #include <string_view>
 #include <cstdint>
 #include <filesystem>
-#include <random>
 #include "base64.hpp"
 
 namespace fs = std::filesystem;
@@ -52,10 +51,4 @@ constexpr std::string getGraphicsEscCode(const fs::path& tempDataFileAbs,
             {base64::to_base64(tempDataFileAbs.string())};
 
     return esc + "_G" + ctrlData + ';' + tempDataFileAbsEncoded + escEnd;
-}
-
-template <typename TInt>
-TInt mtRandInt(TInt min, TInt max) {
-    static std::mt19937 mt {std::random_device{}()};
-    return std::uniform_int_distribution{min, max}(mt);
 }

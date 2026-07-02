@@ -1,3 +1,4 @@
+#include <random>
 #include <cstring>
 #include <cstdint>
 #include <fstream>
@@ -73,7 +74,9 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols) {
 void displayImg(const fs::path& imgAbs, int rows, int cols) {
     constexpr std::uint32_t minID {1};
     constexpr std::uint32_t maxID {(1 << 24) - 1};
-    std::uint32_t id {mtRandInt(minID, maxID)};
+
+    static std::mt19937 rng {std::random_device{}()};
+    const std::uint32_t id {std::uniform_int_distribution{minID, maxID}(rng)};
 
     loadImg(imgAbs, id, rows, cols);
     displayLoadedImg(id, rows, cols);
