@@ -8,6 +8,7 @@
 #include <filesystem>
 #include <iostream>
 #define STB_IMAGE_IMPLEMENTATION
+#define STBI_FAILURE_USERMSG
 #include "stb_image.hpp"
 #include "row_col_diacritics.hpp"
 #include "tui.hpp"
@@ -15,6 +16,10 @@
 namespace fs = std::filesystem;
 
 void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
+    if (id == 0) {
+        throw std::runtime_error("image id not in valid range");
+    }
+
     int xPixels {};
     int yPixels {};
     int channels {};
@@ -23,7 +28,7 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     unsigned char* pixelData {stbi_load(imgAbs.c_str(), &xPixels, &yPixels,
                               &channels, noRequiredChannelNum)};
     if (!pixelData) {
-        throw std::runtime_error {"unable to decode image pixel data"};
+        throw std::runtime_error {stbi_failure_reason()};
     }
 
     const int pixelDataSize {xPixels * yPixels * channels};
@@ -35,7 +40,7 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
             {"/dev/shm/mnc-img-data-tty-graphics-protocol"};
     std::ofstream tempDataFile {tempDataFileAbs};
     if (!tempDataFile.is_open()) {
-        throw std::runtime_error {"temp image data file failed to open"};
+        throw std::runtime_error {"image temp data file failed to open"};
     }
 
     tempDataFile << pixelDataView;
@@ -49,6 +54,10 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
 }
 
 void displayLoadedImg(std::uint32_t id, int rows, int cols) {
+    if (id < 1 || id > static_cast<std::uint32_t>((1 << 24) - 1)) {
+        throw std::runtime_error("image id not in valid range");
+    }
+
     const std::uint32_t idRed {(id >> 16) & 255};
     const std::uint32_t idGreen {(id >> 8) & 255};
     const std::uint32_t idBlue {id & 255};

@@ -14,12 +14,16 @@ inline constexpr std::string escEnd {esc + '\\'};
 // load an image to the terminal (create a virtual placement)
 // to be displayed later using unicode placeholder chars;
 // `id` must be an integer between 1 and 2^32 - 1, inclusive;
-// see `displayImg()` for documentation of other parameters
+// see `displayImg()` for documentation of other parameters;
+// throws `std::runtime_error` if `id` is not in valid range,
+// `imgAbs` could not be decoded into pixel data,
+// or the temp image data shared memory file failed to open
 void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols);
 
 // display a loaded image (virtual placement) using unicode placeholder chars;
 // `id` must be an integer between 1 and 2^24 - 1, inclusive;
-// see `displayImg()` for documentation of other parameters
+// see `displayImg()` for documentation of other parameters;
+// throws `std::runtime_error` if `id` is not in valid range
 void displayLoadedImg(std::uint32_t id, int rows, int cols);
 
 // using the kitty graphics protocol, display an image to the terminal;
@@ -28,7 +32,8 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols);
 // to fit centered within `rows` * `cols` characters;
 // note: this function's interface will likely change to not need
 // the `rows` and `cols` parameters once I figure out what method to use to 
-// query the terminal for screen size in characters and character size in pixels
+// query the terminal for screen size in characters and character size in pixels;
+// throws `std::runtime_error` for bad `imgAbs`
 void displayImg(const fs::path& imgAbs, int rows, int cols);
 
 // in `str`, replace all occurences of `target` with `replacement`
