@@ -30,9 +30,6 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols);
 // prints `rows` * `cols` characters to display the image;
 // image will be shrunk or enlargened, maintaining its aspect ratio,
 // to fit centered within `rows` * `cols` characters;
-// note: this function's interface will likely change to not need
-// the `rows` and `cols` parameters once I figure out what method to use to 
-// query the terminal for screen size in characters and character size in pixels;
 // throws `std::runtime_error` for bad `imgAbs`
 void displayImg(const fs::path& imgAbs, int rows, int cols);
 

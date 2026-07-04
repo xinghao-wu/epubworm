@@ -172,4 +172,26 @@ namespace test {
 
         std::cout << "test::wrapForTmuxPassthrough() success cases passed\n";
     }
+
+    void displayImg() {
+        try {
+            ::displayImg("/bad img path", 7, 7);
+            assert(false);
+        }
+        catch (const std::runtime_error& e) {
+            assert(std::string_view{e.what()} == "Unable to open file");
+        }
+        std::cout << "test::displayImg() failure cases passed\n";
+
+        ::displayImg(mysteriesRootAbs / "images/Tarot Club - V01B - Justice.jpg",
+                     35, 80);
+        ::displayImg(parasiteRootAbs / "OEBPS/Images/cover.jpg", 35, 80);
+        ::displayImg(parasiteRootAbs / "OEBPS/Images/ascii.png", 10, 40);
+        ::displayImg(spiceWolfRootAbs / "OEBPS/images/Art_P6.jpg", 35, 80);
+        ::displayImg(zuttomoRootAbs / "images/image1.jpeg", 20, 40);
+        ::displayImg(zuttomoRootAbs / "images/image3.png", 25, 80);
+
+        std::cout << "test::displayImg() success cases did not error, "
+                     "check stdout for expected images\n";
+    }
 }
