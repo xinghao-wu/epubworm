@@ -194,4 +194,30 @@ namespace test {
         std::cout << "test::displayImg() success cases did not error, "
                      "check stdout for expected images\n";
     }
+
+    void getSpine() {
+        std::cout << "test::getSpine() no failure cases\n";
+
+        XMLDocument spiceWolfOPF {};
+        spiceWolfOPF.LoadFile(
+                (spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs)).c_str());
+        const std::vector<fs::path> spiceWolfSpine {::getSpine(spiceWolfOPF)};
+
+        assert(spiceWolfSpine.size() == 43);
+        assert(spiceWolfSpine[0] == "toc.ncx");
+        assert(spiceWolfSpine[1] == "titlepage.xhtml");
+
+        XMLDocument parasiteOPF {};
+        parasiteOPF.LoadFile(
+                (parasiteRootAbs / ::getOPFRel(parasiteRootAbs)).c_str());
+        const std::vector<fs::path> parasiteSpine {::getSpine(parasiteOPF)};
+
+        assert(parasiteSpine.size() == 15);
+        assert(parasiteSpine[0] == "toc.ncx");
+        assert(parasiteSpine[1] == "Text/cover.xhtml");
+        assert(parasiteSpine[2] == "Text/TitlePage.xhtml");
+        assert(parasiteSpine[3] == "Text/insert.xhtml");
+
+        std::cout << "test::getSpine() success cases passed\n";
+    }
 }

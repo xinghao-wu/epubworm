@@ -10,4 +10,6 @@ namespace test {
     void wrapForTmuxPassthrough();
     // also serves to test loadImg(), displayLoadedImg(), getGraphicsEscCode()
     void displayImg();
+    // also serves to test getHrefFromID()
+    void getSpine();
 }
