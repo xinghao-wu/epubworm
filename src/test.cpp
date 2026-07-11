@@ -220,4 +220,24 @@ namespace test {
 
         std::cout << "test::getSpine() success cases passed\n";
     }
+
+    void getTOC() {
+        std::cout << "test::getTOC() no failure cases\n";
+
+        const TocData mysteriesTOC {::getTOC(mysteriesRootAbs / "toc.ncx")};
+        assert(mysteriesTOC.size() == 227);
+        assert(mysteriesTOC[0].first == "Front Cover");
+        assert(mysteriesTOC[0].second == "titlepage.xhtml");
+        assert(mysteriesTOC[222].first == "    Characters");
+        assert(mysteriesTOC[222].second == "index_split_225.html");
+
+        const TocData parasiteTOC {::getTOC(parasiteRootAbs / "OEBPS/toc.ncx")};
+        assert(parasiteTOC.size() == 13);
+        assert(parasiteTOC[0].first == "Cover");
+        assert(parasiteTOC[0].second == "Text/cover.xhtml");
+        assert(parasiteTOC[2].first == "Prologue");
+        assert(parasiteTOC[2].second == "Text/insert.xhtml");
+
+        std::cout << "test::getTOC() success cases passed\n";
+    }
 }

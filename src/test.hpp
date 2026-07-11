@@ -12,4 +12,6 @@ namespace test {
     void displayImg();
     // also serves to test getHrefFromID()
     void getSpine();
+    // also serves to test collectNavPoints()
+    void getTOC();
 }

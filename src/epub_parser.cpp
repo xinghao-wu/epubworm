@@ -6,9 +6,6 @@
 #include "tinyxml2.hpp"
 #include "epub_parser.hpp"
 
-namespace fs = std::filesystem;
-using namespace tinyxml2;
-
 fs::path getOPFRel(const fs::path& epubRootAbs) {
     const fs::path containerAbs {epubRootAbs / "META-INF/container.xml"};
 
@@ -70,6 +67,39 @@ std::vector<fs::path> getSpine(const XMLDocument& opf) {
 
         result.push_back(href);
     }
+
+    return result;
+}
+
+void collectNavPoints(const XMLElement* parent, TocData& tocData,
+                      const std::string& prefix) {
+    for (const XMLElement* navPoint = parent->FirstChildElement("navPoint");
+            navPoint; navPoint = navPoint->NextSiblingElement("navPoint")) {
+
+        const char* name = navPoint->FirstChildElement("navLabel")
+                                   ->FirstChildElement("text")->GetText();
+
+        const char* srcFile = navPoint->FirstChildElement("content")
+                                      ->Attribute("src");
+
+        tocData.emplace_back(prefix + name, srcFile);
+        collectNavPoints(navPoint, tocData, prefix + "    ");
+    }
+}
+
+TocData getTOC(const fs::path& tocAbs) {
+    XMLDocument toc {};
+    toc.LoadFile(tocAbs.c_str());
+
+    if (toc.Error()) {
+        throw std::runtime_error{toc.ErrorStr()};
+    }
+
+    const XMLElement* navMap = toc.FirstChildElement("ncx")
+                                  ->FirstChildElement("navMap");
+
+    TocData result {};
+    collectNavPoints(navMap, result);
 
     return result;
 }
