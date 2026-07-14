@@ -240,4 +240,27 @@ namespace test {
 
         std::cout << "test::getTOC() success cases passed\n";
     }
+
+    void parseText() {
+        std::cout << "test::parseText() no failure cases\n";
+
+        constexpr std::string_view xml 
+                {"<h1>C<span>HAPTER</span> O<span>NE</span></h1>"
+                 "<p>normal<strong>bold</strong><em>italic</em>"
+                 "<b><i>both</i></b><br/>newline</p>"};
+        XMLDocument doc {};
+        doc.Parse(xml.data());
+
+        std::string h1 {""};
+        std::string p {""};
+
+        ::parseText(doc.FirstChildElement("h1"), h1);
+        ::parseText(doc.FirstChildElement("p"), p);
+
+        assert(h1 == "CHAPTER ONE");
+        assert(p == "normal\033[1mbold\033[22m\033[3mitalic\033[23m"
+                    "\033[1m\033[3mboth\033[23m\033[22m\nnewline");
+
+        std::cout << "test::parseText() success cases passed\n";
+    }
 }

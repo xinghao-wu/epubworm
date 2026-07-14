@@ -4,6 +4,7 @@
 #include <string_view>
 #include <vector>
 #include "tinyxml2.hpp"
+#include "tui.hpp"
 #include "epub_parser.hpp"
 
 fs::path getOPFRel(const fs::path& epubRootAbs) {
@@ -102,4 +103,32 @@ TocData getTOC(const fs::path& tocAbs) {
     collectNavPoints(navMap, result);
 
     return result;
+}
+
+void parseText(const XMLElement* parent, std::string& out) {
+    for (const XMLNode* childNode = parent->FirstChild();
+            childNode; childNode = childNode->NextSibling()) {
+        if (const XMLText* childText = childNode->ToText()) {
+            out += childText->Value();
+        }
+        if (const XMLElement* childElem = childNode->ToElement()) {
+            const std::string_view name {childElem->Name()};
+            if (name == "b" || name == "strong") {
+                out += esc + "[1m";
+                parseText(childElem, out);
+                out += esc + "[22m";
+            }
+            else if (name == "i" || name == "em") {
+                out += esc + "[3m";
+                parseText(childElem, out);
+                out += esc + "[23m";
+            }
+            else if (name == "br") {
+                out += '\n';
+            }
+            else {
+                parseText(childElem, out);
+            }
+        }
+    }
 }

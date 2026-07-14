@@ -43,3 +43,9 @@ void collectNavPoints(const XMLElement* parent, TocData& tocData,
 // nested nav points' name prefixed with four spaces for each level of nesting;
 // throws `std::runtime_error` if unable to load `tocAbs`
 TocData getTOC(const fs::path& tocAbs);
+
+// parse all text contained within `parent` recursively, appending it to `out`;
+// the tags `<em>`, `<i>`, `<strong>`, `<b>`, `<br/>` (italic, bold, line feed)
+// will be translated to bash escape sequences,
+// all other elements will be ignored and traversed through
+void parseText(const XMLElement* parent, std::string& out);

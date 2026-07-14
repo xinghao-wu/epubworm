@@ -14,4 +14,5 @@ namespace test {
     void getSpine();
     // also serves to test collectNavPoints()
     void getTOC();
+    void parseText();
 }
