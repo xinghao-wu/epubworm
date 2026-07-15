@@ -105,6 +105,8 @@ TocData getTOC(const fs::path& tocAbs) {
     return result;
 }
 
+// TODO: add support for parsing `<h1>` to `<h6>`, `<p>`, `<img>`, `<image>`,
+// also probably rename to `parseChapter()` or `parsePages()`
 void parseText(const XMLElement* parent, std::string& out) {
     for (const XMLNode* childNode = parent->FirstChild();
             childNode; childNode = childNode->NextSibling()) {

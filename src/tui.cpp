@@ -78,6 +78,9 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols) {
     std::cout << resetFGColor;
 }
 
+// TODO: support automatically calculating `rows` and `cols` by querying
+// the terminal for character pixel dimensions and window size, 
+// also would be good to support appending unicode output to an out parameter
 void displayImg(const fs::path& imgAbs, int rows, int cols) {
     constexpr std::uint32_t minID {1};
     constexpr std::uint32_t maxID {(1 << 24) - 1};
