@@ -1,3 +1,4 @@
+#include <asm-generic/ioctls.h>
 #include <random>
 #include <cstring>
 #include <cstdint>
@@ -7,6 +8,9 @@
 #include <string_view>
 #include <filesystem>
 #include <iostream>
+#include <sys/ioctl.h>
+#include <thread>
+#include <chrono>
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
 #include "stb_image.hpp"
@@ -50,10 +54,10 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     std::string graphicsEscCode {getGraphicsEscCode(
             tempDataFileAbs, channels, xPixels, yPixels, id, rows, cols)};
     wrapForTmuxPassthrough(graphicsEscCode);
-    std::cout << graphicsEscCode;
+    std::cout << graphicsEscCode << std::flush;
 }
 
-void displayLoadedImg(std::uint32_t id, int rows, int cols) {
+void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out) {
     if (id < 1 || id > static_cast<std::uint32_t>((1 << 24) - 1)) {
         throw std::runtime_error("image id not in valid range");
     }
@@ -68,26 +72,52 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols) {
     const std::string placeholderChar {"\U0010EEEE"};
 
     for (int r {0}; r < rows; ++r) {
-        std::string placeholders {placeholderChar + rowColDiacritics.data()[r]};
+        out += idInFGColor + placeholderChar + rowColDiacritics.data()[r];
         for (int c {1}; c < cols; ++c) {
-            placeholders += placeholderChar;
+            out += placeholderChar;
         }
 
-        std::cout << idInFGColor << placeholders << '\n';
+        out += '\n';
     }
-    std::cout << resetFGColor;
+    out += resetFGColor;
 }
 
-// TODO: support automatically calculating `rows` and `cols` by querying
-// the terminal for character pixel dimensions and window size, 
-// also would be good to support appending unicode output to an out parameter
-void displayImg(const fs::path& imgAbs, int rows, int cols) {
+void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
     constexpr std::uint32_t minID {1};
     constexpr std::uint32_t maxID {(1 << 24) - 1};
 
     static std::mt19937 rng {std::random_device{}()};
     const std::uint32_t id {std::uniform_int_distribution{minID, maxID}(rng)};
 
+    if (rows == 0 || cols == 0) {
+        winsize winInfo {};
+        ioctl(0, TIOCGWINSZ, &winInfo);
+        const int cellXPix {winInfo.ws_xpixel / winInfo.ws_col};
+        const int cellYPix {winInfo.ws_ypixel / winInfo.ws_row};
+
+        int imgXPix {};
+        int imgYPix {};
+        int imgChannels {};
+        stbi_info(imgAbs.c_str(), &imgXPix, &imgYPix, &imgChannels);
+
+        const int rowsDesired {(imgYPix / cellYPix) + 1};
+        const int colsDesired {(imgXPix / cellXPix) + 1};
+        rows = rowsDesired;
+        cols = colsDesired;
+
+        if (rowsDesired > winInfo.ws_row) {
+            rows = winInfo.ws_row;
+            cols = static_cast<int>(static_cast<double>(rows) 
+                                        / rowsDesired * cols) + 1;
+        }
+        if (colsDesired > winInfo.ws_col) {
+            cols = winInfo.ws_col;
+            rows = static_cast<int>(static_cast<double>(cols) 
+                                        / colsDesired * rows) + 1;
+        }
+    }
     loadImg(imgAbs, id, rows, cols);
-    displayLoadedImg(id, rows, cols);
+    displayLoadedImg(id, rows, cols, out);
+    // fixs some images breaking if multiple images are displayed too fast
+    std::this_thread::sleep_for(std::chrono::milliseconds{5});
 }
