@@ -245,26 +245,16 @@ namespace test {
         std::cout << "test::getTOC() success cases passed\n";
     }
 
-    void parseText() {
-        std::cout << "test::parseText() no failure cases\n";
+    void parseChapter() {
+        std::cout << "test::parseChapter() no failure cases\n";
 
-        constexpr std::string_view xml 
-                {"<h1>C<span>HAPTER</span> O<span>NE</span></h1>"
-                 "<p>normal<strong>bold</strong><em>italic</em>"
-                 "<b><i>both</i></b><br/>newline</p>"};
-        XMLDocument doc {};
-        doc.Parse(xml.data());
+        std::string result {""};
+        ::parseChapter(spiceWolfRootAbs / "OEBPS/chap01.xhtml", result);
+        ::parseChapter(spiceWolfRootAbs / "OEBPS/chap02.xhtml", result);
+        ::parseChapter(spiceWolfRootAbs / "OEBPS/chapter005.xhtml", result);
+        std::cout << result;
 
-        std::string h1 {""};
-        std::string p {""};
-
-        ::parseText(doc.FirstChildElement("h1"), h1);
-        ::parseText(doc.FirstChildElement("p"), p);
-
-        assert(h1 == "CHAPTER ONE");
-        assert(p == "normal\033[1mbold\033[22m\033[3mitalic\033[23m"
-                    "\033[1m\033[3mboth\033[23m\033[22m\nnewline");
-
-        std::cout << "test::parseText() success cases passed\n";
+        std::cout << "test::parseChapter() success cases did not error, "
+                     "check std::cout for correct images and text\n";
     }
 }

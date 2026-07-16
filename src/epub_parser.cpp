@@ -105,9 +105,8 @@ TocData getTOC(const fs::path& tocAbs) {
     return result;
 }
 
-// TODO: add support for parsing `<h1>` to `<h6>`, `<p>`, `<img>`, `<image>`,
-// also probably rename to `parseChapter()` or `parsePages()`
-void parseText(const XMLElement* parent, std::string& out) {
+void parseContentElem(const XMLElement* parent, std::string& out,
+                      const fs::path& chapterAbs) {
     for (const XMLNode* childNode = parent->FirstChild();
             childNode; childNode = childNode->NextSibling()) {
         if (const XMLText* childText = childNode->ToText()) {
@@ -117,20 +116,53 @@ void parseText(const XMLElement* parent, std::string& out) {
             const std::string_view name {childElem->Name()};
             if (name == "b" || name == "strong") {
                 out += esc + "[1m";
-                parseText(childElem, out);
+                parseContentElem(childElem, out, chapterAbs);
                 out += esc + "[22m";
             }
             else if (name == "i" || name == "em") {
                 out += esc + "[3m";
-                parseText(childElem, out);
+                parseContentElem(childElem, out, chapterAbs);
                 out += esc + "[23m";
             }
             else if (name == "br") {
                 out += '\n';
             }
+            else if (name == "h1" || name == "h2" || name == "h3" 
+                     || name == "h4" || name == "h5" || name == "h6") {
+                out += esc + "[1m" + "# ";
+                parseContentElem(childElem, out, chapterAbs);
+                out += esc + "[22m" + "\n\n";
+            }
+            else if (name == "p") {
+                parseContentElem(childElem, out, chapterAbs);
+                out += "\n\n";
+            }
+            else if (name == "image") {
+                displayImg(chapterAbs.parent_path() 
+                           / childElem->Attribute("xlink:href"), out);
+                out += '\n';
+            }
+            else if (name == "img") {
+                displayImg(chapterAbs.parent_path() 
+                           / childElem->Attribute("src"), out);
+                out += '\n';
+            }
             else {
-                parseText(childElem, out);
+                parseContentElem(childElem, out, chapterAbs);
             }
         }
     }
+}
+
+void parseChapter(const fs::path& chapterAbs, std::string& out) {
+    XMLDocument chapter {};
+    chapter.LoadFile(chapterAbs.c_str());
+    if (chapter.Error()) {
+        throw std::runtime_error{chapter.ErrorStr()};
+    }
+
+    const XMLElement* const body {chapter.FirstChildElement("html")
+                                         ->FirstChildElement("body")};
+
+    parseContentElem(body, out, chapterAbs);
 }

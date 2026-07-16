@@ -44,8 +44,14 @@ void collectNavPoints(const XMLElement* parent, TocData& tocData,
 // throws `std::runtime_error` if unable to load `tocAbs`
 TocData getTOC(const fs::path& tocAbs);
 
-// parse all text contained within `parent` recursively, appending it to `out`;
-// the tags `<em>`, `<i>`, `<strong>`, `<b>`, `<br/>` (italic, bold, line feed)
-// will be translated to bash escape sequences,
-// all other elements will be ignored and traversed through
-void parseText(const XMLElement* parent, std::string& out);
+// parse all text and elements contained within `parent` recursively,
+// appending result to `out`;
+// the elements `<em>`, `<i>`, `<strong>`, `<b>`, `<br/>`, `<h1>` to `<h6>`,
+// `<p>`, `<image>`, and `<img>` will be handled,
+// all other elements will be ignored and traversed through;
+// images require `std::cout` to be able to be outputted to and flushed
+void parseContentElem(const XMLElement* parent, std::string& out,
+                      const fs::path& chapterAbs);
+
+// parse chapter xhtml file using `parseContentElem()`, appending result to out
+void parseChapter(const fs::path& chapterAbs, std::string& out);
