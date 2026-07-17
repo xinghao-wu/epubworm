@@ -5,6 +5,7 @@
 #include <vector>
 #include "tinyxml2.hpp"
 #include "tui.hpp"
+#include "percent_encoding_decode.hpp"
 #include "epub_parser.hpp"
 
 fs::path getOPFRel(const fs::path& epubRootAbs) {
@@ -59,7 +60,8 @@ std::vector<fs::path> getSpine(const XMLDocument& opf) {
     for (const XMLElement* itemref {spine->FirstChildElement("itemref")};
             itemref; itemref = itemref->NextSiblingElement("itemref")) {
         const char* idref = itemref->Attribute("idref");
-        const char* href = getHrefFromID(manifest, idref);
+        std::string href = getHrefFromID(manifest, idref);
+        decodePercentEncoding(href);
 
         const char* linear = itemref->Attribute("linear");
         if (linear && std::string_view{linear} == "no") {
@@ -80,10 +82,11 @@ void collectNavPoints(const XMLElement* parent, TocData& tocData,
         const char* name = navPoint->FirstChildElement("navLabel")
                                    ->FirstChildElement("text")->GetText();
 
-        const char* srcFile = navPoint->FirstChildElement("content")
-                                      ->Attribute("src");
+        std::string srcFilePathRel = navPoint->FirstChildElement("content")
+                                             ->Attribute("src");
+        decodePercentEncoding(srcFilePathRel);
 
-        tocData.emplace_back(prefix + name, srcFile);
+        tocData.emplace_back(prefix + name, srcFilePathRel);
         collectNavPoints(navPoint, tocData, prefix + "    ");
     }
 }
@@ -131,21 +134,34 @@ void parseContentElem(const XMLElement* parent, std::string& out,
                      || name == "h4" || name == "h5" || name == "h6") {
                 out += esc + "[1m" + "# ";
                 parseContentElem(childElem, out, chapterAbs);
-                out += esc + "[22m" + "\n\n";
+                out += esc + "[22m" + "\n\n\n";
             }
-            else if (name == "p") {
+            else if (name == "p" || name == "li") {
                 parseContentElem(childElem, out, chapterAbs);
                 out += "\n\n";
             }
-            else if (name == "image") {
-                displayImg(chapterAbs.parent_path() 
-                           / childElem->Attribute("xlink:href"), out);
-                out += '\n';
-            }
-            else if (name == "img") {
-                displayImg(chapterAbs.parent_path() 
-                           / childElem->Attribute("src"), out);
-                out += '\n';
+            else if (name == "image" || name == "img") {
+                const std::string_view imgAttributeName {
+                        (name == "image") ? "xlink:href" : "src"};
+                std::string imgPathAbs {chapterAbs.parent_path() 
+                        / childElem->Attribute(imgAttributeName.data())};
+                decodePercentEncoding(imgPathAbs);
+
+                try {
+                    displayImg(imgPathAbs, out);
+                    out += '\n';
+                }
+                catch (const std::runtime_error& e) {
+                    if (std::string_view{e.what()} == "Unable to open file") {
+                        out += esc + "[1m"; 
+                        out += "[image reference in epub "
+                               "points to nonexistent file]";
+                        out += esc + "[22m" + "\n\n";
+                    }
+                    else {
+                        throw;
+                    }
+                }
             }
             else {
                 parseContentElem(childElem, out, chapterAbs);
@@ -165,4 +181,23 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
                                          ->FirstChildElement("body")};
 
     parseContentElem(body, out, chapterAbs);
+}
+
+void dumpEpub(const fs::path& epubRootAbs, std::string& out) {
+    const fs::path opfAbs {epubRootAbs / getOPFRel(epubRootAbs)};
+    XMLDocument opf {};
+    opf.LoadFile(opfAbs.c_str());
+    if (opf.Error()) {
+        throw std::runtime_error{opf.ErrorStr()};
+    }
+
+    const std::vector<fs::path> spine {getSpine(opf)};
+
+    for (int i {1}; i < std::ssize(spine); ++i) {
+        parseChapter(opfAbs.parent_path() / spine.data()[i], out);
+    }
+}
+
+void expandEllipses(std::string& str) {
+    findAndReplaceAll(str, "…", "...");
 }

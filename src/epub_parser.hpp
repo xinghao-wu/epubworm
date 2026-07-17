@@ -26,9 +26,9 @@ std::string getAuthor(const XMLElement* metadata);
 const char* getHrefFromID(const XMLElement* manifest, std::string_view id);
 
 // returns relative paths of the epub's xml files listed in <spine>;
-// paths are relative to the root of the epub file;
+// paths are relative to opf file's parent dir;
 // table of contents is the first element, rest follow in order of appearance;
-// skips any elements with the attribute linear="no"
+// skips any elements with the attribute linear="no" (nav.xhtml usually)
 std::vector<fs::path> getSpine(const XMLDocument& opf);
 
 // helper function for getTOC()
@@ -39,7 +39,7 @@ void collectNavPoints(const XMLElement* parent, TocData& tocData,
 // only works on toc.ncx files, not nav.xhtml;
 // order of nav point pairs in vector is the same as their order in ToC;
 // first element of pair is the nav point's name,
-// second element is its file's path relative to the epub's root;
+// second element is its file's path relative to toc.nxc's parent dir;
 // nested nav points' name prefixed with four spaces for each level of nesting;
 // throws `std::runtime_error` if unable to load `tocAbs`
 TocData getTOC(const fs::path& tocAbs);
@@ -47,7 +47,7 @@ TocData getTOC(const fs::path& tocAbs);
 // parse all text and elements contained within `parent` recursively,
 // appending result to `out`;
 // the elements `<em>`, `<i>`, `<strong>`, `<b>`, `<br/>`, `<h1>` to `<h6>`,
-// `<p>`, `<image>`, and `<img>` will be handled,
+// `<p>`, `<li>`, `<image/>`, and `<img/>` will be handled,
 // all other elements will be ignored and traversed through;
 // images require `std::cout` to be able to be outputted to and flushed
 void parseContentElem(const XMLElement* parent, std::string& out,
@@ -55,3 +55,10 @@ void parseContentElem(const XMLElement* parent, std::string& out,
 
 // parse chapter xhtml file using `parseContentElem()`, appending result to out
 void parseChapter(const fs::path& chapterAbs, std::string& out);
+
+// parse all chapters of epub, appending result to out;
+// mostly for testing purposes, getting the whole epub at once is inefficient
+void dumpEpub(const fs::path& epubRootAbs, std::string& out);
+
+// in `str`, expand the ugly unicode ellipses (…) into three normal dots (...)
+void expandEllipses(std::string& str);

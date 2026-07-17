@@ -16,4 +16,6 @@ namespace test {
     void getTOC();
     // also serves to test parseContentElem()
     void parseChapter();
+    // also serves to test expandEllipses()
+    void dumpEpub();
 }

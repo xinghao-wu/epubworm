@@ -118,6 +118,6 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
     }
     loadImg(imgAbs, id, rows, cols);
     displayLoadedImg(id, rows, cols, out);
-    // fixs some images breaking if multiple images are displayed too fast
+    // fixs images breaking if multiple are displayed too fast in succession
     std::this_thread::sleep_for(std::chrono::milliseconds{5});
 }

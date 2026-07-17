@@ -196,7 +196,7 @@ namespace test {
         std::cout << output;
 
         std::cout << "test::displayImg() success cases did not error, "
-                     "check cout for expected images\n";
+                     "check std::cout for expected images\n";
     }
 
     void getSpine() {
@@ -256,5 +256,19 @@ namespace test {
 
         std::cout << "test::parseChapter() success cases did not error, "
                      "check std::cout for correct images and text\n";
+    }
+
+    void dumpEpub() {
+        std::cout << "test::dumpEpub() no failure cases\n";
+
+        std::string result {""};
+        ::dumpEpub(parasiteRootAbs, result);
+        ::dumpEpub(spiceWolfRootAbs, result);
+        ::dumpEpub(zuttomoRootAbs, result);
+        ::expandEllipses(result);
+        std::cout << result;
+
+        std::cout << "test::dumpEpub() success cases did not error, "
+                     "check std::cout for content of three epubs\n";
     }
 }
