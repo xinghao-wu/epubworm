@@ -5,6 +5,10 @@
 
 // decode percent (url) encoding, use for file paths extracted from epubs
 constexpr void decodePercentEncoding(std::string& str) {
+    if (str.find('%') == std::string::npos) {
+        return;
+    }
+
     findAndReplaceAll(str, "%20", " ");
     findAndReplaceAll(str, "%21", "!");
     findAndReplaceAll(str, "%22", "\"");
