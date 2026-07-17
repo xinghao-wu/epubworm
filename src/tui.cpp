@@ -11,6 +11,9 @@
 #include <sys/ioctl.h>
 #include <thread>
 #include <chrono>
+#include <cstdlib>
+#include <termios.h>
+#include <unistd.h>
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
 #include "stb_image.hpp"
@@ -18,6 +21,8 @@
 #include "tui.hpp"
 
 namespace fs = std::filesystem;
+
+static termios ogTermFlags {};
 
 void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     if (id == 0) {
@@ -120,4 +125,25 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
     displayLoadedImg(id, rows, cols, out);
     // fixs images breaking if multiple are displayed too fast in succession
     std::this_thread::sleep_for(std::chrono::milliseconds{5});
+}
+
+void disableRawMode() {
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ogTermFlags) == -1) {
+        throw std::runtime_error{"failed to restore original terminal settings"};
+    }
+}
+
+void enableRawMode() {
+    if (tcgetattr(STDIN_FILENO, &ogTermFlags) == -1) {
+        throw std::runtime_error{"failed to get original terminal settings"};
+    }
+
+    std::atexit(disableRawMode);
+
+    termios rawTermFlags {ogTermFlags};
+    rawTermFlags.c_lflag &= static_cast<unsigned int>(~(ECHO | ICANON));
+
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &rawTermFlags) == -1) {
+        throw std::runtime_error{"failed to set terminal settings to raw mode"};
+    }
 }

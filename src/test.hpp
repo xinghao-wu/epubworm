@@ -10,7 +10,7 @@ namespace test {
     void wrapForTmuxPassthrough();
     // also serves to test loadImg(), displayLoadedImg(), getGraphicsEscCode()
     void displayImg();
-    // also serves to test getHrefFromID()
+    // also serves to test getHrefFromID(), decodePercentEncoding()
     void getSpine();
     // also serves to test collectNavPoints()
     void getTOC();
@@ -18,4 +18,6 @@ namespace test {
     void parseChapter();
     // also serves to test expandEllipses()
     void dumpEpub();
+    // also serves to test disableRawMode()
+    void enableRawMode();
 }

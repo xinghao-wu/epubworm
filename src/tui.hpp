@@ -83,3 +83,14 @@ constexpr std::string getGraphicsEscCode(const fs::path& tempDataFileAbs,
 
     return esc + "_G" + ctrlData + ';' + tempDataFileAbsEncoded + escEnd;
 }
+
+// resets terminal settings to original flags;
+// helper to enableRawMode(), never call this function without calling
+// enableRawMode() first;
+// throws `std::runtime_error` on failure to set terminal settings
+void disableRawMode();
+
+// sets terminal to raw mode, disabling echo and canonical mode;
+// sets disableRawMode() to be called at program exit;
+// throws `std::runtime_error` on failure to read or set terminal settings
+void enableRawMode();

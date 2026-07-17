@@ -2,6 +2,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <iostream>
+#include <unistd.h>
 #include <string>
 #include "tinyxml2.hpp"
 #include "data_management.hpp"
@@ -270,5 +271,22 @@ namespace test {
 
         std::cout << "test::dumpEpub() success cases did not error, "
                      "check std::cout for content of three epubs\n";
+    }
+
+    void enableRawMode() {
+        std::cout << "test::enableRawMode() no failure cases\n";
+
+        ::enableRawMode();
+        std::cout << "test::enableRawMode() success cases did not error, "
+                     "the terminal should now be in raw mode. "
+                     "Any character typed should be instantly displayed "
+                     "along with their integer representation. "
+                     "Press q to quit.\n";
+
+        char c {};
+        while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
+            std::cout << c << " (" << static_cast<int>(c) << ") " << std::flush;
+        }
+        std::cout << '\n';
     }
 }
