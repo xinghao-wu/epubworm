@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <fstream>
 #include <stdexcept>
+#include <system_error>
+#include <cerrno>
 #include <string>
 #include <string_view>
 #include <filesystem>
@@ -14,6 +16,7 @@
 #include <cstdlib>
 #include <termios.h>
 #include <unistd.h>
+#include <iconv.h>
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
 #include "stb_image.hpp"
@@ -146,4 +149,40 @@ void enableRawMode() {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &rawTermFlags) == -1) {
         throw std::runtime_error{"failed to set terminal settings to raw mode"};
     }
+}
+
+std::wstring utf8ToWide(const std::string& input) {
+    if (input.empty()) {
+        return {};
+    }
+
+    const iconv_t convDescriptor {iconv_open("WCHAR_T", "UTF-8")};
+    if (convDescriptor == reinterpret_cast<iconv_t>(-1)) {
+        throw std::system_error(errno, std::generic_category(), 
+                                "iconv_open failed");
+    }
+
+    char* inBuf {const_cast<char*>(input.data())};
+    std::size_t inBytesLeft {input.size()};
+
+    std::wstring output {};
+    output.resize(input.size()); 
+    char* outBuf {reinterpret_cast<char*>(output.data())};
+    std::size_t outBytesLeft {output.size() * sizeof(wchar_t)};
+
+    const std::size_t error {iconv(convDescriptor, &inBuf, &inBytesLeft, 
+                                   &outBuf, &outBytesLeft)};
+    if (error == static_cast<std::size_t>(-1)) {
+        const int err {errno};
+        iconv_close(convDescriptor);
+        throw std::system_error(err, std::generic_category(), 
+                                "iconv conversion failed");
+    }
+
+    iconv_close(convDescriptor);
+    
+    std::size_t bytesWritten {(output.size() * sizeof(wchar_t)) - outBytesLeft};
+    output.resize(bytesWritten / sizeof(wchar_t));
+
+    return output;
 }

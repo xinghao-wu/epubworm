@@ -20,4 +20,5 @@ namespace test {
     void dumpEpub();
     // also serves to test disableRawMode()
     void enableRawMode();
+    void utf8ToWide();
 }

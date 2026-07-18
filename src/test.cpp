@@ -289,4 +289,14 @@ namespace test {
         }
         std::cout << '\n';
     }
+
+    void utf8ToWide() {
+        std::cout << "test::utf8ToWide() no failure cases\n";
+
+        assert(::utf8ToWide("hallo") == L"hallo");
+        assert(::utf8ToWide("Hello, 世界") == L"Hello, 世界");
+        assert(::utf8ToWide("Hello, World! 🚀") == L"Hello, World! 🚀");
+
+        std::cout << "test::utf8ToWide() success cases passed\n";
+    }
 }

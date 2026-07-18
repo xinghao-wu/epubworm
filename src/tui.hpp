@@ -94,3 +94,7 @@ void disableRawMode();
 // sets disableRawMode() to be called at program exit;
 // throws `std::runtime_error` on failure to read or set terminal settings
 void enableRawMode();
+
+// converts a utf-8 encoded string into a wide string (utf-32 on posix);
+// throws `std::system_error` on failure
+std::wstring utf8ToWide(const std::string& input);
