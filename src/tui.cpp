@@ -271,3 +271,36 @@ void wrapLines(std::string& str, int maxLen) {
         lineEnd = lineBreak;
     }
 }
+
+void centerContentOnScreen(std::string& str, int maxTextLen) {
+    winsize winInfo {};
+    ioctl(0, TIOCGWINSZ, &winInfo);
+
+    for (std::size_t lineBeginIndex {0}; lineBeginIndex < str.size();
+            lineBeginIndex = str.find('\n', lineBeginIndex) + 1) {
+
+        int contentWidth {};
+        // check if line is part of image
+        if (std::string_view{str}.substr(lineBeginIndex, 7) == esc + "[38;2;") {
+            constexpr std::string_view imgCellCh {"\U0010EEEE"};
+            const std::size_t lineEndIndex {str.find('\n', lineBeginIndex)};
+            int imgWidth {0};
+            for (std::size_t cellPos {str.find(imgCellCh, lineBeginIndex)};
+                    cellPos < lineEndIndex;
+                    cellPos = str.find(imgCellCh, cellPos + imgCellCh.size())) {
+                ++imgWidth;
+            }
+
+            contentWidth = imgWidth;
+        }
+        else {
+            contentWidth = maxTextLen;
+        }
+
+        int paddingLen = (winInfo.ws_col - contentWidth) / 2;
+        if (paddingLen <= 0) {
+            continue;
+        }
+        str.insert(lineBeginIndex, static_cast<std::size_t>(paddingLen), ' ');
+    }
+}

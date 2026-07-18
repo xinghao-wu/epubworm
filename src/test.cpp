@@ -263,17 +263,20 @@ namespace test {
         std::cout << "test::dumpEpub() no failure cases\n";
 
         std::string result {""};
+
         ::dumpEpub(parasiteRootAbs, result);
         ::dumpEpub(spiceWolfRootAbs, result);
         ::dumpEpub(zuttomoRootAbs, result);
 
         ::expandEllipses(result);
         ::wrapLines(result, 55);
+        ::centerContentOnScreen(result, 55);
         std::cout << result;
 
         std::cout << "test::dumpEpub() success cases did not error, "
                      "check std::cout for content of three epubs. "
-                     "Ellipses should be expanded, lines wrapped to 55 cols.\n";
+                     "Ellipses should be expanded, lines wrapped to 55 cols, "
+                     "and content centered on the screen\n";
     }
 
     void enableRawMode() {
