@@ -14,6 +14,7 @@
 #include <thread>
 #include <chrono>
 #include <cstdlib>
+#include <cwchar>
 #include <termios.h>
 #include <unistd.h>
 #include <iconv.h>
@@ -151,7 +152,7 @@ void enableRawMode() {
     }
 }
 
-std::wstring utf8ToWide(const std::string& input) {
+std::wstring utf8ToWide(std::string_view input) {
     if (input.empty()) {
         return {};
     }
@@ -185,4 +186,88 @@ std::wstring utf8ToWide(const std::string& input) {
     output.resize(bytesWritten / sizeof(wchar_t));
 
     return output;
+}
+
+std::string wideToUTF8(std::wstring_view input) {
+    if (input.empty()) {
+        return {};
+    }
+
+    const iconv_t convDescriptor {iconv_open("UTF-8", "WCHAR_T")};
+    if (convDescriptor == reinterpret_cast<iconv_t>(-1)) {
+        throw std::system_error(errno, std::generic_category(), 
+                                "iconv_open failed");
+    }
+
+    char* inBuf {const_cast<char*>(reinterpret_cast<const char*>(input.data()))};
+    std::size_t inBytesLeft {input.size() * sizeof(wchar_t)};
+
+    std::string output {};
+    output.resize(input.size() * sizeof(wchar_t)); 
+    char* outBuf {output.data()};
+    std::size_t outBytesLeft {output.size()};
+
+    const std::size_t error {iconv(convDescriptor, &inBuf, &inBytesLeft, 
+                                   &outBuf, &outBytesLeft)};
+    if (error == static_cast<std::size_t>(-1)) {
+        const int err {errno};
+        iconv_close(convDescriptor);
+        throw std::system_error(err, std::generic_category(), 
+                                "iconv conversion failed");
+    }
+
+    iconv_close(convDescriptor);
+    
+    std::size_t bytesWritten {output.size() - outBytesLeft};
+    output.resize(bytesWritten);
+
+    return output;
+}
+
+int getVisualLen(std::wstring_view str) {
+    int totalLen {0};
+    for (const auto& ch : str) {
+        int chLen {wcwidth(ch)};
+        if (chLen == -1) {
+            chLen = 1;
+        }
+        totalLen += chLen;
+    }
+    // Why's the total length one less than its supposed to be? Hell if I know!
+    return totalLen + 1; 
+}
+
+// TODO: optimization possible via looking for `wideLineBreak` forwards
+void wrapLines(std::string& str, int maxLen) {
+    if (str.back() != '\n') {
+        str += '\n';
+    }
+    for (std::size_t lineBegin {0}, lineEnd {str.find('\n')};
+            lineEnd != std::string::npos;
+            lineBegin = lineEnd + 1, lineEnd = str.find('\n', lineBegin)) {
+
+        const std::wstring wideLine {utf8ToWide(std::string_view
+                {str.begin() + static_cast<std::ptrdiff_t>(lineBegin),
+                 str.begin() + static_cast<std::ptrdiff_t>(lineEnd)})};
+
+        std::size_t wideLineBreak {wideLine.size() - 1};
+        while (wideLineBreak != std::string::npos && 
+                getVisualLen(std::wstring_view{wideLine.begin(), wideLine.begin()
+                             + static_cast<std::ptrdiff_t>(wideLineBreak)}) 
+                > (wideLine[wideLineBreak] == L' ' ? maxLen + 1 : maxLen)) {
+            wideLineBreak = wideLine.rfind(L' ', wideLineBreak - 1);
+        }
+
+        if (wideLineBreak == std::string::npos 
+                || wideLineBreak == wideLine.size() - 1) {
+            continue;
+        }
+
+        const std::string lineBreakAndAfter 
+                {wideToUTF8(std::wstring_view{wideLine}.substr(wideLineBreak))};
+        const std::size_t lineBreak {str.rfind(lineBreakAndAfter, lineEnd)};
+
+        str.replace(lineBreak, 1, "\n");
+        lineEnd = lineBreak;
+    }
 }

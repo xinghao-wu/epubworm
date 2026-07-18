@@ -266,11 +266,14 @@ namespace test {
         ::dumpEpub(parasiteRootAbs, result);
         ::dumpEpub(spiceWolfRootAbs, result);
         ::dumpEpub(zuttomoRootAbs, result);
+
         ::expandEllipses(result);
+        ::wrapLines(result, 55);
         std::cout << result;
 
         std::cout << "test::dumpEpub() success cases did not error, "
-                     "check std::cout for content of three epubs\n";
+                     "check std::cout for content of three epubs. "
+                     "Ellipses should be expanded, lines wrapped to 55 cols.\n";
     }
 
     void enableRawMode() {
@@ -298,5 +301,15 @@ namespace test {
         assert(::utf8ToWide("Hello, World! 🚀") == L"Hello, World! 🚀");
 
         std::cout << "test::utf8ToWide() success cases passed\n";
+    }
+
+    void wideToUTF8() {
+        std::cout << "test::wideToUTF8() no failure cases\n";
+
+        assert(::wideToUTF8(L"hallo") == "hallo");
+        assert(::wideToUTF8(L"Hello, 世界") == "Hello, 世界");
+        assert(::wideToUTF8(L"Hello, World! 🚀") == "Hello, World! 🚀");
+
+        std::cout << "test::wideToUTF8() success cases passed\n";
     }
 }

@@ -132,9 +132,15 @@ void parseContentElem(const XMLElement* parent, std::string& out,
             }
             else if (name == "h1" || name == "h2" || name == "h3" 
                      || name == "h4" || name == "h5" || name == "h6") {
-                out += esc + "[1m" + "# ";
+                out += esc + "[1m";
+                out += esc + "[33m";
                 parseContentElem(childElem, out, chapterAbs);
-                out += esc + "[22m" + "\n\n\n";
+                // minimize impact of esc codes on visual length calculation
+                // by putting the reset codes on the empty line
+                out += '\n'; 
+                out += esc + "[22m";
+                out += esc + "[39m";
+                out += '\n';
             }
             else if (name == "p" || name == "li") {
                 parseContentElem(childElem, out, chapterAbs);
@@ -181,6 +187,12 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
                                          ->FirstChildElement("body")};
 
     parseContentElem(body, out, chapterAbs);
+    out.pop_back(); // remove extraneous newline
+    out += esc + "[1m";
+    out += esc + "[31m";
+    out += "---";
+    out += esc + "[22m";
+    out += esc + "[39m";
 }
 
 void dumpEpub(const fs::path& epubRootAbs, std::string& out) {
@@ -195,6 +207,7 @@ void dumpEpub(const fs::path& epubRootAbs, std::string& out) {
 
     for (int i {1}; i < std::ssize(spine); ++i) {
         parseChapter(opfAbs.parent_path() / spine.data()[i], out);
+        out += "\n\n";
     }
 }
 

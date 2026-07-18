@@ -97,4 +97,19 @@ void enableRawMode();
 
 // converts a utf-8 encoded string into a wide string (utf-32 on posix);
 // throws `std::system_error` on failure
-std::wstring utf8ToWide(const std::string& input);
+std::wstring utf8ToWide(std::string_view input);
+
+// converts a wide string (utf-32 on posix) to a utf-8 encoded string;
+// throws `std::system_error` on failure
+std::string wideToUTF8(std::wstring_view input);
+
+// queries wcwidth() for visual length (columns) of str;
+// may be slightly inaccurate when encountering non-printable characters,
+// since this function counts them all as one column wide
+int getVisualLen(std::wstring_view str);
+
+// split lines longer than `maxLen` visual length in `str` at spaces;
+// if a space is not encountered on a long line, it is left as is
+// (this is to support displaying images wider than `maxLen`);
+// if `str` does not end with a newline, one is appended to it
+void wrapLines(std::string& str, int maxLen);
