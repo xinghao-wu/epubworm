@@ -114,13 +114,14 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
         rows = rowsDesired;
         cols = colsDesired;
 
-        if (rowsDesired > winInfo.ws_row) {
-            rows = winInfo.ws_row;
+        constexpr int margin {1};
+        if (rowsDesired > winInfo.ws_row - margin * 2) {
+            rows = winInfo.ws_row - margin * 2;
             cols = static_cast<int>(static_cast<double>(rows) 
                                         / rowsDesired * cols) + 1;
         }
-        if (colsDesired > winInfo.ws_col) {
-            cols = winInfo.ws_col;
+        if (colsDesired > winInfo.ws_col - margin * 4) {
+            cols = winInfo.ws_col - margin * 4;
             rows = static_cast<int>(static_cast<double>(cols) 
                                         / colsDesired * rows) + 1;
         }
@@ -229,50 +230,73 @@ int getVisualLen(std::wstring_view str) {
     for (const auto& ch : str) {
         int chLen {wcwidth(ch)};
         if (chLen == -1) {
-            chLen = 1;
+            chLen = 0;
         }
         totalLen += chLen;
     }
-    // Why's the total length one less than its supposed to be? Hell if I know!
-    return totalLen + 1; 
+    totalLen -= getInvisEscSeqLen(str);
+    return totalLen; 
 }
 
-// TODO: optimization possible via looking for `wideLineBreak` forwards
+void useSystemLocale() {
+    std::locale::global(std::locale("")); 
+    std::cout.imbue(std::locale{});
+    std::cin.imbue(std::locale{});
+}
+
 void wrapLines(std::string& str, int maxLen) {
-    if (str.back() != '\n') {
-        str += '\n';
-    }
-    for (std::size_t lineBegin {0}, lineEnd {str.find('\n')};
-            lineEnd != std::string::npos;
-            lineBegin = lineEnd + 1, lineEnd = str.find('\n', lineBegin)) {
+    for (std::size_t lineBeginIndex {0}, lineEndIndex {str.find('\n')};
+            lineBeginIndex < str.size();
+            lineBeginIndex = lineEndIndex + 1, 
+            lineEndIndex = str.find('\n', lineBeginIndex)) {
 
-        const std::wstring wideLine {utf8ToWide(std::string_view
-                {str.begin() + static_cast<std::ptrdiff_t>(lineBegin),
-                 str.begin() + static_cast<std::ptrdiff_t>(lineEnd)})};
-
-        std::size_t wideLineBreak {wideLine.size() - 1};
-        while (wideLineBreak != std::string::npos && 
-                getVisualLen(std::wstring_view{wideLine.begin(), wideLine.begin()
-                             + static_cast<std::ptrdiff_t>(wideLineBreak)}) 
-                > (wideLine[wideLineBreak] == L' ' ? maxLen + 1 : maxLen)) {
-            wideLineBreak = wideLine.rfind(L' ', wideLineBreak - 1);
+        if (lineEndIndex == std::string::npos) {
+            lineEndIndex = str.size() - 1;
         }
 
-        if (wideLineBreak == std::string::npos 
-                || wideLineBreak == wideLine.size() - 1) {
+        const std::wstring wideLine {utf8ToWide(std::string_view{str}
+                .substr(lineBeginIndex, lineEndIndex - lineBeginIndex + 1))};
+
+        bool lineDone {false};
+        std::size_t wideLineBreakIndex {};
+        wideLineBreakIndex = wideLine.find_first_of(L" \n");
+        while (wideLineBreakIndex != std::string::npos) {
+            const std::wstring wideBeginToBreak {std::wstring_view{wideLine}
+                    .substr(0, wideLineBreakIndex + 1)};
+
+            int beginToBreakLen {getVisualLen(wideBeginToBreak)};
+            if (beginToBreakLen > maxLen + 1) {
+                break;
+            }
+            if (wideBeginToBreak.back() == L'\n') {
+                if (beginToBreakLen <= maxLen) {
+                    lineDone = true;
+                    break;
+                }
+                if (beginToBreakLen == maxLen + 1) {
+                    break;
+                }
+            }
+            wideLineBreakIndex = 
+                    wideLine.find_first_of(L" \n", wideLineBreakIndex + 1);
+        }
+        wideLineBreakIndex = wideLine.rfind(L' ', wideLineBreakIndex - 1);
+
+        if (wideLineBreakIndex == std::string::npos || lineDone == true) {
             continue;
         }
 
-        const std::string lineBreakAndAfter 
-                {wideToUTF8(std::wstring_view{wideLine}.substr(wideLineBreak))};
-        const std::size_t lineBreak {str.rfind(lineBreakAndAfter, lineEnd)};
+        const std::string beginToLineBreak {wideToUTF8(
+                std::wstring_view{wideLine}.substr(0, wideLineBreakIndex + 1))};
+        const std::size_t lineBreakIndex 
+                {lineBeginIndex + beginToLineBreak.size() - 1};
 
-        str.replace(lineBreak, 1, "\n");
-        lineEnd = lineBreak;
+        str.replace(lineBreakIndex, 1, "\n");
+        lineEndIndex = lineBreakIndex;
     }
 }
 
-void centerContentOnScreen(std::string& str, int maxTextLen) {
+void centerContentOnScreen(std::string& str, int maxLen) {
     winsize winInfo {};
     ioctl(0, TIOCGWINSZ, &winInfo);
 
@@ -283,18 +307,17 @@ void centerContentOnScreen(std::string& str, int maxTextLen) {
         // check if line is part of image
         if (std::string_view{str}.substr(lineBeginIndex, 7) == esc + "[38;2;") {
             constexpr std::string_view imgCellCh {"\U0010EEEE"};
-            const std::size_t lineEndIndex {str.find('\n', lineBeginIndex)};
-            int imgWidth {0};
-            for (std::size_t cellPos {str.find(imgCellCh, lineBeginIndex)};
-                    cellPos < lineEndIndex;
-                    cellPos = str.find(imgCellCh, cellPos + imgCellCh.size())) {
-                ++imgWidth;
-            }
 
-            contentWidth = imgWidth;
+            const std::size_t lineEndIndex {str.find('\n', lineBeginIndex)};
+            std::string_view line {std::string_view{str}.substr(
+                    lineBeginIndex, lineEndIndex - lineBeginIndex + 1)};
+
+            const int imgCols {getOccurences(line, imgCellCh)};
+
+            contentWidth = imgCols;
         }
         else {
-            contentWidth = maxTextLen;
+            contentWidth = maxLen;
         }
 
         int paddingLen = (winInfo.ws_col - contentWidth) / 2;
@@ -305,37 +328,31 @@ void centerContentOnScreen(std::string& str, int maxTextLen) {
     }
 }
 
-void centerJustifySpecialText(std::string_view before, std::string_view after, 
-                              std::string& out, int maxLen) {
-    // sorry... I should've used while loops...
-    for (std::size_t specBeginIndex {out.find(before)}, 
-            specEndIndex {out.find(after, specBeginIndex)};
+void centerJustify(std::string_view prefix, std::string_view postfix, 
+                   std::string& str, int maxLen) {
+    for (std::size_t specBeginIndex {str.find(prefix)}, 
+            specEndIndex {str.find(postfix, specBeginIndex + prefix.size())};
             specBeginIndex != std::string::npos;
-            specBeginIndex = out.find(before, specEndIndex + 1 + after.size()),
-            specEndIndex = out.find(after, specBeginIndex)) {
-
-        specBeginIndex += before.size();
-        --specEndIndex;
+            specBeginIndex = str.find(prefix, specEndIndex + postfix.size()),
+            specEndIndex = str.find(postfix, specBeginIndex + prefix.size())) {
 
         for (std::size_t lineBeginIndex {specBeginIndex},
-                lineEndIndex {out.find('\n', lineBeginIndex) > specEndIndex
-                    ? specEndIndex : out.find('\n', lineBeginIndex)};
+                lineEndIndex {str.find('\n', lineBeginIndex) > specEndIndex
+                              ? specEndIndex : str.find('\n', lineBeginIndex)};
                 lineBeginIndex <= specEndIndex;
                 lineBeginIndex = lineEndIndex + 1,
-                lineEndIndex = out.find('\n',lineBeginIndex) > specEndIndex
-                    ? specEndIndex : out.find('\n', lineBeginIndex)) {
+                lineEndIndex = str.find('\n',lineBeginIndex) > specEndIndex
+                               ? specEndIndex : str.find('\n', lineBeginIndex)) {
 
-            const std::wstring wideLine {utf8ToWide(std::string_view
-                    {out.begin() + static_cast<std::ptrdiff_t>(lineBeginIndex),
-                     out.begin() + static_cast<std::ptrdiff_t>(lineEndIndex)})};
+            const std::wstring wideLine {utf8ToWide(std::string_view{str}.substr(
+                        lineBeginIndex, lineEndIndex - lineBeginIndex + 1))};
+
             int lineVisualLen {getVisualLen(wideLine)};
-            if (wideLine.back() == L'\n') {
-                --lineVisualLen;
-            }
 
             const std::size_t paddingLen 
                     {static_cast<std::size_t>((maxLen - lineVisualLen) / 2)};
-            out.insert(lineBeginIndex, paddingLen, ' ');
+
+            str.insert(lineBeginIndex, paddingLen, ' ');
             lineEndIndex += paddingLen;
             specEndIndex += paddingLen;
         }

@@ -9,14 +9,6 @@ using namespace tinyxml2;
 namespace fs = std::filesystem;
 using TocData = std::vector<std::pair<std::string, fs::path>>;
 
-inline constexpr std::string bold {"[1m"};
-inline constexpr std::string resetBold {"[22m"};
-inline constexpr std::string italic {"[3m"};
-inline constexpr std::string resetItalic {"[23m"};
-inline constexpr std::string yellowFG {"[33m"};
-inline constexpr std::string redFG {"[31m"};
-inline constexpr std::string resetFG {"[39m"};
-
 // returns .opf file's path relative to `epubRootAbs`;
 // throws `std::runtime_error` if epub's container.xml failed to be parsed;
 // null pointer dereference occurs
@@ -69,4 +61,5 @@ void parseChapter(const fs::path& chapterAbs, std::string& out);
 void dumpEpub(const fs::path& epubRootAbs, std::string& out);
 
 // in `str`, expand the ugly unicode ellipses (…) into three normal dots (...)
-void expandEllipses(std::string& str);
+// and escaped tab characters into four spaces
+void expandEllipsesAndTabs(std::string& str);

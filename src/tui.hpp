@@ -10,6 +10,13 @@ namespace fs = std::filesystem;
 
 inline constexpr std::string esc {'\033'};
 inline constexpr std::string escEnd {esc + '\\'};
+inline constexpr std::string bold {"[1m"};
+inline constexpr std::string resetBold {"[22m"};
+inline constexpr std::string italic {"[3m"};
+inline constexpr std::string resetItalic {"[23m"};
+inline constexpr std::string yellowFG {"[33m"};
+inline constexpr std::string redFG {"[31m"};
+inline constexpr std::string resetFG {"[39m"};
 
 // load an image to the terminal (create a virtual placement)
 // to be displayed later using special unicode characters;
@@ -103,20 +110,54 @@ std::wstring utf8ToWide(std::string_view input);
 // throws `std::system_error` on failure
 std::string wideToUTF8(std::wstring_view input);
 
-// queries wcwidth() for visual length (columns) of str;
-// overestimates the length of `str` containing escape sequences,
-// as the function counts all non-printable characters as 1 column wide
+// queries wcwidth() for visual length (columns) of `str`;
+// useSystemLocale() should be called beforehand;
+// overestimates length of string containing escape sequences not accounted for
+// by getInvisEscSeqLen()
 int getVisualLen(std::wstring_view str);
 
-// split lines longer than `maxLen` visual length in `str` at spaces;
+// get number of occurences of `target` in `str`
+template <typename TStrView>
+constexpr int getOccurences(TStrView str, TStrView target) {
+    int count {0};
+    std::size_t pos {};
+    while ((pos = str.find(target, pos)) != std::string::npos) {
+        ++count;
+        pos += target.size();
+    }
+    return count;
+}
+
+// get length of invisible escape sequence chars in `str`, 
+// only looks for plausible escape sequences
+constexpr int getInvisEscSeqLen(std::wstring_view str) {
+    int count {0};
+    count += getOccurences<std::wstring_view>(str, L"\033[1m") * 3;
+    count += getOccurences<std::wstring_view>(str, L"\033[22m") * 4;
+    count += getOccurences<std::wstring_view>(str, L"\033[3m") * 3;
+    count += getOccurences<std::wstring_view>(str, L"\033[23m") * 4;
+    count += getOccurences<std::wstring_view>(str, L"\033[33m") * 4;
+    count += getOccurences<std::wstring_view>(str, L"\033[31m") * 4;
+    count += getOccurences<std::wstring_view>(str, L"\033[39m") * 4;
+    return count;
+}
+
+// sets program's locale to system locale, updating `std::cout` and `std::cin`;
+// should be one of the first functions the program calls
+void useSystemLocale();
+
+// split lines with visual length longer than `maxLen` in `str` at spaces;
 // if a space is not encountered on a long line, it is left as is
 // (this is to support displaying images wider than `maxLen`);
-// if `str` does not end with a newline, one is appended to it
+// this should be the first text content manipulation function called
 void wrapLines(std::string& str, int maxLen);
 
-// based on screen width, center text using `maxTextLen`, images using img width
-void centerContentOnScreen(std::string& str, int maxTextLen);
+// based on screen width, center text using `maxLen`, images using img width;
+// this will create lines longer than `maxLen`, 
+// so it should be the last text content manipulation function called
+void centerContentOnScreen(std::string& str, int maxLen);
 
-// in `str`, center justify text between all occurences of `before` and `after`
-void centerJustifySpecialText(std::string_view before, std::string_view after, 
-                              std::string& out, int maxLen);
+// in `str`, using `maxLen`, center justify text beginning with `prefix` 
+// and ending with `postfix`
+void centerJustify(std::string_view prefix, std::string_view postfix, 
+                   std::string& str, int maxLen);

@@ -262,25 +262,26 @@ namespace test {
     void dumpEpub() {
         std::cout << "test::dumpEpub() no failure cases\n";
 
-        std::string result {""};
+        useSystemLocale();
 
+        std::string result {""};
         ::dumpEpub(parasiteRootAbs, result);
         ::dumpEpub(spiceWolfRootAbs, result);
         ::dumpEpub(zuttomoRootAbs, result);
 
+        ::expandEllipsesAndTabs(result);
         constexpr int cols {55};
-        ::expandEllipses(result);
         ::wrapLines(result, cols);
-        ::centerJustifySpecialText(esc + yellowFG, esc + resetFG, result, cols);
-        ::centerJustifySpecialText(esc + redFG, esc + resetFG, result, cols);
+        ::centerJustify(esc + yellowFG, esc + resetFG, result, cols);
+        ::centerJustify(esc + redFG, esc + resetFG, result, cols);
         ::centerContentOnScreen(result, cols);
         std::cout << result;
 
         std::cout << "test::dumpEpub() success cases did not error, "
                      "check std::cout for content of three epubs. "
                      "Ellipses should be expanded, lines wrapped to 55 cols, "
-                     "content centered on the screen, "
-                     "chapter titles and ends center justified.\n";
+                     "chapter titles and ends center justified, "
+                     "and content centered on the screen.\n";
     }
 
     void enableRawMode() {

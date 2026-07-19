@@ -137,15 +137,11 @@ void parseContentElem(const XMLElement* parent, std::string& out,
             else if (name == "h1" || name == "h2" || name == "h3" 
                      || name == "h4" || name == "h5" || name == "h6") {
                 out += esc + bold;
-                // wrap header in FG and resetFG for centerJustifySpecialText()
                 out += esc + yellowFG;
                 parseContentElem(childElem, out, chapterAbs);
-                // minimize impact of esc codes on visual length calculation
-                // by putting the reset codes on the empty line
-                out += '\n'; 
-                out += esc + resetFG;
                 out += esc + resetBold;
-                out += '\n';
+                out += esc + resetFG;
+                out += "\n\n";
             }
             else if (name == "p" || name == "li") {
                 parseContentElem(childElem, out, chapterAbs);
@@ -194,11 +190,10 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
     parseContentElem(body, out, chapterAbs);
     out.pop_back(); // remove extraneous newline
     out += esc + bold;
-    // wrap header in FG and resetFG for centerJustifySpecialText()
     out += esc + redFG;
     out += "---";
-    out += esc + resetFG;
     out += esc + resetBold;
+    out += esc + resetFG;
 }
 
 void dumpEpub(const fs::path& epubRootAbs, std::string& out) {
@@ -217,6 +212,7 @@ void dumpEpub(const fs::path& epubRootAbs, std::string& out) {
     }
 }
 
-void expandEllipses(std::string& str) {
+void expandEllipsesAndTabs(std::string& str) {
     findAndReplaceAll(str, "…", "...");
+    findAndReplaceAll(str, "\t", "    ");
 }
