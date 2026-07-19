@@ -268,15 +268,19 @@ namespace test {
         ::dumpEpub(spiceWolfRootAbs, result);
         ::dumpEpub(zuttomoRootAbs, result);
 
+        constexpr int cols {55};
         ::expandEllipses(result);
-        ::wrapLines(result, 55);
-        ::centerContentOnScreen(result, 55);
+        ::wrapLines(result, cols);
+        ::centerJustifySpecialText(esc + yellowFG, esc + resetFG, result, cols);
+        ::centerJustifySpecialText(esc + redFG, esc + resetFG, result, cols);
+        ::centerContentOnScreen(result, cols);
         std::cout << result;
 
         std::cout << "test::dumpEpub() success cases did not error, "
                      "check std::cout for content of three epubs. "
                      "Ellipses should be expanded, lines wrapped to 55 cols, "
-                     "and content centered on the screen\n";
+                     "content centered on the screen, "
+                     "chapter titles and ends center justified.\n";
     }
 
     void enableRawMode() {

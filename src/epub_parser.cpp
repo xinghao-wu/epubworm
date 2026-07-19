@@ -122,28 +122,29 @@ void parseContentElem(const XMLElement* parent, std::string& out,
         if (const XMLElement* childElem = childNode->ToElement()) {
             const std::string_view name {childElem->Name()};
             if (name == "b" || name == "strong") {
-                out += esc + "[1m";
+                out += esc + bold;
                 parseContentElem(childElem, out, chapterAbs);
-                out += esc + "[22m";
+                out += esc + resetBold;
             }
             else if (name == "i" || name == "em") {
-                out += esc + "[3m";
+                out += esc + italic;
                 parseContentElem(childElem, out, chapterAbs);
-                out += esc + "[23m";
+                out += esc + resetItalic;
             }
             else if (name == "br") {
                 out += '\n';
             }
             else if (name == "h1" || name == "h2" || name == "h3" 
                      || name == "h4" || name == "h5" || name == "h6") {
-                out += esc + "[1m";
-                out += esc + "[33m";
+                out += esc + bold;
+                // wrap header in FG and resetFG for centerJustifySpecialText()
+                out += esc + yellowFG;
                 parseContentElem(childElem, out, chapterAbs);
                 // minimize impact of esc codes on visual length calculation
                 // by putting the reset codes on the empty line
                 out += '\n'; 
-                out += esc + "[22m";
-                out += esc + "[39m";
+                out += esc + resetFG;
+                out += esc + resetBold;
                 out += '\n';
             }
             else if (name == "p" || name == "li") {
@@ -163,10 +164,10 @@ void parseContentElem(const XMLElement* parent, std::string& out,
                 }
                 catch (const std::runtime_error& e) {
                     if (std::string_view{e.what()} == "Unable to open file") {
-                        out += esc + "[1m"; 
+                        out += esc + bold; 
                         out += "[image reference in epub "
                                "points to nonexistent file]";
-                        out += esc + "[22m" + "\n\n";
+                        out += esc + resetBold + "\n\n";
                     }
                     else {
                         throw;
@@ -192,11 +193,12 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
 
     parseContentElem(body, out, chapterAbs);
     out.pop_back(); // remove extraneous newline
-    out += esc + "[1m";
-    out += esc + "[31m";
+    out += esc + bold;
+    // wrap header in FG and resetFG for centerJustifySpecialText()
+    out += esc + redFG;
     out += "---";
-    out += esc + "[22m";
-    out += esc + "[39m";
+    out += esc + resetFG;
+    out += esc + resetBold;
 }
 
 void dumpEpub(const fs::path& epubRootAbs, std::string& out) {

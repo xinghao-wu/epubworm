@@ -304,3 +304,40 @@ void centerContentOnScreen(std::string& str, int maxTextLen) {
         str.insert(lineBeginIndex, static_cast<std::size_t>(paddingLen), ' ');
     }
 }
+
+void centerJustifySpecialText(std::string_view before, std::string_view after, 
+                              std::string& out, int maxLen) {
+    // sorry... I should've used while loops...
+    for (std::size_t specBeginIndex {out.find(before)}, 
+            specEndIndex {out.find(after, specBeginIndex)};
+            specBeginIndex != std::string::npos;
+            specBeginIndex = out.find(before, specEndIndex + 1 + after.size()),
+            specEndIndex = out.find(after, specBeginIndex)) {
+
+        specBeginIndex += before.size();
+        --specEndIndex;
+
+        for (std::size_t lineBeginIndex {specBeginIndex},
+                lineEndIndex {out.find('\n', lineBeginIndex) > specEndIndex
+                    ? specEndIndex : out.find('\n', lineBeginIndex)};
+                lineBeginIndex <= specEndIndex;
+                lineBeginIndex = lineEndIndex + 1,
+                lineEndIndex = out.find('\n',lineBeginIndex) > specEndIndex
+                    ? specEndIndex : out.find('\n', lineBeginIndex)) {
+
+            const std::wstring wideLine {utf8ToWide(std::string_view
+                    {out.begin() + static_cast<std::ptrdiff_t>(lineBeginIndex),
+                     out.begin() + static_cast<std::ptrdiff_t>(lineEndIndex)})};
+            int lineVisualLen {getVisualLen(wideLine)};
+            if (wideLine.back() == L'\n') {
+                --lineVisualLen;
+            }
+
+            const std::size_t paddingLen 
+                    {static_cast<std::size_t>((maxLen - lineVisualLen) / 2)};
+            out.insert(lineBeginIndex, paddingLen, ' ');
+            lineEndIndex += paddingLen;
+            specEndIndex += paddingLen;
+        }
+    }
+}

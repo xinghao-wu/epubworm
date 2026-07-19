@@ -104,7 +104,8 @@ std::wstring utf8ToWide(std::string_view input);
 std::string wideToUTF8(std::wstring_view input);
 
 // queries wcwidth() for visual length (columns) of str;
-// overestimates the length of escape sequences
+// overestimates the length of `str` containing escape sequences,
+// as the function counts all non-printable characters as 1 column wide
 int getVisualLen(std::wstring_view str);
 
 // split lines longer than `maxLen` visual length in `str` at spaces;
@@ -115,3 +116,7 @@ void wrapLines(std::string& str, int maxLen);
 
 // based on screen width, center text using `maxTextLen`, images using img width
 void centerContentOnScreen(std::string& str, int maxTextLen);
+
+// in `str`, center justify text between all occurences of `before` and `after`
+void centerJustifySpecialText(std::string_view before, std::string_view after, 
+                              std::string& out, int maxLen);

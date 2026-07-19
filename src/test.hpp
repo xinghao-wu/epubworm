@@ -17,7 +17,7 @@ namespace test {
     // also serves to test parseContentElem()
     void parseChapter();
     // also serves to test expandEllipses(), getVisualLen(), wrapLines(),
-    // centerContentOnScreen()
+    // centerContentOnScreen(), centerJustifySpecialText()
     void dumpEpub();
     // also serves to test disableRawMode()
     void enableRawMode();
