@@ -80,8 +80,9 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out) {
     const std::string resetFGColor {esc + "[39m"};
     const std::string placeholderChar {"\U0010EEEE"};
 
+    out += idInFGColor;
     for (int r {0}; r < rows; ++r) {
-        out += idInFGColor + placeholderChar + rowColDiacritics.data()[r];
+        out += placeholderChar + rowColDiacritics.data()[r];
         for (int c {1}; c < cols; ++c) {
             out += placeholderChar;
         }
@@ -254,6 +255,9 @@ void wrapLines(std::string& str, int maxLen) {
             lineBeginIndex = lineEndIndex + 1, 
             lineEndIndex = str.find('\n', lineBeginIndex)) {
 
+        if (lineEndIndex == lineBeginIndex) {
+            continue;
+        }
         if (lineEndIndex == std::string::npos) {
             lineEndIndex = str.size() - 1;
         }
@@ -305,19 +309,22 @@ void centerContentOnScreen(std::string& str, int maxLen) {
     ioctl(0, TIOCGWINSZ, &winInfo);
 
     for (std::size_t lineBeginIndex {0}; lineBeginIndex < str.size();
-            lineBeginIndex = str.find('\n', lineBeginIndex) + 1) {
+            lineBeginIndex = 
+            (str.find('\n', lineBeginIndex) == std::string::npos)
+            ? std::string::npos : str.find('\n', lineBeginIndex) + 1) {
+
+        const std::size_t lineEndIndex {str.find('\n', lineBeginIndex)};
+        if (lineEndIndex == lineBeginIndex) {
+            continue;
+        }
 
         int contentWidth {};
-        // check if line is part of image
-        if (std::string_view{str}.substr(lineBeginIndex, 7) == esc + "[38;2;") {
-            constexpr std::string_view imgCellCh {"\U0010EEEE"};
+        std::string_view line {std::string_view{str}.substr(
+                lineBeginIndex, lineEndIndex - lineBeginIndex + 1)};
+        constexpr std::string_view imgCellCh {"\U0010EEEE"};
 
-            const std::size_t lineEndIndex {str.find('\n', lineBeginIndex)};
-            std::string_view line {std::string_view{str}.substr(
-                    lineBeginIndex, lineEndIndex - lineBeginIndex + 1)};
-
+        if (line.contains(imgCellCh)) {
             const int imgCols {getOccurences(line, imgCellCh)};
-
             contentWidth = imgCols;
         }
         else {
@@ -347,6 +354,10 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
                 lineBeginIndex = lineEndIndex + 1,
                 lineEndIndex = str.find('\n',lineBeginIndex) > specEndIndex
                                ? specEndIndex : str.find('\n', lineBeginIndex)) {
+
+            if (lineEndIndex == lineBeginIndex) {
+                continue;
+            }
 
             const std::wstring wideLine {utf8ToWide(std::string_view{str}.substr(
                         lineBeginIndex, lineEndIndex - lineBeginIndex + 1))};
