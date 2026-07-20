@@ -32,8 +32,8 @@ namespace test {
     // getInvisEscSeqLen(), useSystemLocale()
     void dumpEpub();
 
-    // also serves to test disableRawMode()
-    void enableRawMode();
+    // also serves to test disableRawMode(), enableRawMode(), clearScreen()
+    void rawReadKey();
 
     void utf8ToWide();
 

@@ -134,7 +134,7 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
 
 void disableRawMode() {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ogTermFlags) == -1) {
-        throw std::runtime_error{"failed to restore original terminal settings"};
+        throw std::runtime_error{"failed to restore original term settings"};
     }
 }
 
@@ -146,10 +146,14 @@ void enableRawMode() {
     std::atexit(disableRawMode);
 
     termios rawTermFlags {ogTermFlags};
+    // disable echo and canonical mode
     rawTermFlags.c_lflag &= static_cast<unsigned int>(~(ECHO | ICANON));
+    // let read() return 0 every 100ms when not receiving input
+    rawTermFlags.c_cc[VMIN] = 0;
+    rawTermFlags.c_cc[VTIME] = 1;
 
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &rawTermFlags) == -1) {
-        throw std::runtime_error{"failed to set terminal settings to raw mode"};
+        throw std::runtime_error{"failed to set term settings to raw mode"};
     }
 }
 
@@ -357,4 +361,61 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
             specEndIndex += paddingLen;
         }
     }
+}
+
+void clearScreen() {
+    std::cout << esc << clearAll << esc << posCursorTopLeft;
+}
+
+int rawReadKey() {
+    ssize_t err {};
+    char ch {};
+    while ((err = read(STDIN_FILENO, &ch, 1)) != 1) {
+        if (err == -1 && errno != EAGAIN) {
+            throw std::system_error{errno, std::generic_category(),
+                                    "raw mode read key errored"};
+        }
+    }
+    if (ch != '\033') {
+        return ch;
+    }
+
+    std::vector<char> seq (3);
+    if (read(STDIN_FILENO, &seq[0], 1) == 0) {
+        return '\033';
+    }
+    read(STDIN_FILENO, &seq[1], 1);
+
+    if (seq[0] == '[') {
+        if (seq[1] >= '0' && seq[1] <= '9') {
+            read(STDIN_FILENO, &seq[2], 1);
+            if (seq[2] == '~') {
+                switch (seq[1]) {
+                case '1': return key::home;
+                case '4': return key::end;
+                case '5': return key::pgUp;
+                case '6': return key::pgDown;
+                case '7': return key::home;
+                case '8': return key::end;
+                }
+            }
+        } 
+        else {
+            switch (seq[1]) {
+            case 'A': return key::arrowUp;
+            case 'B': return key::arrowDown;
+            case 'C': return key::arrowRight;
+            case 'D': return key::arrowLeft;
+            case 'H': return key::home;
+            case 'F': return key::end;
+            }
+        }
+    } 
+    if (seq[0] == 'O') {
+        switch (seq[1]) {
+        case 'H': return key::home;
+        case 'F': return key::end;
+        }
+    }
+    return key::unknownEscSeq;
 }

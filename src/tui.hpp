@@ -10,6 +10,8 @@ namespace fs = std::filesystem;
 
 inline constexpr std::string esc {'\033'};
 inline constexpr std::string escEnd {esc + '\\'};
+inline constexpr std::string clearAll {"[2J"};
+inline constexpr std::string posCursorTopLeft {"[H"};
 inline constexpr std::string bold {"[1m"};
 inline constexpr std::string resetBold {"[22m"};
 inline constexpr std::string italic {"[3m"};
@@ -17,6 +19,20 @@ inline constexpr std::string resetItalic {"[23m"};
 inline constexpr std::string yellowFG {"[33m"};
 inline constexpr std::string redFG {"[31m"};
 inline constexpr std::string resetFG {"[39m"};
+
+namespace key {
+    enum keyValues : int {
+        arrowLeft = 1000,
+        arrowRight,
+        arrowUp,
+        arrowDown,
+        home,
+        end,
+        pgUp,
+        pgDown,
+        unknownEscSeq,
+    };
+}
 
 // load an image to the terminal (create a virtual placement)
 // to be displayed later using special unicode characters;
@@ -92,12 +108,13 @@ constexpr std::string getGraphicsEscCode(const fs::path& tempDataFileAbs,
 }
 
 // resets terminal settings to original flags;
-// helper to enableRawMode(), never call this function without calling
-// enableRawMode() first;
+// depends on enableRawMode() to retrieve original settings first,
+// never call this function before calling enableRawMode();
 // throws `std::runtime_error` on failure to set terminal settings
 void disableRawMode();
 
 // sets terminal to raw mode, disabling echo and canonical mode;
+// read() returns 0 every 100ms when not receiving input;
 // sets disableRawMode() to be called at program exit;
 // throws `std::runtime_error` on failure to read or set terminal settings
 void enableRawMode();
@@ -161,3 +178,12 @@ void centerContentOnScreen(std::string& str, int maxLen);
 // and ending with `postfix`
 void centerJustify(std::string_view prefix, std::string_view postfix, 
                    std::string& str, int maxLen);
+
+// clear the entire screen and position cursor to top left cell
+void clearScreen();
+
+// read one key input in raw mode;
+// for normal keypresses, returns the character promoted to an int; 
+// for those represented by escape seqs, returns a value in key::keyValues;
+// throws `std::system_error` on error to read key
+int rawReadKey();

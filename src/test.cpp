@@ -284,21 +284,30 @@ namespace test {
                      "and content centered on the screen.\n";
     }
 
-    void enableRawMode() {
-        std::cout << "test::enableRawMode() no failure cases\n";
+    void rawReadKey() {
+        std::cout << "test::rawReadKey() no failure cases\n";
 
-        ::enableRawMode();
-        std::cout << "test::enableRawMode() success cases did not error, "
+        std::cout << "test::rawReadKey() success cases needs manual check, "
                      "the terminal should now be in raw mode. "
                      "Any character typed should be instantly displayed "
                      "along with their integer representation. "
-                     "Press q to quit.\n";
+                     "Also check for values contained in key::keyValues. "
+                     "Press q to quit. The screen will be cleared after.\n";
 
-        char c {};
-        while (read(STDIN_FILENO, &c, 1) == 1 && c != 'q') {
-            std::cout << c << " (" << static_cast<int>(c) << ") " << std::flush;
+        ::enableRawMode();
+
+        int ch {};
+        while ((ch = ::rawReadKey()) != 'q') {
+            if (ch >= key::arrowLeft || std::iscntrl(ch)) {
+                std::cout << "ctrl char : [" << ch << "]\n" << std::flush;
+            }
+            else {
+                std::cout << '\"' << static_cast<char>(ch) << '\"';
+                std::cout << " : [" << ch << "]\n" << std::flush;
+            }
         }
-        std::cout << '\n';
+
+        ::clearScreen();
     }
 
     void utf8ToWide() {
