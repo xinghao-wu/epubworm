@@ -75,12 +75,11 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out) {
     const std::uint32_t idGreen {(id >> 8) & 255};
     const std::uint32_t idBlue {id & 255};
 
-    const std::string idInFGColor {esc + "[38;2;" + std::to_string(idRed) + ';'
+    const std::string idInFG {esc + "[38;2;" + std::to_string(idRed) + ';'
             + std::to_string(idGreen) + ';' + std::to_string(idBlue) + 'm'};
-    const std::string resetFGColor {esc + "[39m"};
     const std::string placeholderChar {"\U0010EEEE"};
 
-    out += idInFGColor;
+    out += idInFG;
     for (int r {0}; r < rows; ++r) {
         out += placeholderChar + rowColDiacritics.data()[r];
         for (int c {1}; c < cols; ++c) {
@@ -89,7 +88,7 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out) {
 
         out += '\n';
     }
-    out += resetFGColor;
+    out += resetFG;
 }
 
 void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
@@ -101,7 +100,7 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
 
     if (rows == 0 || cols == 0) {
         winsize winInfo {};
-        ioctl(0, TIOCGWINSZ, &winInfo);
+        ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
         const int cellXPix {winInfo.ws_xpixel / winInfo.ws_col};
         const int cellYPix {winInfo.ws_ypixel / winInfo.ws_row};
 
@@ -306,7 +305,7 @@ void wrapLines(std::string& str, int maxLen) {
 
 void centerContentOnScreen(std::string& str, int maxLen) {
     winsize winInfo {};
-    ioctl(0, TIOCGWINSZ, &winInfo);
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
     for (std::size_t lineBeginIndex {0}; lineBeginIndex < str.size();
             lineBeginIndex = 
@@ -425,4 +424,15 @@ int rawReadKey() {
         }
     }
     return key::unknownEscSeq;
+}
+
+void eraseScreen() {
+    winsize winInfo {};
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
+
+    std::cout << esc << posCursorTopLeft;
+    for (int i {0}; i < winInfo.ws_row; ++i) {
+        std::cout << esc << eraseLine << '\n';
+    }
+    std::cout << esc << posCursorTopLeft;
 }

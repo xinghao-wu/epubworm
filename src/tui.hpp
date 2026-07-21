@@ -12,6 +12,7 @@ inline constexpr std::string esc {'\033'};
 inline constexpr std::string escEnd {esc + '\\'};
 inline constexpr std::string clearScreen {"[2J"};
 inline constexpr std::string posCursorTopLeft {"[H"};
+inline constexpr std::string eraseLine {"[2K"};
 inline constexpr std::string bold {"[1m"};
 inline constexpr std::string resetBold {"[22m"};
 inline constexpr std::string italic {"[3m"};
@@ -184,3 +185,6 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
 // for those represented by escape seqs, returns a value in key::keyValues;
 // throws `std::system_error` on error to read key
 int rawReadKey();
+
+// equivalent to clearing the screen but not putting it in scrollback buffer
+void eraseScreen();
