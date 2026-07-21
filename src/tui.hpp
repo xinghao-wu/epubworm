@@ -171,9 +171,10 @@ void useSystemLocale();
 void wrapLines(std::string& str, int maxLen);
 
 // based on screen width, center text using `maxLen`, images using img width;
-// this will create lines longer than `maxLen`, 
+// also prefix every line with escape seq to erase the line the cursor's on;
+// this will create lines (with spaces in them) longer than `maxLen`, 
 // so it should be the last text content manipulation function called
-void centerContentOnScreen(std::string& str, int maxLen);
+void centerOnScreenAndAddEraseLineSeq(std::string& str, int maxLen);
 
 // in `str`, using `maxLen`, center justify text beginning with `prefix` 
 // and ending with `postfix`

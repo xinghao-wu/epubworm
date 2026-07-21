@@ -274,7 +274,7 @@ namespace test {
         ::wrapLines(result, cols);
         ::centerJustify(esc + yellowFG, esc + resetFG, result, cols);
         ::centerJustify(esc + redFG, esc + resetFG, result, cols);
-        ::centerContentOnScreen(result, cols);
+        ::centerOnScreenAndAddEraseLineSeq(result, cols);
         std::cout << result;
 
         std::cout << "test::dumpEpub() success cases did not error, "

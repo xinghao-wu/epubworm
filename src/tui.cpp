@@ -303,7 +303,7 @@ void wrapLines(std::string& str, int maxLen) {
     }
 }
 
-void centerContentOnScreen(std::string& str, int maxLen) {
+void centerOnScreenAndAddEraseLineSeq(std::string& str, int maxLen) {
     winsize winInfo {};
     ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
@@ -313,6 +313,8 @@ void centerContentOnScreen(std::string& str, int maxLen) {
             ? std::string::npos : str.find('\n', lineBeginIndex) + 1) {
 
         const std::size_t lineEndIndex {str.find('\n', lineBeginIndex)};
+
+        str.insert(lineBeginIndex, esc + eraseLine);
         if (lineEndIndex == lineBeginIndex) {
             continue;
         }
