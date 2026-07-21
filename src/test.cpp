@@ -292,7 +292,7 @@ namespace test {
                      "Any character typed should be instantly displayed "
                      "along with their integer representation. "
                      "Also check for values contained in key::keyValues. "
-                     "Press q to quit. The screen will be cleared after.\n";
+                     "Press q to quit.\n";
 
         ::enableRawMode();
 
@@ -306,8 +306,6 @@ namespace test {
                 std::cout << " : [" << ch << "]\n" << std::flush;
             }
         }
-
-        ::clearScreen();
     }
 
     void utf8ToWide() {

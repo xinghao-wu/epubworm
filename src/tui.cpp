@@ -374,10 +374,6 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
     }
 }
 
-void clearScreen() {
-    std::cout << esc << clearAll << esc << posCursorTopLeft;
-}
-
 int rawReadKey() {
     ssize_t err {};
     char ch {};

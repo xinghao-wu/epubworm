@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 
 inline constexpr std::string esc {'\033'};
 inline constexpr std::string escEnd {esc + '\\'};
-inline constexpr std::string clearAll {"[2J"};
+inline constexpr std::string clearScreen {"[2J"};
 inline constexpr std::string posCursorTopLeft {"[H"};
 inline constexpr std::string bold {"[1m"};
 inline constexpr std::string resetBold {"[22m"};
@@ -178,9 +178,6 @@ void centerContentOnScreen(std::string& str, int maxLen);
 // and ending with `postfix`
 void centerJustify(std::string_view prefix, std::string_view postfix, 
                    std::string& str, int maxLen);
-
-// clear the entire screen and position cursor to top left cell
-void clearScreen();
 
 // read one key input in raw mode;
 // for normal keypresses, returns the character promoted to an int; 
