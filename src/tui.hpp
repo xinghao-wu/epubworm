@@ -189,3 +189,25 @@ int rawReadKey();
 
 // equivalent to clearing the screen but not putting it in scrollback buffer
 void eraseScreen();
+
+// get index of Nth occurence of `target` in `str`, starting the search
+// from `startIndex`, doesn't count overlapping `target`
+constexpr std::size_t findNth(std::string_view str, std::string_view target, 
+        int n, std::size_t startIndex = 0) {
+    if (n == 0 || target.empty()) {
+        return std::string_view::npos;
+    }
+
+    std::size_t targetBeginIndex {startIndex};
+    int count {0};
+
+    while ((targetBeginIndex = str.find(target, targetBeginIndex)) 
+           != std::string_view::npos) {
+        ++count;
+        if (count == n) {
+            return targetBeginIndex;
+        }
+        targetBeginIndex += target.size(); 
+    }
+    return std::string_view::npos;
+}

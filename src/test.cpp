@@ -327,4 +327,13 @@ namespace test {
 
         std::cout << "test::wideToUTF8() success cases passed\n";
     }
+
+    void findNth() {
+        std::cout << "test::findNth() no failure cases\n";
+
+        assert(::findNth("banana", "an", 2) == 3);
+        assert(::findNth("mirra mirra on ze walle", "mirra", 1, 3) == 6);
+        assert(::findNth("mirra mirra", "mirra", 3) == std::string_view::npos);
+        std::cout << "test::findNth() success cases passed\n";
+    }
 }

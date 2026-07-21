@@ -38,4 +38,6 @@ namespace test {
     void utf8ToWide();
 
     void wideToUTF8();
+
+    void findNth();
 }
