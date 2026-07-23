@@ -1,0 +1,14 @@
+Checks: >
+  *,
+  -abseil-*,
+  -altera-*,
+  -android-*,
+  -fuchsia-*,
+  -google-*,
+  -llvm*,
+  -zircon-*,
+  -modernize-use-trailing-return-type,
+  -misc-no-recursion,
+  -misc-use-anonymous-namespace,
+  -misc-use-internal-linkage,
+  -readability-identifier-length
