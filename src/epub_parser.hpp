@@ -64,7 +64,8 @@ void parseContentElem(const XMLElement* parent, std::string& out,
                       const fs::path& chapterAbs);
 
 // parse chapter content xhtml file using `parseContentElem()`, 
-// appending result to `out`
+// appending result to `out`;
+// a red fg colored "---\n" is appended to chapter text
 void parseChapter(const fs::path& chapterAbs, std::string& out);
 
 // parse all chapters of epub, appending result to out;

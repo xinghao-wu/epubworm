@@ -254,11 +254,8 @@ namespace test {
 
         std::string result {};
         ::parseChapter(spiceWolfRootAbs / "OEBPS/chap01.xhtml", result);
-        result += '\n';
         ::parseChapter(spiceWolfRootAbs / "OEBPS/chap02.xhtml", result);
-        result += '\n';
         ::parseChapter(spiceWolfRootAbs / "OEBPS/chapter005.xhtml", result);
-        result += '\n';
         std::cout << result;
 
         std::cout << "test::parseChapter() success cases did not error, "

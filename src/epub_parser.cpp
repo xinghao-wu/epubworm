@@ -203,6 +203,7 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
     out += "---";
     out += esc + resetBold;
     out += esc + resetFG;
+    out += '\n';
 }
 
 void dumpEpub(const fs::path& epubRootAbs, std::string& out) {
@@ -218,7 +219,6 @@ void dumpEpub(const fs::path& epubRootAbs, std::string& out) {
 
     for (int i {1}; i < std::ssize(spine); ++i) {
         parseChapter(opfAbs.parent_path() / spine.data()[i], out);
-        out += "\n\n";
     }
 }
 
