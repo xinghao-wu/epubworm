@@ -64,9 +64,11 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string &out);
 // in which case it will be shrunk down to fit, maintaining its aspect ratio);
 // else, image will be shrunk or enlargened, maintaining its aspect ratio,
 // to fit centered within `rows` * `cols` characters;
-// may require `set -g allow-passthrough on` in ~/.tmux.conf to work;
+// requires `set -g allow-passthrough on` in ~/.tmux.conf to work;
 // must be able to output to stdout through `std::cout` to send terminal data;
-// throws `std::runtime_error` for bad `imgAbs`
+// throws `std::runtime_error` for bad `imgAbs`;
+// note: there's a bug on ghostty's end that images displayed on tmux panes on
+// the right side of the screen will be broken until tmux redraws the screen
 void displayImg(const fs::path& imgAbs, std::string& out,
                 int rows = 0, int cols = 0);
 
@@ -174,7 +176,7 @@ constexpr void findAndReplaceAll(std::string& str, std::string_view target,
 
 // modify `str` to wrap its content in tmux's passthrough escape sequence,
 // letting escape sequences tmux doesn't know abt reach the terminal emulator;
-// may require `set -g allow-passthrough on` in ~/.tmux.conf for passthrough
+// requires `set -g allow-passthrough on` in ~/.tmux.conf for passthrough
 constexpr void wrapForTmuxPassthrough(std::string& str) {
     findAndReplaceAll(str, esc, esc + esc);
     str = esc + "Ptmux;" + str + escEnd;
