@@ -26,11 +26,12 @@
 
 namespace fs = std::filesystem;
 
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static termios ogTermFlags {};
 
 void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     if (id == 0) {
-        throw std::runtime_error("image id not in valid range");
+        throw std::runtime_error{"image id not in valid range"};
     }
 
     int xPixels {};
@@ -39,21 +40,21 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     constexpr int noRequiredChannelNum {0};
 
     unsigned char* pixelData {stbi_load(imgAbs.c_str(), &xPixels, &yPixels,
-                              &channels, noRequiredChannelNum)};
-    if (!pixelData) {
-        throw std::runtime_error {stbi_failure_reason()};
+                                        &channels, noRequiredChannelNum)};
+    if (pixelData == nullptr) {
+        throw std::runtime_error{stbi_failure_reason()};
     }
 
     const int pixelDataSize {xPixels * yPixels * channels};
-    const std::string_view pixelDataView 
-            {reinterpret_cast<const char*>(pixelData),
-             static_cast<std::size_t>(pixelDataSize)};
+    const std::string_view pixelDataView {
+            reinterpret_cast<const char*>(pixelData),
+            static_cast<std::size_t>(pixelDataSize)};
 
-    const fs::path tempDataFileAbs 
-            {"/dev/shm/mnc-img-data-tty-graphics-protocol"};
+    const fs::path tempDataFileAbs {
+            "/dev/shm/mnc-img-data-tty-graphics-protocol"};
     std::ofstream tempDataFile {tempDataFileAbs};
     if (!tempDataFile.is_open()) {
-        throw std::runtime_error {"image temp data file failed to open"};
+        throw std::runtime_error{"image temp data file failed to open"};
     }
 
     tempDataFile << pixelDataView;
@@ -68,27 +69,25 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
 
 void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out) {
     if (id < 1 || id > static_cast<std::uint32_t>((1 << 24) - 1)) {
-        throw std::runtime_error("image id not in valid range");
+        throw std::runtime_error{"image id not in valid range"};
     }
 
     const std::uint32_t idRed {(id >> 16) & 255};
     const std::uint32_t idGreen {(id >> 8) & 255};
     const std::uint32_t idBlue {id & 255};
-
     const std::string idInFG {esc + "[38;2;" + std::to_string(idRed) + ';'
             + std::to_string(idGreen) + ';' + std::to_string(idBlue) + 'm'};
-    const std::string placeholderChar {"\U0010EEEE"};
 
     out += idInFG;
     for (int r {0}; r < rows; ++r) {
-        out += placeholderChar + rowColDiacritics.data()[r];
-        for (int c {1}; c < cols; ++c) {
-            out += placeholderChar;
-        }
+        out += imgCellPlaceholder + rowColDiacritics.data()[r];
 
+        for (int c {1}; c < cols; ++c) {
+            out += imgCellPlaceholder;
+        }
         out += '\n';
     }
-    out += resetFG;
+    out += esc + resetFG;
 }
 
 void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
@@ -115,21 +114,42 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
         cols = colsDesired;
 
         constexpr int margin {1};
-        if (rowsDesired > winInfo.ws_row - margin * 2) {
-            rows = winInfo.ws_row - margin * 2;
+        if (rowsDesired > winInfo.ws_row - (margin * 2)) {
+            rows = winInfo.ws_row - (margin * 2);
             cols = static_cast<int>(static_cast<double>(rows) 
-                                        / rowsDesired * cols) + 1;
+                                    / rowsDesired * cols) + 1;
         }
-        if (colsDesired > winInfo.ws_col - margin * 4) {
-            cols = winInfo.ws_col - margin * 4;
+        if (colsDesired > winInfo.ws_col - (margin * 4)) {
+            cols = winInfo.ws_col - (margin * 4);
             rows = static_cast<int>(static_cast<double>(cols) 
-                                        / colsDesired * rows) + 1;
+                                    / colsDesired * rows) + 1;
         }
     }
     loadImg(imgAbs, id, rows, cols);
     displayLoadedImg(id, rows, cols, out);
     // fixs images breaking if multiple are displayed too fast in succession
     std::this_thread::sleep_for(std::chrono::milliseconds{5});
+}
+
+std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels, 
+                               int xPixels, int yPixels, std::uint32_t id, 
+                               int rows, int cols) {
+    std::string ctrlData {};
+    ctrlData += "f=" + std::to_string(channels * 8) + ',';
+    ctrlData += "s=" + std::to_string(xPixels) + ',';
+    ctrlData += "v=" + std::to_string(yPixels) + ',';
+    ctrlData += "i=" + std::to_string(id) + ',';
+    ctrlData += "r=" + std::to_string(rows) + ',';
+    ctrlData += "c=" + std::to_string(cols) + ',';
+    ctrlData += "t=t,";
+    ctrlData += "U=1,";
+    ctrlData += "a=T,";
+    ctrlData += "q=2";
+
+    const std::string tempDataFileAbsEncoded {
+            base64::to_base64(tempDataFileAbs.string())};
+
+    return esc + "_G" + ctrlData + ';' + tempDataFileAbsEncoded + escEnd;
 }
 
 void disableRawMode() {
@@ -143,7 +163,10 @@ void enableRawMode() {
         throw std::runtime_error{"failed to get original terminal settings"};
     }
 
-    std::atexit(disableRawMode);
+    if (std::atexit(disableRawMode) != 0) {
+        throw std::runtime_error{"failed to register disableRawMode() to run "
+                                 "at program exit"};
+    }
 
     termios rawTermFlags {ogTermFlags};
     // disable echo and canonical mode
@@ -162,10 +185,11 @@ std::wstring utf8ToWide(std::string_view input) {
         return {};
     }
 
-    const iconv_t convDescriptor {iconv_open("WCHAR_T", "UTF-8")};
+    iconv_t convDescriptor {iconv_open("WCHAR_T", "UTF-8")};
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
     if (convDescriptor == reinterpret_cast<iconv_t>(-1)) {
-        throw std::system_error(errno, std::generic_category(), 
-                                "iconv_open failed");
+        throw std::system_error{errno, std::generic_category(), 
+                                "iconv_open failed"};
     }
 
     char* inBuf {const_cast<char*>(input.data())};
@@ -181,13 +205,14 @@ std::wstring utf8ToWide(std::string_view input) {
     if (error == static_cast<std::size_t>(-1)) {
         const int err {errno};
         iconv_close(convDescriptor);
-        throw std::system_error(err, std::generic_category(), 
-                                "iconv conversion failed");
+        throw std::system_error{err, std::generic_category(), 
+                                "iconv conversion failed"};
     }
 
     iconv_close(convDescriptor);
     
-    std::size_t bytesWritten {(output.size() * sizeof(wchar_t)) - outBytesLeft};
+    const std::size_t bytesWritten {(output.size() * sizeof(wchar_t)) 
+                                    - outBytesLeft};
     output.resize(bytesWritten / sizeof(wchar_t));
 
     return output;
@@ -198,13 +223,15 @@ std::string wideToUTF8(std::wstring_view input) {
         return {};
     }
 
-    const iconv_t convDescriptor {iconv_open("UTF-8", "WCHAR_T")};
+    iconv_t convDescriptor {iconv_open("UTF-8", "WCHAR_T")};
+    // NOLINTNEXTLINE(performance-no-int-to-ptr)
     if (convDescriptor == reinterpret_cast<iconv_t>(-1)) {
-        throw std::system_error(errno, std::generic_category(), 
-                                "iconv_open failed");
+        throw std::system_error{errno, std::generic_category(), 
+                                "iconv_open failed"};
     }
 
-    char* inBuf {const_cast<char*>(reinterpret_cast<const char*>(input.data()))};
+    char* inBuf {const_cast<char*>(
+                 reinterpret_cast<const char*>(input.data()))};
     std::size_t inBytesLeft {input.size() * sizeof(wchar_t)};
 
     std::string output {};
@@ -217,13 +244,13 @@ std::string wideToUTF8(std::wstring_view input) {
     if (error == static_cast<std::size_t>(-1)) {
         const int err {errno};
         iconv_close(convDescriptor);
-        throw std::system_error(err, std::generic_category(), 
-                                "iconv conversion failed");
+        throw std::system_error{err, std::generic_category(), 
+                                "iconv conversion failed"};
     }
 
     iconv_close(convDescriptor);
     
-    std::size_t bytesWritten {output.size() - outBytesLeft};
+    const std::size_t bytesWritten {output.size() - outBytesLeft};
     output.resize(bytesWritten);
 
     return output;
@@ -240,6 +267,18 @@ int getVisualLen(std::wstring_view str) {
     }
     totalLen -= getInvisEscSeqLen(str);
     return totalLen; 
+}
+
+int getInvisEscSeqLen(std::wstring_view str) {
+    int totalLen {0};
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[1m") * 3;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[22m") * 4;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[3m") * 3;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[23m") * 4;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[33m") * 4;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[31m") * 4;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[39m") * 4;
+    return totalLen;
 }
 
 void useSystemLocale() {
@@ -289,14 +328,14 @@ void wrapLines(std::string& str, int maxLen) {
         }
         wideLineBreakIndex = wideLine.rfind(L' ', wideLineBreakIndex - 1);
 
-        if (wideLineBreakIndex == std::string::npos || lineDone == true) {
+        if (wideLineBreakIndex == std::string::npos || lineDone) {
             continue;
         }
 
-        const std::string beginToLineBreak {wideToUTF8(
-                std::wstring_view{wideLine}.substr(0, wideLineBreakIndex + 1))};
-        const std::size_t lineBreakIndex 
-                {lineBeginIndex + beginToLineBreak.size() - 1};
+        const std::string beginToLineBreak {wideToUTF8(std::wstring_view{
+                wideLine}.substr(0, wideLineBreakIndex + 1))};
+        const std::size_t lineBreakIndex {
+                lineBeginIndex + beginToLineBreak.size() - 1};
 
         str.replace(lineBreakIndex, 1, "\n");
         lineEndIndex = lineBreakIndex;
@@ -309,8 +348,8 @@ void centerOnScreenAndAddEraseLineSeq(std::string& str, int maxLen) {
 
     for (std::size_t lineBeginIndex {0}; lineBeginIndex < str.size();
             lineBeginIndex = 
-            (str.find('\n', lineBeginIndex) == std::string::npos)
-            ? std::string::npos : str.find('\n', lineBeginIndex) + 1) {
+                (str.find('\n', lineBeginIndex) == std::string::npos)
+                ? std::string::npos : str.find('\n', lineBeginIndex) + 1) {
 
         const std::size_t lineEndIndex {str.find('\n', lineBeginIndex)};
 
@@ -322,10 +361,10 @@ void centerOnScreenAndAddEraseLineSeq(std::string& str, int maxLen) {
         int contentWidth {};
         std::string_view line {std::string_view{str}.substr(
                 lineBeginIndex, lineEndIndex - lineBeginIndex + 1)};
-        constexpr std::string_view imgCellCh {"\U0010EEEE"};
 
-        if (line.contains(imgCellCh)) {
-            const int imgCols {getOccurences(line, imgCellCh)};
+        if (line.contains(imgCellPlaceholder)) {
+            const int imgCols {
+                    getOccurences<std::string_view>(line, imgCellPlaceholder)};
             contentWidth = imgCols;
         }
         else {
@@ -350,23 +389,24 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
 
         for (std::size_t lineBeginIndex {specBeginIndex},
                 lineEndIndex {str.find('\n', lineBeginIndex) > specEndIndex
-                              ? specEndIndex : str.find('\n', lineBeginIndex)};
+                    ? specEndIndex : str.find('\n', lineBeginIndex)};
                 lineBeginIndex <= specEndIndex;
                 lineBeginIndex = lineEndIndex + 1,
                 lineEndIndex = str.find('\n',lineBeginIndex) > specEndIndex
-                               ? specEndIndex : str.find('\n', lineBeginIndex)) {
+                    ? specEndIndex : str.find('\n', lineBeginIndex)) {
 
             if (lineEndIndex == lineBeginIndex) {
                 continue;
             }
 
-            const std::wstring wideLine {utf8ToWide(std::string_view{str}.substr(
-                        lineBeginIndex, lineEndIndex - lineBeginIndex + 1))};
+            const std::wstring wideLine {
+                    utf8ToWide(std::string_view{str}.substr(
+                    lineBeginIndex, lineEndIndex - lineBeginIndex + 1))};
 
             int lineVisualLen {getVisualLen(wideLine)};
 
-            const std::size_t paddingLen 
-                    {static_cast<std::size_t>((maxLen - lineVisualLen) / 2)};
+            const std::size_t paddingLen {
+                    static_cast<std::size_t>((maxLen - lineVisualLen) / 2)};
 
             str.insert(lineBeginIndex, paddingLen, ' ');
             lineEndIndex += paddingLen;
@@ -389,6 +429,7 @@ int rawReadKey() {
     }
 
     std::vector<char> seq (3);
+    // NOLINTNEXTLINE(readability-container-data-pointer)
     if (read(STDIN_FILENO, &seq[0], 1) == 0) {
         return '\033';
     }

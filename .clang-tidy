@@ -11,4 +11,17 @@ Checks: >
   -misc-no-recursion,
   -misc-use-anonymous-namespace,
   -misc-use-internal-linkage,
-  -readability-identifier-length
+  -readability-identifier-length,
+  -readability-simplify-subscript-expr,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -bugprone-easily-swappable-parameters,
+  -performance-enum-size,
+  -cppcoreguidelines-pro-type-vararg,
+  -hicpp-vararg,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-magic-numbers,
+  -hicpp-signed-bitwise,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-type-const-cast,
+  -bugprone-switch-missing-default-case,
+  -cert-err58-cpp

@@ -18,10 +18,11 @@ namespace test {
     const fs::path projectRootAbs {fs::current_path().parent_path()};
 
     const fs::path epubsAbs {projectRootAbs / "test_epubs"};
-    const fs::path mysteriesRootAbs 
-            {epubsAbs / "lord_of_mysteries_vol_1_unzipped"};
+    const fs::path mysteriesRootAbs {
+            epubsAbs / "lord_of_mysteries_vol_1_unzipped"};
     const fs::path parasiteRootAbs {epubsAbs / "parasite_in_love_unzipped"};
-    const fs::path spiceWolfRootAbs {epubsAbs / "spice_and_wolf_vol_1_unzipped"};
+    const fs::path spiceWolfRootAbs {
+            epubsAbs / "spice_and_wolf_vol_1_unzipped"};
     const fs::path zuttomoRootAbs {epubsAbs / "zuttomo_vol_1_unzipped"};
 
     const fs::path xdgDirsAbs {projectRootAbs / ".testing_xdg_dirs"};
@@ -30,11 +31,11 @@ namespace test {
     const fs::path shareAbs {xdgDirsAbs / "share"};
 
     void unzip() {
-        const fs::path mysteriesZippedAbs 
-                {epubsAbs / "lord_of_mysteries_vol_1.epub"};
+        const fs::path mysteriesZippedAbs {
+                epubsAbs / "lord_of_mysteries_vol_1.epub"};
         const fs::path parasiteZippedAbs {epubsAbs / "parasite_in_love.epub"};
-        const fs::path spiceWolfZippedAbs 
-                {epubsAbs / "spice_and_wolf_vol_1.epub"};
+        const fs::path spiceWolfZippedAbs {
+                epubsAbs / "spice_and_wolf_vol_1.epub"};
         const fs::path zuttomoZippedAbs {epubsAbs / "zuttomo_vol_1.epub"};
 
         try {
@@ -58,7 +59,8 @@ namespace test {
         ::unzip(mysteriesZippedAbs, 
                 shareAbs / "lord_of_mysteries_vol_1_unzipped");
         ::unzip(parasiteZippedAbs, shareAbs / "parasite_in_love_unzipped");
-        ::unzip(spiceWolfZippedAbs, shareAbs / "spice_and_wolf_vol_1_unzipped");
+        ::unzip(spiceWolfZippedAbs, 
+                shareAbs / "spice_and_wolf_vol_1_unzipped");
         ::unzip(zuttomoZippedAbs, shareAbs / "zuttomo_vol_1_unzipped");
         std::cout << "test::unzip() success cases did not error, "
                      "check testing share dir to verify correct result\n";
@@ -86,33 +88,33 @@ namespace test {
 
     void getMetadata() {
         XMLDocument mysteriesOPF {};
-        mysteriesOPF.LoadFile((mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
-                              .c_str());
+        mysteriesOPF.LoadFile(
+                (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs)).c_str());
         XMLDocument parasiteOPF {};
-        parasiteOPF.LoadFile((parasiteRootAbs / ::getOPFRel(parasiteRootAbs))
-                             .c_str());
+        parasiteOPF.LoadFile(
+                (parasiteRootAbs / ::getOPFRel(parasiteRootAbs)).c_str());
 
         const XMLElement* mysteriesMetadata {::getMetadata(mysteriesOPF)};
         const XMLElement* parasiteMetadata {::getMetadata(parasiteOPF)};
 
         std::cout << "test::getMetadata() no failure cases\n";
 
-        assert(std::string_view
-               {mysteriesMetadata->FirstChildElement("dc:language")->GetText()}
+        assert(std::string_view{
+               mysteriesMetadata->FirstChildElement("dc:language")->GetText()}
                == "en");
-        assert(std::string_view
-               {parasiteMetadata->FirstChildElement("dc:publisher")->GetText()}
+        assert(std::string_view{
+               parasiteMetadata->FirstChildElement("dc:publisher")->GetText()}
                == "ASCII Media Works");
         std::cout << "test::getMetadata() success cases passed\n";
     }
 
     void getTitle() {
         XMLDocument mysteriesOPF {};
-        mysteriesOPF.LoadFile((mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
-                              .c_str());
+        mysteriesOPF.LoadFile(
+                (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs)).c_str());
         XMLDocument spiceWolfOPF {};
-        spiceWolfOPF.LoadFile((spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs))
-                              .c_str());
+        spiceWolfOPF.LoadFile(
+                (spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs)).c_str());
 
         const XMLElement* mysteriesMetadata {::getMetadata(mysteriesOPF)};
         const XMLElement* spiceWolfMetadata {::getMetadata(spiceWolfOPF)};
@@ -128,11 +130,11 @@ namespace test {
 
     void getAuthor() {
         XMLDocument mysteriesOPF {};
-        mysteriesOPF.LoadFile((mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs))
-                              .c_str());
+        mysteriesOPF.LoadFile(
+                (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs)).c_str());
         XMLDocument spiceWolfOPF {};
-        spiceWolfOPF.LoadFile((spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs))
-                              .c_str());
+        spiceWolfOPF.LoadFile(
+                (spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs)).c_str());
 
         const XMLElement* mysteriesMetadata {::getMetadata(mysteriesOPF)};
         const XMLElement* spiceWolfMetadata {::getMetadata(spiceWolfOPF)};
@@ -164,10 +166,10 @@ namespace test {
 
         std::string notEmpty {"\033]1337;SetProfile=NewProfileName\007"};
         ::wrapForTmuxPassthrough(notEmpty);
-        assert(notEmpty 
-               == "\033Ptmux;\033\033]1337;SetProfile=NewProfileName\007\033\\");
+        assert(notEmpty == 
+               "\033Ptmux;\033\033]1337;SetProfile=NewProfileName\007\033\\");
 
-        std::string empty {""};
+        std::string empty {};
         ::wrapForTmuxPassthrough(empty);
         assert(empty == "\033Ptmux;\033\\");
 
@@ -175,7 +177,7 @@ namespace test {
     }
 
     void displayImg() {
-        std::string output {""};
+        std::string output {};
 
         try {
             ::displayImg("/bad img path", output);
@@ -186,8 +188,8 @@ namespace test {
         }
         std::cout << "test::displayImg() failure cases passed\n";
 
-        ::displayImg(mysteriesRootAbs / "images/Tarot Club - V01B - Justice.jpg",
-                     output);
+        ::displayImg(mysteriesRootAbs 
+                     / "images/Tarot Club - V01B - Justice.jpg", output);
         ::displayImg(parasiteRootAbs / "OEBPS/Images/cover.jpg", output);
         ::displayImg(parasiteRootAbs / "OEBPS/Images/ascii.png", output);
         ::displayImg(spiceWolfRootAbs / "OEBPS/images/Art_P6.jpg", output);
@@ -236,7 +238,8 @@ namespace test {
         assert(mysteriesTOC[222].first == "    Characters");
         assert(mysteriesTOC[222].second == "index_split_225.html");
 
-        const TocData parasiteTOC {::getTOC(parasiteRootAbs / "OEBPS/toc.ncx")};
+        const TocData parasiteTOC {
+                ::getTOC(parasiteRootAbs / "OEBPS/toc.ncx")};
         assert(parasiteTOC.size() == 13);
         assert(parasiteTOC[0].first == "Cover");
         assert(parasiteTOC[0].second == "Text/cover.xhtml");
@@ -249,10 +252,13 @@ namespace test {
     void parseChapter() {
         std::cout << "test::parseChapter() no failure cases\n";
 
-        std::string result {""};
+        std::string result {};
         ::parseChapter(spiceWolfRootAbs / "OEBPS/chap01.xhtml", result);
+        result += '\n';
         ::parseChapter(spiceWolfRootAbs / "OEBPS/chap02.xhtml", result);
+        result += '\n';
         ::parseChapter(spiceWolfRootAbs / "OEBPS/chapter005.xhtml", result);
+        result += '\n';
         std::cout << result;
 
         std::cout << "test::parseChapter() success cases did not error, "
@@ -264,7 +270,7 @@ namespace test {
 
         useSystemLocale();
 
-        std::string result {""};
+        std::string result {};
         ::dumpEpub(parasiteRootAbs, result);
         ::dumpEpub(spiceWolfRootAbs, result);
         ::dumpEpub(zuttomoRootAbs, result);
@@ -298,7 +304,7 @@ namespace test {
 
         int ch {};
         while ((ch = ::rawReadKey()) != 'q') {
-            if (ch >= key::arrowLeft || std::iscntrl(ch)) {
+            if (ch >= key::arrowLeft || std::iscntrl(ch) != 0) {
                 std::cout << "ctrl char : [" << ch << "]\n" << std::flush;
             }
             else {
@@ -331,9 +337,11 @@ namespace test {
     void findNth() {
         std::cout << "test::findNth() no failure cases\n";
 
-        assert(::findNth("banana", "an", 2) == 3);
-        assert(::findNth("mirra mirra on ze walle", "mirra", 1, 3) == 6);
-        assert(::findNth("mirra mirra", "mirra", 3) == std::string_view::npos);
+        static_assert(::findNth("banana", "an", 2) == 3);
+        static_assert(::findNth("mirra mirra on ze walle", "mirra", 1, 3) 
+                      == 6);
+        static_assert(::findNth("mirra mirra", "mirra", 3) 
+                      == std::string_view::npos);
         std::cout << "test::findNth() success cases passed\n";
     }
 }
