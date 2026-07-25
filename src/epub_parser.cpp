@@ -10,7 +10,6 @@
 
 using namespace tinyxml2;
 namespace fs = std::filesystem;
-using TocData = std::vector<std::pair<std::string, fs::path>>;
 
 fs::path getOPFRel(const fs::path& epubRootAbs) {
     const fs::path containerAbs {epubRootAbs / "META-INF/container.xml"};

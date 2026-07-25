@@ -7,6 +7,7 @@
 
 using namespace tinyxml2;
 namespace fs = std::filesystem;
+
 using TocData = std::vector<std::pair<std::string, fs::path>>;
 
 // Note: for all functions that traverse xml,
