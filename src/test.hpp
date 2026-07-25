@@ -29,7 +29,7 @@ namespace test {
     void parseChapter();
 
     // also serves to test `expandEllipsesAndTabs()`, `getVisualLen()`, 
-    //  `centerOnScreenAndAddEraseLineSeq()`, `centerJustify()`, 
+    //  `centerOnScreen()`, `centerJustify()`, 
     //  `getOccurences()`, `getInvisEscSeqLen()`, `useSystemLocale()`, 
     //  `wrapLines()`
     void dumpEpub();
