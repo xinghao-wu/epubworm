@@ -22,6 +22,7 @@
 #define STBI_FAILURE_USERMSG
 #include "stb_image.hpp"
 #include "row_col_diacritics.hpp"
+#include "epub_parser.hpp"
 #include "tui.hpp"
 
 namespace fs = std::filesystem;
@@ -476,4 +477,12 @@ void eraseScreen() {
         std::cout << esc << eraseLine << '\n';
     }
     std::cout << esc << posCursorTopLeft;
+}
+
+void processContentText(std::string& str, int maxLen) {
+    expandEllipsesAndTabs(str);
+    wrapLines(str, maxLen);
+    centerJustify(esc + yellowFG, esc + resetFG, str, maxLen);
+    centerJustify(esc + redFG, esc + resetFG, str, maxLen);
+    centerOnScreen(str, maxLen);
 }

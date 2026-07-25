@@ -271,13 +271,7 @@ namespace test {
         ::dumpEpub(parasiteRootAbs, result);
         ::dumpEpub(spiceWolfRootAbs, result);
         ::dumpEpub(zuttomoRootAbs, result);
-
-        ::expandEllipsesAndTabs(result);
-        constexpr int cols {55};
-        ::wrapLines(result, cols);
-        ::centerJustify(esc + yellowFG, esc + resetFG, result, cols);
-        ::centerJustify(esc + redFG, esc + resetFG, result, cols);
-        ::centerOnScreen(result, cols);
+        ::processContentText(result, 55);
         std::cout << result;
 
         std::cout << "test::dumpEpub() success cases did not error, "

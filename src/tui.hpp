@@ -193,3 +193,6 @@ constexpr int getOccurences(TStrView str, TStrView target) {
     }
     return count;
 }
+
+// process content text of epubs extracted from chapter xhtml files for display
+void processContentText(std::string& str, int maxLen);
