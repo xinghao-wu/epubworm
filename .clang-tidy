@@ -25,4 +25,5 @@ Checks: >
   -cppcoreguidelines-pro-type-const-cast,
   -bugprone-switch-missing-default-case,
   -cert-err58-cpp,
-  -hicpp-multiway-paths-covered
+  -hicpp-multiway-paths-covered,
+  -cppcoreguidelines-avoid-non-const-global-variables

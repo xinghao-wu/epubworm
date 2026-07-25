@@ -28,7 +28,6 @@
 
 namespace fs = std::filesystem;
 
-// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 static termios ogTermFlags {};
 
 void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
