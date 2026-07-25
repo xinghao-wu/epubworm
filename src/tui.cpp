@@ -28,7 +28,7 @@
 
 namespace fs = std::filesystem;
 
-static termios ogTermFlags {};
+static termios g_ogTermFlags {};
 
 void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     if (id == 0) {
@@ -95,8 +95,9 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
     constexpr std::uint32_t minID {1};
     constexpr std::uint32_t maxID {(1 << 24) - 1};
 
-    static std::mt19937 rng {std::random_device{}()};
-    const std::uint32_t id {std::uniform_int_distribution{minID, maxID}(rng)};
+    static std::mt19937 s_rng {std::random_device{}()};
+    const std::uint32_t id {
+            std::uniform_int_distribution{minID, maxID}(s_rng)};
 
     if (rows == 0 || cols == 0) {
         winsize winInfo {};
@@ -154,13 +155,13 @@ std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
 }
 
 void disableRawMode() {
-    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &ogTermFlags) == -1) {
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &g_ogTermFlags) == -1) {
         throw std::runtime_error{"failed to restore original term settings"};
     }
 }
 
 void enableRawMode() {
-    if (tcgetattr(STDIN_FILENO, &ogTermFlags) == -1) {
+    if (tcgetattr(STDIN_FILENO, &g_ogTermFlags) == -1) {
         throw std::runtime_error{"failed to get original terminal settings"};
     }
 
@@ -169,7 +170,7 @@ void enableRawMode() {
                                  "at program exit"};
     }
 
-    termios rawTermFlags {ogTermFlags};
+    termios rawTermFlags {g_ogTermFlags};
     // disable echo and canonical mode
     rawTermFlags.c_lflag &= static_cast<unsigned int>(~(ECHO | ICANON));
     // let read() return 0 every 100ms when not receiving input
