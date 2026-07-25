@@ -335,4 +335,30 @@ namespace test {
                       == std::string_view::npos);
         std::cout << "test::findNth() success cases passed\n";
     }
+
+    void displayChapter() {
+        ::useSystemLocale();
+        ::enableRawMode();
+
+        std::cout << esc << clearScreen;
+        std::pair imgChapterOutput {::displayChapter(
+                spiceWolfRootAbs / "OEBPS/chap02.xhtml", 0, 55)};
+        std::pair textChapterOutput {::displayChapter(
+                spiceWolfRootAbs / "OEBPS/chapter005.xhtml", 0.5, 55)};
+        eraseScreen();
+
+        std::cout << "test::displayChapter() no failure cases\n";
+        std::cout << "test::displayChapter() success cases require manual "
+                     "verification, a tui interface for an image and text "
+                     "chapter should have been displayed.\n";
+
+        std::cout << "image chapter exit key: " << imgChapterOutput.first;
+        std::cout << '\n';
+        std::cout << "image chapter final prog: " << imgChapterOutput.second;
+        std::cout << '\n';
+        std::cout << "text chapter exit key: " << textChapterOutput.first;
+        std::cout << '\n';
+        std::cout << "text chapter final prog: " << textChapterOutput.second;
+        std::cout << '\n';
+    }
 }

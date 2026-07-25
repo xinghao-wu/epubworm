@@ -13,6 +13,8 @@ inline constexpr std::string escEnd {esc + '\\'};
 inline constexpr std::string clearScreen {"[2J"};
 inline constexpr std::string posCursorTopLeft {"[H"};
 inline constexpr std::string eraseLine {"[2K"};
+inline constexpr std::string hideCursor {"[?25l"};
+inline constexpr std::string showCursor {"[?25h"};
 inline constexpr std::string bold {"[1m"};
 inline constexpr std::string resetBold {"[22m"};
 inline constexpr std::string italic {"[3m"};
@@ -196,3 +198,9 @@ constexpr int getOccurences(TStrView str, TStrView target) {
 
 // process content text of epubs extracted from chapter xhtml files for display
 void processContentText(std::string& str, int maxLen);
+
+// in raw mode, create a tui interface to view `chapterAbs`;
+// chapter displayed starting from `iniProg`, lines wrapped at `maxLen`;
+//  `int` return value is key that caused exit, `double` is progress at exit
+std::pair<int, double> displayChapter(const fs::path& chapterAbs,
+                                      double iniProg, int maxLen);

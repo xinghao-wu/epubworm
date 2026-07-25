@@ -42,4 +42,6 @@ namespace test {
     void wideToUTF8();
 
     void findNth();
+
+    void displayChapter();
 }

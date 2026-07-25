@@ -15,6 +15,7 @@
 #include <chrono>
 #include <cstdlib>
 #include <cwchar>
+#include <cmath>
 #include <termios.h>
 #include <unistd.h>
 #include <iconv.h>
@@ -414,6 +415,7 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
     }
 }
 
+// TODO: add SIGWINCH (window resize) handler
 int rawReadKey() {
     ssize_t err {};
     char ch {};
@@ -474,7 +476,10 @@ void eraseScreen() {
 
     std::cout << esc << posCursorTopLeft;
     for (int i {0}; i < winInfo.ws_row; ++i) {
-        std::cout << esc << eraseLine << '\n';
+        std::cout << esc << eraseLine;
+        if (i < winInfo.ws_row - 1) {
+            std::cout << '\n';
+        }
     }
     std::cout << esc << posCursorTopLeft;
 }
@@ -485,4 +490,117 @@ void processContentText(std::string& str, int maxLen) {
     centerJustify(esc + yellowFG, esc + resetFG, str, maxLen);
     centerJustify(esc + redFG, esc + resetFG, str, maxLen);
     centerOnScreen(str, maxLen);
+}
+
+std::pair<int, double> displayChapter(const fs::path& chapterAbs,
+                                      double iniProg, int maxLen) {
+    std::string chapter {};
+    parseChapter(chapterAbs, chapter);
+    processContentText(chapter, maxLen);
+    
+    winsize winInfo {};
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
+
+    const int chapterLines {getOccurences<std::string_view>(chapter, "\n")};
+
+    int screenTopLine {static_cast<int>(std::lround(iniProg * chapterLines))};
+    screenTopLine = std::max(screenTopLine, 1);
+
+    int screenBotLine {screenTopLine + winInfo.ws_row - 1};
+    screenBotLine = std::min(screenBotLine, chapterLines);
+    screenTopLine = screenBotLine - winInfo.ws_row + 1;
+    screenTopLine = std::max(screenTopLine, 1);
+
+    std::cout << esc << hideCursor;
+    while (true) {
+        std::size_t dispBeginIndex {};
+        if (screenTopLine == 1) {
+            dispBeginIndex = 0;
+        }
+        else {
+            dispBeginIndex = findNth(chapter, "\n", screenTopLine - 1) + 1;
+        }
+        const std::size_t dispEndIndex {
+                findNth(chapter, "\n", screenBotLine) - 1};
+        const std::string_view dispView {std::string_view{chapter}
+                .substr(dispBeginIndex, dispEndIndex - dispBeginIndex + 1)};
+
+        eraseScreen();
+        std::cout << dispView << std::flush;
+
+        const double prog {static_cast<double>(screenTopLine) / chapterLines};
+
+        int inputKey {rawReadKey()};
+        switch (inputKey) {
+        case 't': case '\t': case 'q':
+            std::cout << esc << showCursor;
+            return {inputKey, prog};
+        case 'h': case 'b': case key::arrowLeft: case key::pgUp:
+            if (screenTopLine == 1) {
+                std::cout << esc << showCursor;
+                return {inputKey, prog};
+            }
+            screenTopLine -= winInfo.ws_row;
+            screenTopLine = std::max(screenTopLine, 1);
+            screenBotLine = screenTopLine + winInfo.ws_row - 1;
+            screenBotLine = std::min(screenBotLine, chapterLines);
+            break;
+        case 'l': case 'f': case ' ': case key::arrowRight: case key::pgDown:
+            if (screenBotLine == chapterLines) {
+                std::cout << esc << showCursor;
+                return {inputKey, prog};
+            }
+            screenBotLine += winInfo.ws_row;
+            screenBotLine = std::min(screenBotLine, chapterLines);
+            screenTopLine = screenBotLine - winInfo.ws_row + 1;
+            screenTopLine = std::max(screenTopLine, 1);
+            break;
+        case 'u':
+            if (screenTopLine == 1) {
+                std::cout << esc << showCursor;
+                return {inputKey, prog};
+            }
+            screenTopLine -= winInfo.ws_row / 2;
+            screenTopLine = std::max(screenTopLine, 1);
+            screenBotLine = screenTopLine + winInfo.ws_row - 1;
+            screenBotLine = std::min(screenBotLine, chapterLines);
+            break;
+        case 'd':
+            if (screenBotLine == chapterLines) {
+                std::cout << esc << showCursor;
+                return {inputKey, prog};
+            }
+            screenBotLine += winInfo.ws_row / 2;
+            screenBotLine = std::min(screenBotLine, chapterLines);
+            screenTopLine = screenBotLine - winInfo.ws_row + 1;
+            screenTopLine = std::max(screenTopLine, 1);
+            break;
+        case 'k': case key::arrowUp:
+            if (screenTopLine == 1) {
+                std::cout << esc << showCursor;
+                return {inputKey, prog};
+            }
+            --screenTopLine;
+            --screenBotLine;
+            break;
+        case 'j': case key::arrowDown:
+            if (screenBotLine == chapterLines) {
+                std::cout << esc << showCursor;
+                return {inputKey, prog};
+            }
+            ++screenTopLine;
+            ++screenBotLine;
+            break;
+        case 'g': case key::home:
+            screenTopLine = 1;
+            screenBotLine = screenTopLine + winInfo.ws_row - 1;
+            screenBotLine = std::min(screenBotLine, chapterLines);
+            break;
+        case 'G': case key::end:
+            screenBotLine = chapterLines;
+            screenTopLine = screenBotLine - winInfo.ws_row + 1;
+            screenTopLine = std::max(screenTopLine, 1);
+            break;
+        }
+    }
 }
