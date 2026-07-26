@@ -88,7 +88,7 @@ distribution.
 #define TINYXML2_CONSTANT inline constexpr
 #elif defined(__cplusplus) && __cplusplus >= 201103L
 #define TINYXML2_CONSTANT static constexpr
-#else 
+#else
 #define TINYXML2_CONSTANT static const
 #endif
 

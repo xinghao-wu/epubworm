@@ -50,16 +50,16 @@ namespace test {
             assert(false);
         }
         catch (const fs::filesystem_error& e) {
-            assert(std::string_view{e.what()} 
+            assert(std::string_view{e.what()}
                    == "filesystem error: cannot create directories: "
                       "Permission denied [/bad destination path/META-INF]");
         }
         std::cout << "test::unzip() failure cases passed\n";
 
-        ::unzip(mysteriesZippedAbs, 
+        ::unzip(mysteriesZippedAbs,
                 shareAbs / "lord_of_mysteries_vol_1_unzipped");
         ::unzip(parasiteZippedAbs, shareAbs / "parasite_in_love_unzipped");
-        ::unzip(spiceWolfZippedAbs, 
+        ::unzip(spiceWolfZippedAbs,
                 shareAbs / "spice_and_wolf_vol_1_unzipped");
         ::unzip(zuttomoZippedAbs, shareAbs / "zuttomo_vol_1_unzipped");
         std::cout << "test::unzip() success cases did not error, "
@@ -72,7 +72,7 @@ namespace test {
             assert(false);
         }
         catch (const std::runtime_error& e) {
-            assert(std::string_view{e.what()} 
+            assert(std::string_view{e.what()}
                    == "Error=XML_ERROR_FILE_NOT_FOUND "
                       "ErrorID=3 (0x3) Line number=0: "
                       "filename=/bad epub root/META-INF/container.xml");
@@ -121,9 +121,9 @@ namespace test {
 
         std::cout << "test::getTitle() no failure cases\n";
 
-        assert(::getTitle(mysteriesMetadata) 
+        assert(::getTitle(mysteriesMetadata)
                == "Lord of Mysteries Volume 1: Clown");
-        assert(::getTitle(spiceWolfMetadata) 
+        assert(::getTitle(spiceWolfMetadata)
                == "Spice and Wolf, Vol. 1");
         std::cout << "test::getTitle() success cases passed\n";
     }
@@ -141,7 +141,7 @@ namespace test {
 
         std::cout << "test::getAuthor() no failure cases\n";
 
-        assert(::getAuthor(mysteriesMetadata) 
+        assert(::getAuthor(mysteriesMetadata)
                == "Cuttlefish That Loves Diving (爱潜水的乌贼)");
         assert(::getAuthor(spiceWolfMetadata) == "Isuna Hasekura");
         std::cout << "test::getAuthor() success cases passed\n";
@@ -166,7 +166,7 @@ namespace test {
 
         std::string notEmpty {"\033]1337;SetProfile=NewProfileName\007"};
         ::wrapForTmuxPassthrough(notEmpty);
-        assert(notEmpty == 
+        assert(notEmpty ==
                "\033Ptmux;\033\033]1337;SetProfile=NewProfileName\007\033\\");
 
         std::string empty {};
@@ -188,7 +188,7 @@ namespace test {
         }
         std::cout << "test::displayImg() failure cases passed\n";
 
-        ::displayImg(mysteriesRootAbs 
+        ::displayImg(mysteriesRootAbs
                      / "images/Tarot Club - V01B - Justice.jpg", output);
         ::displayImg(parasiteRootAbs / "OEBPS/Images/cover.jpg", output);
         ::displayImg(parasiteRootAbs / "OEBPS/Images/ascii.png", output);
@@ -325,9 +325,9 @@ namespace test {
         std::cout << "test::findNth() no failure cases\n";
 
         static_assert(::findNth("banana", "an", 2) == 3);
-        static_assert(::findNth("mirra mirra on ze walle", "mirra", 1, 3) 
+        static_assert(::findNth("mirra mirra on ze walle", "mirra", 1, 3)
                       == 6);
-        static_assert(::findNth("mirra mirra", "mirra", 3) 
+        static_assert(::findNth("mirra mirra", "mirra", 3)
                       == std::string_view::npos);
         std::cout << "test::findNth() success cases passed\n";
     }

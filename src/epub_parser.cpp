@@ -84,7 +84,7 @@ std::vector<fs::path> getSpine(const XMLDocument& opf) {
 void collectNavPoints(const XMLElement* parent, TocData& tocData,
                       const std::string& prefix) {
     for (const XMLElement* navPoint {parent->FirstChildElement("navPoint")};
-            navPoint != nullptr; 
+            navPoint != nullptr;
             navPoint = navPoint->NextSiblingElement("navPoint")) {
 
         const char* name {navPoint->FirstChildElement("navLabel")
@@ -139,7 +139,7 @@ void parseContentElem(const XMLElement* parent, std::string& out,
             else if (name == "br") {
                 out += '\n';
             }
-            else if (name == "h1" || name == "h2" || name == "h3" 
+            else if (name == "h1" || name == "h2" || name == "h3"
                      || name == "h4" || name == "h5" || name == "h6") {
                 out += esc + bold;
                 out += esc + yellowFG;
@@ -155,7 +155,7 @@ void parseContentElem(const XMLElement* parent, std::string& out,
             else if (name == "image" || name == "img") {
                 const std::string imgAttributeName {
                         (name == "image") ? "xlink:href" : "src"};
-                std::string imgPathAbs {chapterAbs.parent_path() 
+                std::string imgPathAbs {chapterAbs.parent_path()
                         / childElem->Attribute(imgAttributeName.data())};
                 decodePercentEncoding(imgPathAbs);
 
@@ -165,7 +165,7 @@ void parseContentElem(const XMLElement* parent, std::string& out,
                 }
                 catch (const std::runtime_error& e) {
                     if (std::string_view{e.what()} == "Unable to open file") {
-                        out += esc + bold; 
+                        out += esc + bold;
                         out += "[image reference in epub "
                                "points to nonexistent file]";
                         out += esc + resetBold;

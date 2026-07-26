@@ -15,7 +15,7 @@ namespace test {
 
     void wrapForTmuxPassthrough();
 
-    // also serves to test `loadImg()`, `displayLoadedImg()`, 
+    // also serves to test `loadImg()`, `displayLoadedImg()`,
     //  `getGraphicsEscCode()`
     void displayImg();
 
@@ -28,9 +28,9 @@ namespace test {
     // also serves to test `parseContentElem()`
     void parseChapter();
 
-    // also serves to test `expandEllipsesAndTabs()`, `getVisualLen()`, 
+    // also serves to test `expandEllipsesAndTabs()`, `getVisualLen()`,
     //  `centerOnScreen()`, `centerJustify()`, `processContentText()`,
-    //  `getOccurences()`, `getInvisEscSeqLen()`, `useSystemLocale()`, 
+    //  `getOccurences()`, `getInvisEscSeqLen()`, `useSystemLocale()`,
     //  `wrapLines()`
     void dumpEpub();
 

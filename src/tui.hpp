@@ -76,7 +76,7 @@ enum class ChapterExit {
 // or the temp image data shared memory file failed to open
 void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols);
 
-// display a loaded image (existing virtual placement) 
+// display a loaded image (existing virtual placement)
 // using `rows` * `cols` special unicode characters;
 // appends unicode characters (the image) to `out`;
 //  `id` must be an integer between 1 and 2^24 - 1, inclusive;
@@ -88,7 +88,7 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string &out);
 // if `rows` and `cols` are not provided, image will be displayed
 // at its original size, with its original aspect ratio,
 // using the minimum amount of characters possible
-// (unless the image is larger than window size - hardcoded margin size, 
+// (unless the image is larger than window size - hardcoded margin size,
 // in which case it will be shrunk down to fit, maintaining its aspect ratio);
 // else, image will be shrunk or enlargened, maintaining its aspect ratio,
 // to fit centered within `rows` * `cols` characters;
@@ -102,8 +102,8 @@ void displayImg(const fs::path& imgAbs, std::string& out,
 
 // constructs the appropriate graphics escape code of the kitty image protocol
 // to load an image (create a virtual placement) based on provided parameters
-std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels, 
-                               int xPixels, int yPixels, std::uint32_t id, 
+std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
+                               int xPixels, int yPixels, std::uint32_t id,
                                int rows, int cols);
 
 // restore original terminal settings;
@@ -150,13 +150,13 @@ void useSystemLocale();
 void wrapLines(std::string& str, int maxLen);
 
 // based on screen width, center text using `maxLen`, images using img width;
-// note this will create lines longer than `maxLen`, 
+// note this will create lines longer than `maxLen`,
 // so it should be one of the last text content manipulation functions called
 void centerOnScreen(std::string& str, int maxLen);
 
-// in `str`, using `maxLen`, center justify text beginning with `prefix` 
+// in `str`, using `maxLen`, center justify text beginning with `prefix`
 // and ending with `postfix`
-void centerJustify(std::string_view prefix, std::string_view postfix, 
+void centerJustify(std::string_view prefix, std::string_view postfix,
                    std::string& str, int maxLen);
 
 // read one input in raw mode;
@@ -172,7 +172,7 @@ void eraseScreen();
 // get index of nth occurence of `target` in `str`, starting the search
 // from `startIndex`, doesn't count overlapping `target` occurences;
 // returns `std::string_view::npos` if nth occurence does not exist
-constexpr std::size_t findNth(std::string_view str, std::string_view target, 
+constexpr std::size_t findNth(std::string_view str, std::string_view target,
                               int n, std::size_t startIndex = 0) {
     if (n == 0 || target.empty()) {
         return std::string_view::npos;
@@ -181,19 +181,19 @@ constexpr std::size_t findNth(std::string_view str, std::string_view target,
     std::size_t targetBeginIndex {startIndex};
     int count {0};
 
-    while ((targetBeginIndex = str.find(target, targetBeginIndex)) 
+    while ((targetBeginIndex = str.find(target, targetBeginIndex))
            != std::string_view::npos) {
         ++count;
         if (count == n) {
             return targetBeginIndex;
         }
-        targetBeginIndex += target.size(); 
+        targetBeginIndex += target.size();
     }
     return std::string_view::npos;
 }
 
 // in `str`, replace all occurences of `target` with `replacement`
-constexpr void findAndReplaceAll(std::string& str, std::string_view target, 
+constexpr void findAndReplaceAll(std::string& str, std::string_view target,
                                  std::string_view replacement) {
     std::size_t pos {str.find(target)};
     while (pos != std::string::npos) {
@@ -228,7 +228,7 @@ void processContentText(std::string& str, int maxLen);
 
 // in raw mode, create a tui interface to view `chapterAbs`;
 // chapter displayed starting from `iniProg`, lines wrapped at `desiredMaxLen`;
-// returns reason for exit and progress at exit 
+// returns reason for exit and progress at exit
 std::pair<ChapterExit, double> displayChapter(
         const fs::path& chapterAbs, double iniProg, int desiredMaxLen);
 

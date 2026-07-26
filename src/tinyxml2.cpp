@@ -1126,10 +1126,10 @@ char* XMLNode::ParseDeep( char* p, StrPair* parentEndTag, int* curLineNumPtr )
             // Declarations are only allowed at document level
             //
             // Multiple declarations are allowed but all declarations
-            // must occur before anything else. 
+            // must occur before anything else.
             //
-            // Optimized due to a security test case. If the first node is 
-            // a declaration, and the last node is a declaration, then only 
+            // Optimized due to a security test case. If the first node is
+            // a declaration, and the last node is a declaration, then only
             // declarations have so far been added.
             bool wellLocated = false;
 
@@ -2242,7 +2242,7 @@ void XMLDocument::Clear()
     delete [] _charBuffer;
     _charBuffer = 0;
 	_parsingDepth = 0;
-    
+
 #if 0
     _textPool.Trace( "text" );
     _elementPool.Trace( "element" );
@@ -2329,7 +2329,7 @@ static FILE* callfopen( const char* filepath, const char* mode )
     return fp;
 }
 
-void XMLDocument::DeleteNode( XMLNode* node )	{   
+void XMLDocument::DeleteNode( XMLNode* node )	{
     if(node == 0) {
         return; // check for null pointer
     }

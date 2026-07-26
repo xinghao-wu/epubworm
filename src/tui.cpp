@@ -123,12 +123,12 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
 
         if (rowsDesired > winInfo.ws_row) {
             rows = winInfo.ws_row;
-            cols = static_cast<int>(static_cast<double>(rows) 
+            cols = static_cast<int>(static_cast<double>(rows)
                                     / rowsDesired * cols) + 1;
         }
         if (colsDesired > winInfo.ws_col) {
             cols = winInfo.ws_col;
-            rows = static_cast<int>(static_cast<double>(cols) 
+            rows = static_cast<int>(static_cast<double>(cols)
                                     / colsDesired * rows) + 1;
         }
     }
@@ -138,8 +138,8 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
     std::this_thread::sleep_for(std::chrono::milliseconds{5});
 }
 
-std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels, 
-                               int xPixels, int yPixels, std::uint32_t id, 
+std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
+                               int xPixels, int yPixels, std::uint32_t id,
                                int rows, int cols) {
     std::string ctrlData {};
     ctrlData += "f=" + std::to_string(channels * 8) + ',';
@@ -207,7 +207,7 @@ std::wstring utf8ToWide(std::string_view input) {
     iconv_t convDescriptor {iconv_open("WCHAR_T", "UTF-8")};
     // NOLINTNEXTLINE(performance-no-int-to-ptr)
     if (convDescriptor == reinterpret_cast<iconv_t>(-1)) {
-        throw std::system_error{errno, std::generic_category(), 
+        throw std::system_error{errno, std::generic_category(),
                                 "iconv_open failed"};
     }
 
@@ -215,22 +215,22 @@ std::wstring utf8ToWide(std::string_view input) {
     std::size_t inBytesLeft {input.size()};
 
     std::wstring output {};
-    output.resize(input.size()); 
+    output.resize(input.size());
     char* outBuf {reinterpret_cast<char*>(output.data())};
     std::size_t outBytesLeft {output.size() * sizeof(wchar_t)};
 
-    const std::size_t error {iconv(convDescriptor, &inBuf, &inBytesLeft, 
+    const std::size_t error {iconv(convDescriptor, &inBuf, &inBytesLeft,
                                    &outBuf, &outBytesLeft)};
     if (error == static_cast<std::size_t>(-1)) {
         const int err {errno};
         iconv_close(convDescriptor);
-        throw std::system_error{err, std::generic_category(), 
+        throw std::system_error{err, std::generic_category(),
                                 "iconv conversion failed"};
     }
 
     iconv_close(convDescriptor);
-    
-    const std::size_t bytesWritten {(output.size() * sizeof(wchar_t)) 
+
+    const std::size_t bytesWritten {(output.size() * sizeof(wchar_t))
                                     - outBytesLeft};
     output.resize(bytesWritten / sizeof(wchar_t));
 
@@ -245,7 +245,7 @@ std::string wideToUTF8(std::wstring_view input) {
     iconv_t convDescriptor {iconv_open("UTF-8", "WCHAR_T")};
     // NOLINTNEXTLINE(performance-no-int-to-ptr)
     if (convDescriptor == reinterpret_cast<iconv_t>(-1)) {
-        throw std::system_error{errno, std::generic_category(), 
+        throw std::system_error{errno, std::generic_category(),
                                 "iconv_open failed"};
     }
 
@@ -254,21 +254,21 @@ std::string wideToUTF8(std::wstring_view input) {
     std::size_t inBytesLeft {input.size() * sizeof(wchar_t)};
 
     std::string output {};
-    output.resize(input.size() * sizeof(wchar_t)); 
+    output.resize(input.size() * sizeof(wchar_t));
     char* outBuf {output.data()};
     std::size_t outBytesLeft {output.size()};
 
-    const std::size_t error {iconv(convDescriptor, &inBuf, &inBytesLeft, 
+    const std::size_t error {iconv(convDescriptor, &inBuf, &inBytesLeft,
                                    &outBuf, &outBytesLeft)};
     if (error == static_cast<std::size_t>(-1)) {
         const int err {errno};
         iconv_close(convDescriptor);
-        throw std::system_error{err, std::generic_category(), 
+        throw std::system_error{err, std::generic_category(),
                                 "iconv conversion failed"};
     }
 
     iconv_close(convDescriptor);
-    
+
     const std::size_t bytesWritten {output.size() - outBytesLeft};
     output.resize(bytesWritten);
 
@@ -285,7 +285,7 @@ int getVisualLen(std::wstring_view str) {
         totalLen += chLen;
     }
     totalLen -= getInvisEscSeqLen(str);
-    return totalLen; 
+    return totalLen;
 }
 
 int getInvisEscSeqLen(std::wstring_view str) {
@@ -301,7 +301,7 @@ int getInvisEscSeqLen(std::wstring_view str) {
 }
 
 void useSystemLocale() {
-    std::locale::global(std::locale("")); 
+    std::locale::global(std::locale(""));
     std::cout.imbue(std::locale{});
     std::cin.imbue(std::locale{});
 }
@@ -309,7 +309,7 @@ void useSystemLocale() {
 void wrapLines(std::string& str, int maxLen) {
     for (std::size_t lineBeginIndex {0}, lineEndIndex {str.find('\n')};
             lineBeginIndex < str.size();
-            lineBeginIndex = lineEndIndex + 1, 
+            lineBeginIndex = lineEndIndex + 1,
             lineEndIndex = str.find('\n', lineBeginIndex)) {
 
         if (lineEndIndex == lineBeginIndex) {
@@ -342,7 +342,7 @@ void wrapLines(std::string& str, int maxLen) {
                     break;
                 }
             }
-            wideLineBreakIndex = 
+            wideLineBreakIndex =
                     wideLine.find_first_of(L" \n", wideLineBreakIndex + 1);
         }
         wideLineBreakIndex = wideLine.rfind(L' ', wideLineBreakIndex - 1);
@@ -366,7 +366,7 @@ void centerOnScreen(std::string& str, int maxLen) {
     ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
     for (std::size_t lineBeginIndex {0}; lineBeginIndex < str.size();
-            lineBeginIndex = 
+            lineBeginIndex =
                 (str.find('\n', lineBeginIndex) == std::string::npos)
                 ? std::string::npos : str.find('\n', lineBeginIndex) + 1) {
 
@@ -396,9 +396,9 @@ void centerOnScreen(std::string& str, int maxLen) {
     }
 }
 
-void centerJustify(std::string_view prefix, std::string_view postfix, 
+void centerJustify(std::string_view prefix, std::string_view postfix,
                    std::string& str, int maxLen) {
-    for (std::size_t specBeginIndex {str.find(prefix)}, 
+    for (std::size_t specBeginIndex {str.find(prefix)},
             specEndIndex {str.find(postfix, specBeginIndex + prefix.size())};
             specBeginIndex != std::string::npos;
             specBeginIndex = str.find(prefix, specEndIndex + postfix.size()),
@@ -454,7 +454,7 @@ std::tuple<Key, int, int> readRawInput() {
     std::size_t i {0};
     while (read(STDIN_FILENO, &seq[i], 1) == 1) {
         switch (seq[i]) {
-        case '~': case 'A': case 'B': case 'C': case 'D': 
+        case '~': case 'A': case 'B': case 'C': case 'D':
         case 'H': case 'F': case 'M': case 'm':
             ++i;
             goto exit_loop;
@@ -466,7 +466,7 @@ exit_loop:
 
     if (seq == "[5~") return {specKey::pgUp, 0, 0};
     if (seq == "[6~") return {specKey::pgDown, 0, 0};
-    if (seq == "[A") return {specKey::arrowUp, 0, 0};     
+    if (seq == "[A") return {specKey::arrowUp, 0, 0};
     if (seq == "[B") return {specKey::arrowDown, 0, 0};
     if (seq == "[C") return {specKey::arrowRight, 0, 0};
     if (seq == "[D") return {specKey::arrowLeft, 0, 0};
@@ -478,15 +478,15 @@ exit_loop:
     }
 
     if (seq.starts_with("[<")) {
-        assert(seq.find_first_of("mM") == seq.size() - 1 
+        assert(seq.find_first_of("mM") == seq.size() - 1
                && "received incomplete or multiple mouse actions");
 
         const std::size_t firstSemicolonIndex {findNth(seq, ";", 1)};
         const std::size_t secSemicolonIndex {findNth(seq, ";", 2)};
         const int action {std::stoi(seq.substr(2, firstSemicolonIndex - 2))};
-        const int col {std::stoi(seq.substr(firstSemicolonIndex + 1, 
+        const int col {std::stoi(seq.substr(firstSemicolonIndex + 1,
                        secSemicolonIndex - firstSemicolonIndex - 1))};
-        const int row {std::stoi(seq.substr(secSemicolonIndex + 1, 
+        const int row {std::stoi(seq.substr(secSemicolonIndex + 1,
                        seq.find_first_of("mM") - secSemicolonIndex - 1))};
 
         if (seq.back() == 'm') {
@@ -533,7 +533,7 @@ std::pair<ChapterExit, double> displayChapter(
     parseChapter(chapterAbs, chapter);
     int maxLen {std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col))};
     processContentText(chapter, maxLen);
-    
+
     int chapterLines {getOccurences<std::string_view>(chapter, "\n")};
 
     int screenTopLine {static_cast<int>(std::lround(iniProg * chapterLines))};
@@ -569,7 +569,7 @@ std::pair<ChapterExit, double> displayChapter(
         // and refactor into helper functions
         std::tuple<Key, int, int> input {readRawInput()};
         switch (std::get<0>(input)) {
-        case 't': case '\t': 
+        case 't': case '\t':
             std::cout << esc << showCursor;
             return {ChapterExit::toc, prog};
         case 'q':
@@ -585,7 +585,7 @@ std::pair<ChapterExit, double> displayChapter(
             screenBotLine = screenTopLine + winInfo.ws_row - 1;
             screenBotLine = std::min(screenBotLine, chapterLines);
             break;
-        case 'l': case 'f': case ' ': case specKey::arrowRight: 
+        case 'l': case 'f': case ' ': case specKey::arrowRight:
         case specKey::pgDown:
             if (screenBotLine == chapterLines) {
                 std::cout << esc << showCursor;
@@ -668,7 +668,7 @@ void execute(const std::vector<std::string>& argV) {
     if (argV.empty() || argV.front().empty()) {
         throw std::invalid_argument{"execute() cmd cannot be empty"};
     }
-    
+
     std::vector<char*> posixAPIArgV {};
     posixAPIArgV.reserve(argV.size() + 1);
     for (const auto& arg : argV) {
@@ -677,17 +677,17 @@ void execute(const std::vector<std::string>& argV) {
     posixAPIArgV.push_back(nullptr);
 
     pid_t pid {};
-    int spawnStatus {posix_spawnp(&pid, posixAPIArgV.front(), nullptr, 
+    int spawnStatus {posix_spawnp(&pid, posixAPIArgV.front(), nullptr,
                                   nullptr, posixAPIArgV.data(), environ)};
     if (spawnStatus != 0) {
-        throw std::system_error{spawnStatus, std::generic_category(), 
+        throw std::system_error{spawnStatus, std::generic_category(),
                                 "failed to spawn cmd: " + argV.front()};
     }
 
     int waitStatus {};
     while (waitpid(pid, &waitStatus, 0) == -1) {
         if (errno != EAGAIN && errno != EINTR) {
-            throw std::system_error{errno, std::generic_category(), 
+            throw std::system_error{errno, std::generic_category(),
                                     "error waiting for cmd: " + argV.front()};
         }
     }
