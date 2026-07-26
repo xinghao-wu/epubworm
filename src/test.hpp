@@ -35,7 +35,8 @@ namespace test {
     void dumpEpub();
 
     // also serves to test `disableRawMode()`, `enableRawMode()`
-    void rawReadKey();
+    //  `registerSigwinchHandler`
+    void readRawInput();
 
     void utf8ToWide();
 

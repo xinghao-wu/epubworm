@@ -281,27 +281,23 @@ namespace test {
                      "and content centered on the screen.\n";
     }
 
-    void rawReadKey() {
-        std::cout << "test::rawReadKey() no failure cases\n";
+    void readRawInput() {
+        std::cout << "test::readRawInput() no failure cases\n";
 
-        std::cout << "test::rawReadKey() success cases needs manual check, "
+        std::cout << "test::readRawInput() success cases needs manual check, "
                      "the terminal should now be in raw mode. "
-                     "Any character typed should be instantly displayed "
-                     "along with their integer representation. "
-                     "Also check for values contained in key::keyValues. "
+                     "Verify correct key, row, col values for inputs. "
                      "Press q to quit.\n";
 
         ::enableRawMode();
 
-        int ch {};
-        while ((ch = ::rawReadKey()) != 'q') {
-            if (ch >= key::arrowLeft || std::iscntrl(ch) != 0) {
-                std::cout << "ctrl char : [" << ch << "]\n" << std::flush;
-            }
-            else {
-                std::cout << '\"' << static_cast<char>(ch) << '\"';
-                std::cout << " : [" << ch << "]\n" << std::flush;
-            }
+        std::tuple<Key, int, int> input {::readRawInput()};
+        while (std::get<0>(input) != 'q') {
+            std::cout << "key: " << std::get<0>(input) << '\n';
+            std::cout << "row: " << std::get<1>(input) << '\n';
+            std::cout << "col: " << std::get<2>(input) << '\n';
+            std::cout << std::flush;
+            input = ::readRawInput();
         }
     }
 
@@ -339,7 +335,6 @@ namespace test {
     void displayChapter() {
         ::useSystemLocale();
         ::enableRawMode();
-        ::registerSigwinchHandler();
 
         std::cout << esc << clearScreen;
         std::pair imgChapterOutput {::displayChapter(
@@ -353,13 +348,16 @@ namespace test {
                      "verification, a tui interface for an image and text "
                      "chapter should have been displayed.\n";
 
-        std::cout << "image chapter exit key: " << imgChapterOutput.first;
+        std::cout << "image chapter exit reason: ";
+        std::cout << static_cast<int>(imgChapterOutput.first);
         std::cout << '\n';
         std::cout << "image chapter final prog: " << imgChapterOutput.second;
         std::cout << '\n';
-        std::cout << "text chapter exit key: " << textChapterOutput.first;
+        std::cout << "text chapter exit reason: ";
+        std::cout << static_cast<int>(textChapterOutput.first);
         std::cout << '\n';
         std::cout << "text chapter final prog: " << textChapterOutput.second;
         std::cout << '\n';
+        std::cout << std::flush;
     }
 }

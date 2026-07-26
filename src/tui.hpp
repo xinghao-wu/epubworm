@@ -19,6 +19,10 @@ inline constexpr std::string posCursorTopLeft {"[H"};
 inline constexpr std::string eraseLine {"[2K"};
 inline constexpr std::string hideCursor {"[?25l"};
 inline constexpr std::string showCursor {"[?25h"};
+inline constexpr std::string enableMouseEventReporting {"[?1003h"};
+inline constexpr std::string disableMouseEventReporting {"[?1003l"};
+inline constexpr std::string enableDecimalReportingFormat {"[?1006h"};
+inline constexpr std::string disableDecimalReportingFormat {"[?1006l"};
 inline constexpr std::string bold {"[1m"};
 inline constexpr std::string resetBold {"[22m"};
 inline constexpr std::string italic {"[3m"};
@@ -28,9 +32,12 @@ inline constexpr std::string redFG {"[31m"};
 inline constexpr std::string resetFG {"[39m"};
 inline constexpr std::string imgCellPlaceholder {"\U0010EEEE"};
 
-namespace key {
-    enum keyValues : int {
-        arrowLeft = 1000,
+using Key = std::int16_t;
+
+namespace specKey {
+    enum Values : Key {
+        // keyboard keys represented by esc seqs
+        arrowLeft = 1000, // don't conflict with normal 8 bit char values
         arrowRight,
         arrowUp,
         arrowDown,
@@ -38,10 +45,24 @@ namespace key {
         end,
         pgUp,
         pgDown,
+        // mouse events
+        leftClickRelease,
+        rightClickRelease,
+        wheelUp,
+        wheelDown,
+        // signals
         winResize,
-        unknownEscSeq,
+        // not recognized/supported
+        unknown,
     };
 }
+
+enum class ChapterExit {
+    prev,
+    next,
+    quit,
+    toc,
+};
 
 // load an image to the terminal (create a virtual placement)
 // to be displayed later using special unicode characters;
@@ -85,14 +106,15 @@ std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
                                int xPixels, int yPixels, std::uint32_t id, 
                                int rows, int cols);
 
-// resets terminal settings to original flags;
-// depends on `enableRawMode()` to retrieve original settings first,
+// restore original terminal settings;
+// depends on `enableRawMode()` to retrieve original terminal setting flags;
 // never call this function before calling `enableRawMode()`;
 // throws `std::runtime_error` on failure to set terminal settings
 void disableRawMode();
 
 // sets terminal to raw mode, disabling echo and canonical mode;
 //  `read()` returns 0 every 100ms when not receiving input;
+// enables mouse event reporting and register SIGWINCH handler;
 // sets `disableRawMode()` to be called at program exit;
 // throws `std::runtime_error` on failure to read or set terminal settings,
 // and on failure to register `disableRawMode()` to run at exit
@@ -137,13 +159,11 @@ void centerOnScreen(std::string& str, int maxLen);
 void centerJustify(std::string_view prefix, std::string_view postfix, 
                    std::string& str, int maxLen);
 
-// read one key input in raw mode;
-// for normal keypresses, returns the character promoted to an `int`; 
-// for those represented by escape seqs, returns a value in `key::keyValues`;
-// if `registerSigwinchHandler()` has been called and the program receives a
-// window resize signal, returns `key::winResize`;
+// read one input in raw mode;
+// returns the key (normal keypress integer values + values in specKey::Values)
+// and the row, col position where the action happened, if applicable;
 // throws `std::system_error` on error to read key
-int rawReadKey();
+std::tuple<Key, int, int> readRawInput();
 
 // equivalent to clearing the screen, removing its content from the scrollback
 // buffer, and setting cursor position to the screen's top left cell
@@ -207,10 +227,10 @@ constexpr int getOccurences(TStrView str, TStrView target) {
 void processContentText(std::string& str, int maxLen);
 
 // in raw mode, create a tui interface to view `chapterAbs`;
-// chapter displayed starting from `iniProg`, lines wrapped at `maxLen`;
-//  `int` return value is key that caused exit, `double` is progress at exit
-std::pair<int, double> displayChapter(const fs::path& chapterAbs,
-                                      double iniProg, int desiredMaxLen);
+// chapter displayed starting from `iniProg`, lines wrapped at `desiredMaxLen`;
+// returns reason for exit and progress at exit 
+std::pair<ChapterExit, double> displayChapter(
+        const fs::path& chapterAbs, double iniProg, int desiredMaxLen);
 
 // execute a command using `posix_spawnp()`, waiting until the command exits;
 //  `argV` first element should be the command binary name,

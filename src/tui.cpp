@@ -9,12 +9,14 @@
 #include <thread>
 #include <chrono>
 #include <vector>
+#include <tuple>
 #include <cstdlib>
 #include <cwchar>
 #include <cmath>
 #include <cerrno>
 #include <cstdint>
 #include <csignal>
+#include <cassert>
 #include <termios.h>
 #include <unistd.h>
 #include <iconv.h>
@@ -158,12 +160,18 @@ std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
 }
 
 void disableRawMode() {
+    std::cout << esc << disableDecimalReportingFormat;
+    std::cout << esc << disableMouseEventReporting;
+    std::cout << std::flush;
+
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &g_ogTermFlags) == -1) {
         throw std::runtime_error{"failed to restore original term settings"};
     }
 }
 
 void enableRawMode() {
+    std::cout << std::flush;
+
     if (tcgetattr(STDIN_FILENO, &g_ogTermFlags) == -1) {
         throw std::runtime_error{"failed to get original terminal settings"};
     }
@@ -183,6 +191,12 @@ void enableRawMode() {
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &rawTermFlags) == -1) {
         throw std::runtime_error{"failed to set term settings to raw mode"};
     }
+
+    std::cout << esc << enableDecimalReportingFormat;
+    std::cout << esc << enableMouseEventReporting;
+    std::cout << std::flush;
+
+    registerSigwinchHandler();
 }
 
 std::wstring utf8ToWide(std::string_view input) {
@@ -418,11 +432,10 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
     }
 }
 
-// TODO: look into mouse input support
-int rawReadKey() {
+std::tuple<Key, int, int> readRawInput() {
     ssize_t err {};
-    char ch {};
-    while ((err = read(STDIN_FILENO, &ch, 1)) != 1 && g_winResize == 0) {
+    char startCh {};
+    while ((err = read(STDIN_FILENO, &startCh, 1)) != 1 && g_winResize == 0) {
         if (err == -1 && errno != EAGAIN && errno != EINTR) {
             throw std::system_error{errno, std::generic_category(),
                                     "raw mode read key errored"};
@@ -430,51 +443,63 @@ int rawReadKey() {
     }
     if (g_winResize == 1) {
         g_winResize = 0;
-        return key::winResize;
+        return {specKey::winResize, 0, 0};
     }
-    if (ch != '\033') {
-        return ch;
+    if (startCh != '\033') {
+        return {startCh, 0, 0};
     }
 
-    std::vector<char> seq (3);
-    // NOLINTNEXTLINE(readability-container-data-pointer)
-    if (read(STDIN_FILENO, &seq[0], 1) == 0) {
-        return '\033';
+    std::string seq {};
+    seq.resize(100);
+    std::size_t i {0};
+    while (read(STDIN_FILENO, &seq[i], 1) == 1) {
+        switch (seq[i]) {
+        case '~': case 'A': case 'B': case 'C': case 'D': 
+        case 'H': case 'F': case 'M': case 'm':
+            ++i;
+            goto exit_loop;
+        }
+        ++i;
     }
-    read(STDIN_FILENO, &seq[1], 1);
+exit_loop:
+    seq.resize(i);
 
-    if (seq[0] == '[') {
-        if (seq[1] >= '0' && seq[1] <= '9') {
-            read(STDIN_FILENO, &seq[2], 1);
-            if (seq[2] == '~') {
-                switch (seq[1]) {
-                case '1': return key::home;
-                case '4': return key::end;
-                case '5': return key::pgUp;
-                case '6': return key::pgDown;
-                case '7': return key::home;
-                case '8': return key::end;
-                }
-            }
-        } 
-        else {
-            switch (seq[1]) {
-            case 'A': return key::arrowUp;
-            case 'B': return key::arrowDown;
-            case 'C': return key::arrowRight;
-            case 'D': return key::arrowLeft;
-            case 'H': return key::home;
-            case 'F': return key::end;
-            }
-        }
-    } 
-    if (seq[0] == 'O') {
-        switch (seq[1]) {
-        case 'H': return key::home;
-        case 'F': return key::end;
-        }
+    if (seq == "[5~") return {specKey::pgUp, 0, 0};
+    if (seq == "[6~") return {specKey::pgDown, 0, 0};
+    if (seq == "[A") return {specKey::arrowUp, 0, 0};     
+    if (seq == "[B") return {specKey::arrowDown, 0, 0};
+    if (seq == "[C") return {specKey::arrowRight, 0, 0};
+    if (seq == "[D") return {specKey::arrowLeft, 0, 0};
+    if (seq == "[1~" || esc == "[7~" || esc == "[H" || esc == "OH") {
+        return {specKey::home, 0, 0};
     }
-    return key::unknownEscSeq;
+    if (seq == "[4~" || esc == "[8~" || esc == "[F" || esc == "OF") {
+        return {specKey::end, 0, 0};
+    }
+
+    if (seq.starts_with("[<")) {
+        assert(seq.find_first_of("mM") == seq.size() - 1 
+               && "received incomplete or multiple mouse actions");
+
+        const std::size_t firstSemicolonIndex {findNth(seq, ";", 1)};
+        const std::size_t secSemicolonIndex {findNth(seq, ";", 2)};
+        const int action {std::stoi(seq.substr(2, firstSemicolonIndex - 2))};
+        const int col {std::stoi(seq.substr(firstSemicolonIndex + 1, 
+                       secSemicolonIndex - firstSemicolonIndex - 1))};
+        const int row {std::stoi(seq.substr(secSemicolonIndex + 1, 
+                       seq.find_first_of("mM") - secSemicolonIndex - 1))};
+
+        if (seq.back() == 'm') {
+            if (action == 0) return {specKey::leftClickRelease, row, col};
+            if (action == 2) return {specKey::rightClickRelease, row, col};
+        }
+        if (seq.back() == 'M') {
+            if (action == 64) return {specKey::wheelUp, row, col};
+            if (action == 65) return {specKey::wheelDown, row, col};
+        }
+        return {specKey::unknown, row, col};
+    }
+    return {specKey::unknown, 0, 0};
 }
 
 void eraseScreen() {
@@ -499,8 +524,8 @@ void processContentText(std::string& str, int maxLen) {
     centerOnScreen(str, maxLen);
 }
 
-std::pair<int, double> displayChapter(const fs::path& chapterAbs,
-                                      double iniProg, int desiredMaxLen) {
+std::pair<ChapterExit, double> displayChapter(
+        const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
     winsize winInfo {};
     ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
@@ -540,25 +565,31 @@ std::pair<int, double> displayChapter(const fs::path& chapterAbs,
 
         const double prog {static_cast<double>(screenTopLine) / chapterLines};
 
-        int inputKey {rawReadKey()};
-        switch (inputKey) {
-        case 't': case '\t': case 'q':
+        // TODO: support more inputs, stop screen redraw on irrelevant input,
+        // and refactor into helper functions
+        std::tuple<Key, int, int> input {readRawInput()};
+        switch (std::get<0>(input)) {
+        case 't': case '\t': 
             std::cout << esc << showCursor;
-            return {inputKey, prog};
-        case 'h': case 'b': case key::arrowLeft: case key::pgUp:
+            return {ChapterExit::toc, prog};
+        case 'q':
+            std::cout << esc << showCursor;
+            return {ChapterExit::quit, prog};
+        case 'h': case 'b': case specKey::arrowLeft: case specKey::pgUp:
             if (screenTopLine == 1) {
                 std::cout << esc << showCursor;
-                return {inputKey, prog};
+                return {ChapterExit::prev, prog};
             }
             screenTopLine -= winInfo.ws_row;
             screenTopLine = std::max(screenTopLine, 1);
             screenBotLine = screenTopLine + winInfo.ws_row - 1;
             screenBotLine = std::min(screenBotLine, chapterLines);
             break;
-        case 'l': case 'f': case ' ': case key::arrowRight: case key::pgDown:
+        case 'l': case 'f': case ' ': case specKey::arrowRight: 
+        case specKey::pgDown:
             if (screenBotLine == chapterLines) {
                 std::cout << esc << showCursor;
-                return {inputKey, prog};
+                return {ChapterExit::next, prog};
             }
             screenBotLine += winInfo.ws_row;
             screenBotLine = std::min(screenBotLine, chapterLines);
@@ -568,7 +599,7 @@ std::pair<int, double> displayChapter(const fs::path& chapterAbs,
         case 'u':
             if (screenTopLine == 1) {
                 std::cout << esc << showCursor;
-                return {inputKey, prog};
+                return {ChapterExit::prev, prog};
             }
             screenTopLine -= winInfo.ws_row / 2;
             screenTopLine = std::max(screenTopLine, 1);
@@ -578,40 +609,40 @@ std::pair<int, double> displayChapter(const fs::path& chapterAbs,
         case 'd':
             if (screenBotLine == chapterLines) {
                 std::cout << esc << showCursor;
-                return {inputKey, prog};
+                return {ChapterExit::next, prog};
             }
             screenBotLine += winInfo.ws_row / 2;
             screenBotLine = std::min(screenBotLine, chapterLines);
             screenTopLine = screenBotLine - winInfo.ws_row + 1;
             screenTopLine = std::max(screenTopLine, 1);
             break;
-        case 'k': case key::arrowUp:
+        case 'k': case specKey::arrowUp:
             if (screenTopLine == 1) {
                 std::cout << esc << showCursor;
-                return {inputKey, prog};
+                return {ChapterExit::prev, prog};
             }
             --screenTopLine;
             --screenBotLine;
             break;
-        case 'j': case key::arrowDown:
+        case 'j': case specKey::arrowDown:
             if (screenBotLine == chapterLines) {
                 std::cout << esc << showCursor;
-                return {inputKey, prog};
+                return {ChapterExit::next, prog};
             }
             ++screenTopLine;
             ++screenBotLine;
             break;
-        case 'g': case key::home:
+        case 'g': case specKey::home:
             screenTopLine = 1;
             screenBotLine = screenTopLine + winInfo.ws_row - 1;
             screenBotLine = std::min(screenBotLine, chapterLines);
             break;
-        case 'G': case key::end:
+        case 'G': case specKey::end:
             screenBotLine = chapterLines;
             screenTopLine = screenBotLine - winInfo.ws_row + 1;
             screenTopLine = std::max(screenTopLine, 1);
             break;
-        case key::winResize:
+        case specKey::winResize:
             ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
             chapter.clear();
