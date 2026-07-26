@@ -1,24 +1,26 @@
-#include <asm-generic/ioctls.h>
 #include <random>
-#include <cstring>
-#include <cstdint>
 #include <fstream>
 #include <stdexcept>
 #include <system_error>
-#include <cerrno>
 #include <string>
 #include <string_view>
 #include <filesystem>
 #include <iostream>
-#include <sys/ioctl.h>
 #include <thread>
 #include <chrono>
+#include <vector>
 #include <cstdlib>
 #include <cwchar>
 #include <cmath>
+#include <cerrno>
+#include <cstdint>
 #include <termios.h>
 #include <unistd.h>
 #include <iconv.h>
+#include <asm-generic/ioctls.h>
+#include <sys/ioctl.h>
+#include <spawn.h>
+#include <sys/wait.h>
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
 #include "stb_image.hpp"
@@ -527,6 +529,8 @@ std::pair<int, double> displayChapter(const fs::path& chapterAbs,
 
         eraseScreen();
         std::cout << dispView << std::flush;
+        // in ghostty, images on right-side tmux panes are broken until redraw
+        execute(std::vector<std::string>{"tmux", "refresh-client"});
 
         const double prog {static_cast<double>(screenTopLine) / chapterLines};
 
@@ -602,5 +606,37 @@ std::pair<int, double> displayChapter(const fs::path& chapterAbs,
             screenTopLine = std::max(screenTopLine, 1);
             break;
         }
+    }
+}
+
+void execute(const std::vector<std::string>& argV) {
+    if (argV.empty() || argV.front().empty()) {
+        throw std::invalid_argument{"execute() cmd cannot be empty"};
+    }
+    
+    std::vector<char*> posixAPIArgV {};
+    posixAPIArgV.reserve(argV.size() + 1);
+    for (const auto& arg : argV) {
+        posixAPIArgV.push_back(const_cast<char*>(arg.c_str()));
+    }
+    posixAPIArgV.push_back(nullptr);
+
+    pid_t pid {};
+    int spawnStatus {posix_spawnp(&pid, posixAPIArgV.front(), nullptr, 
+                                  nullptr, posixAPIArgV.data(), environ)};
+    if (spawnStatus != 0) {
+        throw std::system_error{spawnStatus, std::generic_category(), 
+                                "failed to spawn cmd: " + argV.front()};
+    }
+
+    int waitStatus {};
+    while (waitpid(pid, &waitStatus, 0) == -1) {
+        if (errno != EINTR) {
+            throw std::system_error{errno, std::generic_category(), 
+                                    "error waiting for cmd: " + argV.front()};
+        }
+    }
+    if (!WIFEXITED(waitStatus) || WEXITSTATUS(waitStatus) != 0) {
+        throw std::runtime_error{"cmd did not exit properly: " + argV.front()};
     }
 }

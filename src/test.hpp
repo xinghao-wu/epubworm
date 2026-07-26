@@ -43,5 +43,6 @@ namespace test {
 
     void findNth();
 
+    // also serves to test `execute()`
     void displayChapter();
 }
