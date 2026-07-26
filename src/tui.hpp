@@ -5,10 +5,12 @@
 #include <filesystem>
 #include <vector>
 #include <cstdint>
+#include <csignal>
 #include "base64.hpp"
 
 namespace fs = std::filesystem;
 
+extern volatile std::sig_atomic_t g_winResize;
 inline constexpr std::string esc {'\033'};
 inline constexpr std::string escEnd {esc + '\\'};
 inline constexpr std::string clearScreen {"[2J"};
@@ -213,3 +215,10 @@ std::pair<int, double> displayChapter(const fs::path& chapterAbs,
 // throws `std::system_error` on error spawning or waiting for command;
 // throws `std::runtime_error` for an abnormal exit from command
 void execute(const std::vector<std::string>& argV);
+
+// sets `g_winResize` to 1
+extern "C" void handleSigwinch([[maybe_unused]] int signal);
+
+// start listening for SIGWINCH signals, setting `g_winResize` to 1 on receive;
+// throws `std::runtime_error` on failure to register handler via `sigaction()`
+void registerSigwinchHandler();

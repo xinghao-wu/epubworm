@@ -14,6 +14,7 @@
 #include <cmath>
 #include <cerrno>
 #include <cstdint>
+#include <csignal>
 #include <termios.h>
 #include <unistd.h>
 #include <iconv.h>
@@ -31,6 +32,7 @@
 namespace fs = std::filesystem;
 
 static termios g_ogTermFlags {};
+volatile std::sig_atomic_t g_winResize {0};
 
 void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     if (id == 0) {
@@ -638,5 +640,20 @@ void execute(const std::vector<std::string>& argV) {
     }
     if (!WIFEXITED(waitStatus) || WEXITSTATUS(waitStatus) != 0) {
         throw std::runtime_error{"cmd did not exit properly: " + argV.front()};
+    }
+}
+
+extern "C" void handleSigwinch([[maybe_unused]] int signal) {
+    g_winResize = 1;
+}
+
+void registerSigwinchHandler() {
+    struct sigaction sigAct {};
+    sigAct.sa_handler = handleSigwinch;
+    sigemptyset(&sigAct.sa_mask);       // block no other signals when handling
+    sigAct.sa_flags = SA_RESTART;       // restart interrupted system calls
+
+    if (sigaction(SIGWINCH, &sigAct, nullptr) == -1) {
+        throw std::runtime_error{"failed to register SIGWINCH handler"};
     }
 }
