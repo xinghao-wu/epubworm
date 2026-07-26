@@ -117,7 +117,6 @@ TocData getTOC(const fs::path& tocAbs) {
     return result;
 }
 
-// NOLINTNEXTLINE(readability-function-cognitive-complexity)
 void parseContentElem(const XMLElement* parent, std::string& out,
                       const fs::path& chapterAbs) {
     for (const XMLNode* childNode {parent->FirstChild()};

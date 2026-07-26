@@ -11,6 +11,7 @@
 namespace fs = std::filesystem;
 
 extern volatile std::sig_atomic_t g_winResize;
+
 inline constexpr std::string esc {'\033'};
 inline constexpr std::string escEnd {esc + '\\'};
 inline constexpr std::string clearScreen {"[2J"};
@@ -37,6 +38,7 @@ namespace key {
         end,
         pgUp,
         pgDown,
+        winResize,
         unknownEscSeq,
     };
 }
@@ -138,6 +140,8 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
 // read one key input in raw mode;
 // for normal keypresses, returns the character promoted to an `int`; 
 // for those represented by escape seqs, returns a value in `key::keyValues`;
+// if `registerSigwinchHandler()` has been called and the program receives a
+// window resize signal, returns `key::winResize`;
 // throws `std::system_error` on error to read key
 int rawReadKey();
 

@@ -26,4 +26,5 @@ Checks: >
   -bugprone-switch-missing-default-case,
   -cert-err58-cpp,
   -hicpp-multiway-paths-covered,
-  -cppcoreguidelines-avoid-non-const-global-variables
+  -cppcoreguidelines-avoid-non-const-global-variables,
+  -readability-function-cognitive-complexity

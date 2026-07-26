@@ -419,15 +419,18 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
     }
 }
 
-// TODO: add SIGWINCH (window resize) handler
 int rawReadKey() {
     ssize_t err {};
     char ch {};
-    while ((err = read(STDIN_FILENO, &ch, 1)) != 1) {
+    while ((err = read(STDIN_FILENO, &ch, 1)) != 1 && g_winResize == 0) {
         if (err == -1 && errno != EAGAIN && errno != EINTR) {
             throw std::system_error{errno, std::generic_category(),
                                     "raw mode read key errored"};
         }
+    }
+    if (g_winResize == 1) {
+        g_winResize = 0;
+        return key::winResize;
     }
     if (ch != '\033') {
         return ch;
