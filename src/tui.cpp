@@ -119,14 +119,13 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
         rows = rowsDesired;
         cols = colsDesired;
 
-        constexpr int margin {1};
-        if (rowsDesired > winInfo.ws_row - (margin * 2)) {
-            rows = winInfo.ws_row - (margin * 2);
+        if (rowsDesired > winInfo.ws_row) {
+            rows = winInfo.ws_row;
             cols = static_cast<int>(static_cast<double>(rows) 
                                     / rowsDesired * cols) + 1;
         }
-        if (colsDesired > winInfo.ws_col - (margin * 4)) {
-            cols = winInfo.ws_col - (margin * 4);
+        if (colsDesired > winInfo.ws_col) {
+            cols = winInfo.ws_col;
             rows = static_cast<int>(static_cast<double>(cols) 
                                     / colsDesired * rows) + 1;
         }
@@ -419,6 +418,7 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
     }
 }
 
+// TODO: look into mouse input support
 int rawReadKey() {
     ssize_t err {};
     char ch {};
@@ -500,15 +500,16 @@ void processContentText(std::string& str, int maxLen) {
 }
 
 std::pair<int, double> displayChapter(const fs::path& chapterAbs,
-                                      double iniProg, int maxLen) {
-    std::string chapter {};
-    parseChapter(chapterAbs, chapter);
-    processContentText(chapter, maxLen);
-    
+                                      double iniProg, int desiredMaxLen) {
     winsize winInfo {};
     ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
-    const int chapterLines {getOccurences<std::string_view>(chapter, "\n")};
+    std::string chapter {};
+    parseChapter(chapterAbs, chapter);
+    int maxLen {std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col))};
+    processContentText(chapter, maxLen);
+    
+    int chapterLines {getOccurences<std::string_view>(chapter, "\n")};
 
     int screenTopLine {static_cast<int>(std::lround(iniProg * chapterLines))};
     screenTopLine = std::max(screenTopLine, 1);
@@ -607,6 +608,24 @@ std::pair<int, double> displayChapter(const fs::path& chapterAbs,
             break;
         case 'G': case key::end:
             screenBotLine = chapterLines;
+            screenTopLine = screenBotLine - winInfo.ws_row + 1;
+            screenTopLine = std::max(screenTopLine, 1);
+            break;
+        case key::winResize:
+            ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
+
+            chapter.clear();
+            parseChapter(chapterAbs, chapter);
+            maxLen = std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col));
+            processContentText(chapter, maxLen);
+
+            chapterLines = getOccurences<std::string_view>(chapter, "\n");
+
+            screenTopLine = static_cast<int>(std::lround(prog * chapterLines));
+            screenTopLine = std::max(screenTopLine, 1);
+
+            screenBotLine = screenTopLine + winInfo.ws_row - 1;
+            screenBotLine = std::min(screenBotLine, chapterLines);
             screenTopLine = screenBotLine - winInfo.ws_row + 1;
             screenTopLine = std::max(screenTopLine, 1);
             break;

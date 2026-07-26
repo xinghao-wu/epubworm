@@ -339,6 +339,7 @@ namespace test {
     void displayChapter() {
         ::useSystemLocale();
         ::enableRawMode();
+        ::registerSigwinchHandler();
 
         std::cout << esc << clearScreen;
         std::pair imgChapterOutput {::displayChapter(

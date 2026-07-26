@@ -210,7 +210,7 @@ void processContentText(std::string& str, int maxLen);
 // chapter displayed starting from `iniProg`, lines wrapped at `maxLen`;
 //  `int` return value is key that caused exit, `double` is progress at exit
 std::pair<int, double> displayChapter(const fs::path& chapterAbs,
-                                      double iniProg, int maxLen);
+                                      double iniProg, int desiredMaxLen);
 
 // execute a command using `posix_spawnp()`, waiting until the command exits;
 //  `argV` first element should be the command binary name,
