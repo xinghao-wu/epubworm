@@ -422,7 +422,7 @@ int rawReadKey() {
     ssize_t err {};
     char ch {};
     while ((err = read(STDIN_FILENO, &ch, 1)) != 1) {
-        if (err == -1 && errno != EAGAIN) {
+        if (err == -1 && errno != EAGAIN && errno != EINTR) {
             throw std::system_error{errno, std::generic_category(),
                                     "raw mode read key errored"};
         }
@@ -631,7 +631,7 @@ void execute(const std::vector<std::string>& argV) {
 
     int waitStatus {};
     while (waitpid(pid, &waitStatus, 0) == -1) {
-        if (errno != EINTR) {
+        if (errno != EAGAIN && errno != EINTR) {
             throw std::system_error{errno, std::generic_category(), 
                                     "error waiting for cmd: " + argV.front()};
         }
