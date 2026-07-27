@@ -49,4 +49,6 @@ namespace test {
     //  `snapTopLineToBound()`, `snapBotLineToBound()`,
     //  `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`
     void displayChapter();
+
+    void tocDataToString();
 }

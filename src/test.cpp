@@ -358,4 +358,23 @@ namespace test {
         std::cout << "text chapter final prog: " << textChapterOutput.second;
         std::cout << '\n';
     }
+
+    void tocDataToString() {
+        std::cout << "test::tocDataToString() no failure cases\n";
+
+        ::useSystemLocale();
+
+        const TocData mysteriesTOC {::getTOC(mysteriesRootAbs / "toc.ncx")};
+        const TocData parasiteTOC {
+                ::getTOC(parasiteRootAbs / "OEBPS/toc.ncx")};
+
+        std::string str {};
+        ::tocDataToString(mysteriesTOC, str);
+        ::tocDataToString(parasiteTOC, str);
+        ::processContentText(str, 55);
+        std::cout << str;
+
+        std::cout << "test::tocDataToString() success cases did not error, "
+                     "verify correct table of content strings are shown\n";
+    }
 }

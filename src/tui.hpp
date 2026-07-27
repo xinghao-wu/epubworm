@@ -8,10 +8,13 @@
 #include <csignal>
 #include <sys/ioctl.h>
 #include "base64.hpp"
+#include "epub_parser.hpp"
 
 namespace fs = std::filesystem;
 
 extern volatile std::sig_atomic_t g_winResize;
+
+// don't forget to modify `getInvisEscSeqLen()` when you change these constants
 
 inline constexpr std::string esc {'\033'};
 inline constexpr std::string escEnd {esc + '\\'};
@@ -30,6 +33,8 @@ inline constexpr std::string italic {"[3m"};
 inline constexpr std::string resetItalic {"[23m"};
 inline constexpr std::string yellowFG {"[33m"};
 inline constexpr std::string redFG {"[31m"};
+inline constexpr std::string greenFG {"[32m"};
+inline constexpr std::string blueFG {"[34m"};
 inline constexpr std::string resetFG {"[39m"};
 inline constexpr std::string imgCellPlaceholder {"\U0010EEEE"};
 
@@ -264,3 +269,7 @@ extern "C" void handleSigwinch([[maybe_unused]] int signal);
 // start listening for SIGWINCH signals, setting `g_winResize` to 1 on receive;
 // throws `std::runtime_error` on failure to register handler via `sigaction()`
 void registerSigwinchHandler();
+
+// translate `data` into a chapter-like string suitable for display;
+// output is appended to `str`
+void tocDataToString(const TocData& data, std::string& str);

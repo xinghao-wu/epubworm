@@ -288,12 +288,24 @@ int getVisualLen(std::wstring_view str) {
 
 int getInvisEscSeqLen(std::wstring_view str) {
     int totalLen {0};
+    totalLen += getOccurences<std::wstring_view>(str, L"\033\\") * 1;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[2J") * 3;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[H") * 2;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[2K") * 3;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[?25l") * 5;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[?25h") * 5;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[?1003h") * 7;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[?1003l") * 7;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[?1006h") * 7;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[?1006l") * 7;
     totalLen += getOccurences<std::wstring_view>(str, L"\033[1m") * 3;
     totalLen += getOccurences<std::wstring_view>(str, L"\033[22m") * 4;
     totalLen += getOccurences<std::wstring_view>(str, L"\033[3m") * 3;
     totalLen += getOccurences<std::wstring_view>(str, L"\033[23m") * 4;
     totalLen += getOccurences<std::wstring_view>(str, L"\033[33m") * 4;
     totalLen += getOccurences<std::wstring_view>(str, L"\033[31m") * 4;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[32m") * 4;
+    totalLen += getOccurences<std::wstring_view>(str, L"\033[34m") * 4;
     totalLen += getOccurences<std::wstring_view>(str, L"\033[39m") * 4;
     return totalLen;
 }
@@ -518,6 +530,7 @@ void processContentText(std::string& str, int maxLen) {
     expandEllipsesAndTabs(str);
     wrapLines(str, maxLen);
     centerJustify(esc + yellowFG, esc + resetFG, str, maxLen);
+    centerJustify(esc + blueFG, esc + resetFG, str, maxLen);
     centerJustify(esc + redFG, esc + resetFG, str, maxLen);
     centerOnScreen(str, maxLen);
 }
@@ -748,4 +761,23 @@ void registerSigwinchHandler() {
     if (sigaction(SIGWINCH, &sigAct, nullptr) == -1) {
         throw std::runtime_error{"failed to register SIGWINCH handler"};
     }
+}
+
+void tocDataToString(const TocData& data, std::string& str) {
+    str += esc + blueFG;
+    str += esc + bold;
+    str += "Table of Contents\n\n";
+    str += esc + resetFG;
+    str += esc + resetBold;
+
+    for (const auto& navPoint : data) {
+        str += navPoint.first + "\n\n";
+    }
+    str.pop_back();
+
+    str += esc + redFG;
+    str += esc + bold;
+    str += "---\n";
+    str += esc + resetFG;
+    str += esc + resetBold;
 }
