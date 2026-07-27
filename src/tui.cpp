@@ -527,24 +527,15 @@ void processContentText(std::string& str, int maxLen) {
 std::pair<ChapterExit, double> displayChapter(
         const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
     winsize winInfo {};
-    ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
-
     std::string chapter {};
-    parseChapter(chapterAbs, chapter);
-    int maxLen {std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col))};
-    processContentText(chapter, maxLen);
+    int chapterLines {};
+    int screenTopLine {};
+    int screenBotLine {};
 
-    int chapterLines {getOccurences<std::string_view>(chapter, "\n")};
-
-    int screenTopLine {static_cast<int>(std::lround(iniProg * chapterLines))};
-    screenTopLine = std::max(screenTopLine, 1);
-
-    int screenBotLine {screenTopLine + winInfo.ws_row - 1};
-    screenBotLine = std::min(screenBotLine, chapterLines);
-    screenTopLine = screenBotLine - winInfo.ws_row + 1;
-    screenTopLine = std::max(screenTopLine, 1);
-
+    setUpDisplayChapter(chapterAbs, iniProg, desiredMaxLen, winInfo, chapter,
+                        chapterLines, screenTopLine, screenBotLine);
     std::cout << esc << hideCursor;
+
     while (true) {
         std::size_t dispBeginIndex {};
         if (screenTopLine == 1) {
@@ -643,25 +634,34 @@ std::pair<ChapterExit, double> displayChapter(
             screenTopLine = std::max(screenTopLine, 1);
             break;
         case specKey::winResize:
-            ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
-
-            chapter.clear();
-            parseChapter(chapterAbs, chapter);
-            maxLen = std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col));
-            processContentText(chapter, maxLen);
-
-            chapterLines = getOccurences<std::string_view>(chapter, "\n");
-
-            screenTopLine = static_cast<int>(std::lround(prog * chapterLines));
-            screenTopLine = std::max(screenTopLine, 1);
-
-            screenBotLine = screenTopLine + winInfo.ws_row - 1;
-            screenBotLine = std::min(screenBotLine, chapterLines);
-            screenTopLine = screenBotLine - winInfo.ws_row + 1;
-            screenTopLine = std::max(screenTopLine, 1);
+            setUpDisplayChapter(chapterAbs, prog, desiredMaxLen, winInfo,
+                    chapter, chapterLines, screenTopLine, screenBotLine);
             break;
         }
     }
+}
+
+void setUpDisplayChapter(const fs::path& chapterAbs, double prog,
+        int desiredMaxLen, winsize& winInfo, std::string& chapter,
+        int& chapterLines, int& screenTopLine, int& screenBotLine) {
+
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
+
+    chapter.clear();
+    parseChapter(chapterAbs, chapter);
+    const int maxLen {
+            std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col))};
+    processContentText(chapter, maxLen);
+
+    chapterLines = getOccurences<std::string_view>(chapter, "\n");
+
+    screenTopLine = static_cast<int>(std::lround(prog * chapterLines));
+    screenTopLine = std::max(screenTopLine, 1);
+
+    screenBotLine = screenTopLine + winInfo.ws_row - 1;
+    screenBotLine = std::min(screenBotLine, chapterLines);
+    screenTopLine = screenBotLine - winInfo.ws_row + 1;
+    screenTopLine = std::max(screenTopLine, 1);
 }
 
 void execute(const std::vector<std::string>& argV) {

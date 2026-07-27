@@ -45,6 +45,6 @@ namespace test {
     void findNth();
 
     // also serves to test `execute()`, `handleSigwinch()`,
-    //  `registerSigwinchHandler`
+    //  `registerSigwinchHandler`, `setUpDisplayChapter()`
     void displayChapter();
 }

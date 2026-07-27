@@ -6,6 +6,7 @@
 #include <vector>
 #include <cstdint>
 #include <csignal>
+#include <sys/ioctl.h>
 #include "base64.hpp"
 
 namespace fs = std::filesystem;
@@ -231,6 +232,11 @@ void processContentText(std::string& str, int maxLen);
 // returns reason for exit and progress at exit
 std::pair<ChapterExit, double> displayChapter(
         const fs::path& chapterAbs, double iniProg, int desiredMaxLen);
+
+// helper for `displayChapter()`
+void setUpDisplayChapter(const fs::path& chapterAbs, double prog,
+        int desiredMaxLen, winsize& winInfo, std::string& chapter,
+        int& chapterLines, int& screenTopLine, int& screenBotLine);
 
 // execute a command using `posix_spawnp()`, waiting until the command exits;
 //  `argV` first element should be the command binary name,
