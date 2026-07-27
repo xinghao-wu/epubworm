@@ -70,7 +70,9 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
 
     std::string graphicsEscCode {getGraphicsEscCode(
             tempDataFileAbs, channels, xPixels, yPixels, id, rows, cols)};
-    wrapForTmuxPassthrough(graphicsEscCode);
+    if (inTmuxSession()) {
+        wrapForTmuxPassthrough(graphicsEscCode);
+    }
     std::cout << graphicsEscCode << std::flush;
 }
 
@@ -563,7 +565,9 @@ std::pair<ChapterExit, double> displayChapter(
         eraseScreen();
         std::cout << dispView << std::flush;
         // in ghostty, images on right-side tmux panes are broken until redraw
-        execute(std::vector<std::string>{"tmux", "refresh-client"});
+        if (inTmuxSession()) {
+            execute(std::vector<std::string>{"tmux", "refresh-client"});
+        }
 
         const double prog {static_cast<double>(screenTopLine) / chapterLines};
 
@@ -780,4 +784,9 @@ void tocDataToString(const TocData& data, std::string& str) {
     str += "---\n";
     str += esc + resetFG;
     str += esc + resetBold;
+}
+
+bool inTmuxSession() {
+    const char* termProgram {std::getenv("TERM_PROGRAM")};
+    return termProgram != nullptr && std::string_view{termProgram} == "tmux";
 }

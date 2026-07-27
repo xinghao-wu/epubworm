@@ -47,7 +47,8 @@ namespace test {
     // also serves to test `execute()`, `handleSigwinch()`,
     //  `registerSigwinchHandler()`, `setUpDisplayChapter()`,
     //  `snapTopLineToBound()`, `snapBotLineToBound()`,
-    //  `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`
+    //  `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`,
+    //  `inTmuxSession()`
     void displayChapter();
 
     void tocDataToString();

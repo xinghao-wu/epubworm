@@ -273,3 +273,6 @@ void registerSigwinchHandler();
 // translate `data` into a chapter-like string suitable for display;
 // output is appended to `str`
 void tocDataToString(const TocData& data, std::string& str);
+
+// checks `TERM_PROGRAM` env var for whether or not running in tmux session
+bool inTmuxSession();
