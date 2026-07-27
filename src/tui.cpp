@@ -572,11 +572,6 @@ std::pair<ChapterExit, double> displayChapter(
         const double prog {static_cast<double>(screenTopLine) / chapterLines};
 
         while (true) {
-            constexpr Key ctrlB {2};
-            constexpr Key ctrlF {6};
-            constexpr Key ctrlU {21};
-            constexpr Key ctrlD {4};
-
             std::tuple<Key, int, int> input {readRawInput()};
             Key translatedInputKey {std::get<0>(input)};
             if (translatedInputKey == specKey::leftClickRelease) {
