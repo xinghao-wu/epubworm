@@ -556,17 +556,32 @@ std::pair<ChapterExit, double> displayChapter(
 
         const double prog {static_cast<double>(screenTopLine) / chapterLines};
 
-        // TODO: support more inputs
         while (true) {
+            constexpr Key ctrlB {2};
+            constexpr Key ctrlF {6};
+            constexpr Key ctrlU {21};
+            constexpr Key ctrlD {4};
+
             std::tuple<Key, int, int> input {readRawInput()};
-            switch (std::get<0>(input)) {
+            Key translatedInputKey {std::get<0>(input)};
+            if (translatedInputKey == specKey::leftClickRelease) {
+                if (std::get<2>(input) <= winInfo.ws_col / 2) {
+                    translatedInputKey = 'h';
+                }
+                else {
+                    translatedInputKey = 'l';
+                }
+            }
+
+            switch (translatedInputKey) {
             case 't': case '\t':
                 std::cout << esc << showCursor;
                 return {ChapterExit::toc, prog};
             case 'q':
                 std::cout << esc << showCursor;
                 return {ChapterExit::quit, prog};
-            case 'h': case 'b': case specKey::arrowLeft: case specKey::pgUp:
+            case 'h': case 'b': case ctrlB:
+            case specKey::arrowLeft: case specKey::pgUp:
                 if (screenTopLine == 1) {
                     std::cout << esc << showCursor;
                     return {ChapterExit::prev, prog};
@@ -575,9 +590,9 @@ std::pair<ChapterExit, double> displayChapter(
                 snapTopLineToBound(screenTopLine);
                 screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
                 snapBotLineToBound(screenBotLine, chapterLines);
-                goto exit_input_loop;
-            case 'l': case 'f': case ' ': case specKey::arrowRight:
-            case specKey::pgDown:
+                goto redraw_screen;
+            case 'l': case 'f': case ctrlF: case ' ':
+            case specKey::arrowRight: case specKey::pgDown:
                 if (screenBotLine == chapterLines) {
                     std::cout << esc << showCursor;
                     return {ChapterExit::next, prog};
@@ -586,8 +601,8 @@ std::pair<ChapterExit, double> displayChapter(
                 snapBotLineToBound(screenBotLine, chapterLines);
                 screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
                 snapTopLineToBound(screenTopLine);
-                goto exit_input_loop;
-            case 'u':
+                goto redraw_screen;
+            case 'u': case ctrlU:
                 if (screenTopLine == 1) {
                     std::cout << esc << showCursor;
                     return {ChapterExit::prev, prog};
@@ -596,8 +611,8 @@ std::pair<ChapterExit, double> displayChapter(
                 snapTopLineToBound(screenTopLine);
                 screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
                 snapBotLineToBound(screenBotLine, chapterLines);
-                goto exit_input_loop;
-            case 'd':
+                goto redraw_screen;
+            case 'd': case ctrlD:
                 if (screenBotLine == chapterLines) {
                     std::cout << esc << showCursor;
                     return {ChapterExit::next, prog};
@@ -606,30 +621,30 @@ std::pair<ChapterExit, double> displayChapter(
                 snapBotLineToBound(screenBotLine, chapterLines);
                 screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
                 snapTopLineToBound(screenTopLine);
-                goto exit_input_loop;
-            case 'k': case specKey::arrowUp:
+                goto redraw_screen;
+            case 'k': case specKey::arrowUp: case specKey::wheelUp:
                 if (screenTopLine == 1) {
                     std::cout << esc << showCursor;
                     return {ChapterExit::prev, prog};
                 }
                 --screenTopLine;
                 --screenBotLine;
-                goto exit_input_loop;
-            case 'j': case specKey::arrowDown:
+                goto redraw_screen;
+            case 'j': case specKey::arrowDown: case specKey::wheelDown:
                 if (screenBotLine == chapterLines) {
                     std::cout << esc << showCursor;
                     return {ChapterExit::next, prog};
                 }
                 ++screenTopLine;
                 ++screenBotLine;
-                goto exit_input_loop;
+                goto redraw_screen;
             case 'g': case specKey::home:
                 if (screenTopLine != 1) {
                     screenTopLine = 1;
                     screenBotLine =
                             calcBotLineFromTopLine(screenTopLine, winInfo);
                     snapBotLineToBound(screenBotLine, chapterLines);
-                    goto exit_input_loop;
+                    goto redraw_screen;
                 }
                 break;
             case 'G': case specKey::end:
@@ -638,16 +653,16 @@ std::pair<ChapterExit, double> displayChapter(
                     screenTopLine =
                             calcTopLineFromBotLine(screenBotLine, winInfo);
                     snapTopLineToBound(screenTopLine);
-                    goto exit_input_loop;
+                    goto redraw_screen;
                 }
                 break;
             case specKey::winResize:
                 setUpDisplayChapter(chapterAbs, prog, desiredMaxLen, winInfo,
                         chapter, chapterLines, screenTopLine, screenBotLine);
-                goto exit_input_loop;
+                goto redraw_screen;
             }
         }
-exit_input_loop:
+redraw_screen:
     }
 }
 
