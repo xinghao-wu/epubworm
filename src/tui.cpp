@@ -170,8 +170,6 @@ void disableRawMode() {
 }
 
 void enableRawMode() {
-    std::cout << std::flush;
-
     if (tcgetattr(STDIN_FILENO, &g_ogTermFlags) == -1) {
         throw std::runtime_error{"failed to get original terminal settings"};
     }
