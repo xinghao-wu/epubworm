@@ -296,7 +296,6 @@ namespace test {
             std::cout << "key: " << std::get<0>(input) << '\n';
             std::cout << "row: " << std::get<1>(input) << '\n';
             std::cout << "col: " << std::get<2>(input) << '\n';
-            std::cout << std::flush;
             input = ::readRawInput();
         }
     }
@@ -358,6 +357,5 @@ namespace test {
         std::cout << '\n';
         std::cout << "text chapter final prog: " << textChapterOutput.second;
         std::cout << '\n';
-        std::cout << std::flush;
     }
 }
