@@ -573,7 +573,7 @@ std::pair<ChapterExit, double> displayChapter(
             }
             screenTopLine -= winInfo.ws_row;
             snapTopLineToBound(screenTopLine);
-            screenBotLine = screenTopLine + winInfo.ws_row - 1;
+            screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
             snapBotLineToBound(screenBotLine, chapterLines);
             break;
         case 'l': case 'f': case ' ': case specKey::arrowRight:
@@ -584,7 +584,7 @@ std::pair<ChapterExit, double> displayChapter(
             }
             screenBotLine += winInfo.ws_row;
             snapBotLineToBound(screenBotLine, chapterLines);
-            screenTopLine = screenBotLine - winInfo.ws_row + 1;
+            screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
             snapTopLineToBound(screenTopLine);
             break;
         case 'u':
@@ -594,7 +594,7 @@ std::pair<ChapterExit, double> displayChapter(
             }
             screenTopLine -= winInfo.ws_row / 2;
             snapTopLineToBound(screenTopLine);
-            screenBotLine = screenTopLine + winInfo.ws_row - 1;
+            screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
             snapBotLineToBound(screenBotLine, chapterLines);
             break;
         case 'd':
@@ -604,7 +604,7 @@ std::pair<ChapterExit, double> displayChapter(
             }
             screenBotLine += winInfo.ws_row / 2;
             snapBotLineToBound(screenBotLine, chapterLines);
-            screenTopLine = screenBotLine - winInfo.ws_row + 1;
+            screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
             snapTopLineToBound(screenTopLine);
             break;
         case 'k': case specKey::arrowUp:
@@ -625,12 +625,12 @@ std::pair<ChapterExit, double> displayChapter(
             break;
         case 'g': case specKey::home:
             screenTopLine = 1;
-            screenBotLine = screenTopLine + winInfo.ws_row - 1;
+            screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
             snapBotLineToBound(screenBotLine, chapterLines);
             break;
         case 'G': case specKey::end:
             screenBotLine = chapterLines;
-            screenTopLine = screenBotLine - winInfo.ws_row + 1;
+            screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
             snapTopLineToBound(screenTopLine);
             break;
         case specKey::winResize:
@@ -658,9 +658,9 @@ void setUpDisplayChapter(const fs::path& chapterAbs, double prog,
     screenTopLine = static_cast<int>(std::lround(prog * chapterLines));
     snapTopLineToBound(screenTopLine);
 
-    screenBotLine = screenTopLine + winInfo.ws_row - 1;
+    screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
     snapBotLineToBound(screenBotLine, chapterLines);
-    screenTopLine = screenBotLine - winInfo.ws_row + 1;
+    screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
     snapTopLineToBound(screenTopLine);
 }
 
@@ -670,6 +670,14 @@ void snapTopLineToBound(int& screenTopLine) {
 
 void snapBotLineToBound(int& screenBotLine, int chapterLines) {
     screenBotLine = std::min(screenBotLine, chapterLines);
+}
+
+int calcBotLineFromTopLine(int screenTopLine, const winsize& winInfo) {
+    return screenTopLine + winInfo.ws_row - 1;
+}
+
+int calcTopLineFromBotLine(int screenBotLine, const winsize& winInfo) {
+    return screenBotLine - winInfo.ws_row + 1;
 }
 
 void execute(const std::vector<std::string>& argV) {

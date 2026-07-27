@@ -244,6 +244,12 @@ void snapTopLineToBound(int& screenTopLine);
 // helper for `displayChapter()`
 void snapBotLineToBound(int& screenBotLine, int chapterLines);
 
+// helper for `displayChapter()`
+int calcBotLineFromTopLine(int screenTopLine, const winsize& winInfo);
+
+// helper for `displayChapter()`
+int calcTopLineFromBotLine(int screenBotLine, const winsize& winInfo);
+
 // execute a command using `posix_spawnp()`, waiting until the command exits;
 //  `argV` first element should be the command binary name,
 // following elements should be the individual arguments;

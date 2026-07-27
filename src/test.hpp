@@ -46,6 +46,7 @@ namespace test {
 
     // also serves to test `execute()`, `handleSigwinch()`,
     //  `registerSigwinchHandler()`, `setUpDisplayChapter()`,
-    //  `snapTopLineToBound()`, `snapBotLineToBound()`
+    //  `snapTopLineToBound()`, `snapBotLineToBound()`,
+    //  `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`
     void displayChapter();
 }
