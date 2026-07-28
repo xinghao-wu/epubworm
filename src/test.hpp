@@ -55,4 +55,8 @@ namespace test {
 
     // also serves to test `setUpDisplayTOC()`
     void displayTOC();
+
+    void displayEpub();
+
+    void styleEachLineIndividually();
 }

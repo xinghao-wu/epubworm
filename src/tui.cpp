@@ -84,19 +84,19 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out) {
     const std::uint32_t idRed {(id >> 16) & 255};
     const std::uint32_t idGreen {(id >> 8) & 255};
     const std::uint32_t idBlue {id & 255};
-    const std::string idInFG {esc + "[38;2;" + std::to_string(idRed) + ';'
+    const std::string idInFG {"[38;2;" + std::to_string(idRed) + ';'
             + std::to_string(idGreen) + ';' + std::to_string(idBlue) + 'm'};
 
-    out += idInFG;
     for (int r {0}; r < rows; ++r) {
+        out += esc + idInFG;
         out += imgCellPlaceholder + rowColDiacritics.data()[r];
 
         for (int c {1}; c < cols; ++c) {
             out += imgCellPlaceholder;
         }
+        out += esc + resetFG;
         out += '\n';
     }
-    out += esc + resetFG;
 }
 
 void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
@@ -123,8 +123,8 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
         rows = rowsDesired;
         cols = colsDesired;
 
-        if (rowsDesired > winInfo.ws_row) {
-            rows = winInfo.ws_row;
+        if (rowsDesired > winInfo.ws_row - 1) {
+            rows = winInfo.ws_row - 1;
             cols = static_cast<int>(static_cast<double>(rows)
                                     / rowsDesired * cols) + 1;
         }
@@ -532,6 +532,30 @@ void eraseScreen() {
     std::cout << esc << posCursorTopLeft;
 }
 
+void styleEachLineIndividually(std::string& str, std::string_view style,
+                               std::string_view resetStyle) {
+    std::size_t styleBeginIndex {str.find(style)};
+    std::size_t styleEndIndex {
+            str.find(resetStyle, styleBeginIndex + style.size())
+            + resetStyle.size() - 1};
+    while (styleBeginIndex != std::string::npos) {
+        std::size_t styleNewlineIndex {str.find('\n', styleBeginIndex)};
+        while (styleNewlineIndex < styleEndIndex) {
+            str.insert(styleNewlineIndex, resetStyle);
+            styleNewlineIndex += resetStyle.size();
+            styleEndIndex += resetStyle.size();
+            str.insert(styleNewlineIndex + 1, style);
+            styleEndIndex += style.size();
+
+            styleNewlineIndex = str.find('\n', styleNewlineIndex + 1);
+        }
+
+        styleBeginIndex = str.find(style, styleEndIndex + 1);
+        styleEndIndex = str.find(resetStyle, styleBeginIndex + style.size())
+                        + resetStyle.size() - 1;
+    }
+}
+
 void processContentText(std::string& str, int maxLen) {
     expandEllipsesAndTabs(str);
     wrapLines(str, maxLen);
@@ -539,6 +563,12 @@ void processContentText(std::string& str, int maxLen) {
     centerJustify(esc + blueFG, esc + resetFG, str, maxLen);
     centerJustify(esc + redFG, esc + resetFG, str, maxLen);
     centerOnScreen(str, maxLen);
+    styleEachLineIndividually(str, esc + bold, esc + resetBold);
+    styleEachLineIndividually(str, esc + italic, esc + resetItalic);
+    styleEachLineIndividually(str, esc + yellowFG, esc + resetFG);
+    styleEachLineIndividually(str, esc + redFG, esc + resetFG);
+    styleEachLineIndividually(str, esc + greenFG, esc + resetFG);
+    styleEachLineIndividually(str, esc + blueFG, esc + resetFG);
 }
 
 std::pair<ChapterExit, double> displayChapter(
@@ -548,10 +578,8 @@ std::pair<ChapterExit, double> displayChapter(
     int chapterLines {};
     int screenTopLine {};
     int screenBotLine {};
-
     setUpDisplayChapter(chapterAbs, iniProg, desiredMaxLen, winInfo, chapter,
                         chapterLines, screenTopLine, screenBotLine);
-    std::cout << esc << hideCursor;
 
     while (true) {
         std::size_t dispBeginIndex {};
@@ -589,15 +617,12 @@ std::pair<ChapterExit, double> displayChapter(
 
             switch (translatedInputKey) {
             case 't': case '\t':
-                std::cout << esc << showCursor;
                 return {ChapterExit::toc, prog};
             case 'q':
-                std::cout << esc << showCursor;
                 return {ChapterExit::quit, prog};
             case 'h': case 'b': case ctrlB:
             case specKey::arrowLeft: case specKey::pgUp:
                 if (screenTopLine == 1) {
-                    std::cout << esc << showCursor;
                     return {ChapterExit::prev, prog};
                 }
                 screenTopLine -= winInfo.ws_row;
@@ -608,7 +633,6 @@ std::pair<ChapterExit, double> displayChapter(
             case 'l': case 'f': case ctrlF: case ' ':
             case specKey::arrowRight: case specKey::pgDown:
                 if (screenBotLine == chapterLines) {
-                    std::cout << esc << showCursor;
                     return {ChapterExit::next, prog};
                 }
                 screenBotLine += winInfo.ws_row;
@@ -618,7 +642,6 @@ std::pair<ChapterExit, double> displayChapter(
                 goto redraw_screen;
             case 'u': case ctrlU:
                 if (screenTopLine == 1) {
-                    std::cout << esc << showCursor;
                     return {ChapterExit::prev, prog};
                 }
                 screenTopLine -= winInfo.ws_row / 2;
@@ -628,7 +651,6 @@ std::pair<ChapterExit, double> displayChapter(
                 goto redraw_screen;
             case 'd': case ctrlD:
                 if (screenBotLine == chapterLines) {
-                    std::cout << esc << showCursor;
                     return {ChapterExit::next, prog};
                 }
                 screenBotLine += winInfo.ws_row / 2;
@@ -638,7 +660,6 @@ std::pair<ChapterExit, double> displayChapter(
                 goto redraw_screen;
             case 'k': case specKey::arrowUp: case specKey::wheelUp:
                 if (screenTopLine == 1) {
-                    std::cout << esc << showCursor;
                     return {ChapterExit::prev, prog};
                 }
                 --screenTopLine;
@@ -646,7 +667,6 @@ std::pair<ChapterExit, double> displayChapter(
                 goto redraw_screen;
             case 'j': case specKey::arrowDown: case specKey::wheelDown:
                 if (screenBotLine == chapterLines) {
-                    std::cout << esc << showCursor;
                     return {ChapterExit::next, prog};
                 }
                 ++screenTopLine;
@@ -799,7 +819,6 @@ fs::path displayTOC(const TocData& tocData,
     int tocLines {};
     setUpDisplayTOC(tocData, desiredMaxLen, winInfo, tocStr, tocLines);
 
-    std::cout << esc << hideCursor;
     while (true) {
         if (!(selectedNavPointIndex < std::ssize(tocData))) {
             throw std::logic_error{"selected nav point out of bounds"};
@@ -864,10 +883,8 @@ fs::path displayTOC(const TocData& tocData,
             std::tuple<Key, int, int> input {readRawInput()};
             switch (std::get<0>(input)) {
             case 't': case '\t': case 'q': case '\033':
-                std::cout << esc << showCursor;
                 return {};
             case '\n':
-                std::cout << esc << showCursor;
                 return tocData.data()[selectedNavPointIndex].second;
             case 'h': case 'b': case ctrlB:
             case specKey::arrowLeft: case specKey::pgUp:
@@ -947,4 +964,90 @@ void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
     processContentText(tocStr, maxLen);
 
     tocLines = getOccurences<std::string_view>(tocStr, "\n");
+}
+
+EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
+                     int desiredMaxLen) {
+    const fs::path opfAbs {epubRootAbs / getOPFRel(epubRootAbs)};
+    XMLDocument opf {};
+    opf.LoadFile(opfAbs.c_str());
+    if (opf.Error()) {
+        throw std::runtime_error{opf.ErrorStr()};
+    }
+
+    std::vector spineWithAbs {getSpine(opf)};
+    for (auto& rel : spineWithAbs) {
+        rel = opfAbs.parent_path() / rel;
+    }
+
+    TocData tocDataWithAbs {getTOC(spineWithAbs[0])};
+    for (auto& pair : tocDataWithAbs) {
+        pair.second = spineWithAbs[0].parent_path() / pair.second;
+    }
+
+    std::size_t spineIndex {1};
+    while (spineWithAbs[spineIndex] != iniProg.chapterAbs) {
+        ++spineIndex;
+    }
+    double chapterProg {iniProg.chapterProg};
+
+    std::cout << esc << hideCursor;
+    std::cout << esc << clearScreen;
+    while (true) {
+        std::pair chapterOut {displayChapter(spineWithAbs[spineIndex],
+                                             chapterProg, desiredMaxLen)};
+        switch (chapterOut.first) {
+        case ChapterExit::prev:
+            if (spineIndex != 1) {
+                --spineIndex;
+                chapterProg = 1;
+            }
+            else {
+                chapterProg = 0;
+            }
+            break;
+        case ChapterExit::next:
+            if (spineIndex != spineWithAbs.size() - 1) {
+                ++spineIndex;
+                chapterProg = 0;
+            }
+            else {
+                chapterProg = 1;
+            }
+            break;
+        case ChapterExit::toc:
+            {
+                int iniNavPointIndex {0};
+                for (int i {static_cast<int>(spineIndex)}; i >= 1; --i) {
+                    for (int j {0}; j < std::ssize(tocDataWithAbs); ++j) {
+                        if (spineWithAbs.data()[i]
+                                == tocDataWithAbs.data()[j].second) {
+                            iniNavPointIndex = j;
+                            goto exit_nested_loops;
+                        }
+                    }
+                }
+exit_nested_loops:
+                const fs::path tocOut {displayTOC(tocDataWithAbs,
+                                       desiredMaxLen, iniNavPointIndex)};
+                bool found {false};
+                for (int i {1}; i < std::ssize(spineWithAbs); ++i) {
+                    if (spineWithAbs.data()[i] == tocOut) {
+                        found = true;
+                        spineIndex = static_cast<std::size_t>(i);
+                        chapterProg = 0;
+                        break;
+                    }
+                }
+                if (!found) {
+                    chapterProg = chapterOut.second;
+                }
+                break;
+            }
+        case ChapterExit::quit:
+            eraseScreen();
+            std::cout << esc << showCursor;
+            return {spineWithAbs[spineIndex], chapterOut.second};
+        }
+    }
 }

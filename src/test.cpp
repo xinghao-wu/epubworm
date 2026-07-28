@@ -397,4 +397,59 @@ namespace test {
         std::cout << "mysteries output: " << mysteriesTOCOutput << '\n';
         std::cout << "parasite output: " << parasiteTOCOutput << '\n';
     }
+
+    void displayEpub() {
+        ::useSystemLocale();
+        ::enableRawMode();
+
+        const EpubProg mysteriesIniProg {
+                mysteriesRootAbs / "index_split_117.html", 0.5};
+        const EpubProg parasiteIniProg {
+                parasiteRootAbs / "OEBPS/Text/cover.xhtml", 0};
+        const EpubProg spiceWolfIniProg {
+                spiceWolfRootAbs / "OEBPS/epilogue-a.xhtml", 0.25};
+        const EpubProg zuttomoIniProg {
+                zuttomoRootAbs / "index_split_022.html", 0.75};
+
+        const EpubProg mysteriesOut {
+                ::displayEpub(mysteriesIniProg, mysteriesRootAbs, 50)};
+        const EpubProg parasiteOut {
+                ::displayEpub(parasiteIniProg, parasiteRootAbs, 55)};
+        const EpubProg spiceWolfOut {
+                ::displayEpub(spiceWolfIniProg, spiceWolfRootAbs, 60)};
+        const EpubProg zuttomoOut {
+                ::displayEpub(zuttomoIniProg, zuttomoRootAbs, 65)};
+
+        std::cout << "test::displayEpub() no failure cases\n";
+        std::cout << "test::displayEpub() success cases require manual "
+                     "verification, a tui interface for all four "
+                     "test epubs should have been displayed.\n";
+
+        std::cout << "mysteries exit chapter path: ";
+        std::cout << mysteriesOut.chapterAbs << '\n';
+        std::cout << "mysteries exit chapter prog: ";
+        std::cout << mysteriesOut.chapterProg << '\n';
+        std::cout << "parasite exit chapter path: ";
+        std::cout << parasiteOut.chapterAbs << '\n';
+        std::cout << "parasite exit chapter prog: ";
+        std::cout << parasiteOut.chapterProg << '\n';
+        std::cout << "spiceWolf exit chapter path: ";
+        std::cout << spiceWolfOut.chapterAbs << '\n';
+        std::cout << "spiceWolf exit chapter prog: ";
+        std::cout << spiceWolfOut.chapterProg << '\n';
+        std::cout << "zuttomo exit chapter path: ";
+        std::cout << zuttomoOut.chapterAbs << '\n';
+        std::cout << "zuttomo exit chapter prog: ";
+        std::cout << zuttomoOut.chapterProg << '\n';
+    }
+
+    void styleEachLineIndividually() {
+        std::cout << "test::styleEachLineIndividually() no failure cases\n";
+
+        std::string str {"\033[1mfirst line\nsec line\033[22mout"};
+        ::styleEachLineIndividually(str, "\033[1m", "\033[22m");
+        assert(str == "\033[1mfirst line\033[22m\n\033[1msec line\033[22mout");
+
+        std::cout << "test::styleEachLineIndividually() success case passed\n";
+    }
 }

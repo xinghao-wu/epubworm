@@ -44,6 +44,11 @@ enum class ChapterExit {
     toc,
 };
 
+struct EpubProg {
+    fs::path chapterAbs {};
+    double chapterProg {};
+};
+
 extern volatile std::sig_atomic_t g_winResize;
 
 inline constexpr Key ctrlB {2};
@@ -232,6 +237,11 @@ constexpr int getOccurences(TStrView str, TStrView target) {
     return count;
 }
 
+// in `str`, if `style` and `resetStyle` encompass multiple lines,
+// give each line its own `style` and `resetStyle`
+void styleEachLineIndividually(std::string& str, std::string_view style,
+                               std::string_view resetStyle);
+
 // process content text of epubs extracted from chapter xhtml files for display
 void processContentText(std::string& str, int maxLen);
 
@@ -292,3 +302,10 @@ fs::path displayTOC(const TocData& tocData,
 // helper for `displayTOC()`
 void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
                      winsize& winInfo, std::string& tocStr, int& tocLines);
+
+// highest level function for creating the core TUI interface;
+// once in raw mode, with locale set, display an epub book;
+// takes an unzipped epub, desired visual length, and initial progress;
+// returns progress at exit from this function
+EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
+                     int desiredMaxLen);

@@ -94,6 +94,9 @@ void collectNavPoints(const XMLElement* parent, TocData& tocData,
         std::string srcFilePathRel {navPoint->FirstChildElement("content")
                                             ->Attribute("src")};
         decodePercentEncoding(srcFilePathRel);
+        if (srcFilePathRel.contains("#id")) {
+            srcFilePathRel.resize(srcFilePathRel.find("#id"));
+        }
 
         tocData.emplace_back(prefix + name, srcFilePathRel);
         collectNavPoints(navPoint, tocData, prefix + "    ");
