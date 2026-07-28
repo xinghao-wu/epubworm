@@ -34,4 +34,5 @@ Checks: >
   -hicpp-avoid-goto,
   -concurrency-mt-unsafe,
   -readability-math-missing-parentheses,
-  -readability-redundant-member-init
+  -readability-redundant-member-init,
+  -modernize-use-designated-initializers
