@@ -33,4 +33,5 @@ Checks: >
   -cppcoreguidelines-avoid-goto,
   -hicpp-avoid-goto,
   -concurrency-mt-unsafe,
-  -readability-math-missing-parentheses
+  -readability-math-missing-parentheses,
+  -readability-redundant-member-init
