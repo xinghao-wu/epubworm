@@ -792,17 +792,19 @@ bool inTmuxSession() {
     return termProgram != nullptr && std::string_view{termProgram} == "tmux";
 }
 
-fs::path displayTOC(const fs::path& tocAbs, int desiredMaxLen) {
-    const TocData tocData {getTOC(tocAbs)};
+fs::path displayTOC(const TocData& tocData,
+                    int desiredMaxLen, int selectedNavPointIndex) {
     winsize winInfo {};
     std::string tocStr {};
     int tocLines {};
     setUpDisplayTOC(tocData, desiredMaxLen, winInfo, tocStr, tocLines);
 
-    int selectedNavPointIndex {0};
     std::cout << esc << hideCursor;
-
     while (true) {
+        if (!(selectedNavPointIndex < std::ssize(tocData))) {
+            throw std::logic_error{"selected nav point out of bounds"};
+        }
+
         const std::size_t selectionBeginIndex {
                 findNth(tocStr, "\n\n", selectedNavPointIndex + 1) + 2};
         std::size_t selectionEndIndex {};
@@ -866,8 +868,7 @@ fs::path displayTOC(const fs::path& tocAbs, int desiredMaxLen) {
                 return {};
             case '\n':
                 std::cout << esc << showCursor;
-                return tocAbs.parent_path() /
-                        tocData.data()[selectedNavPointIndex].second;
+                return tocData.data()[selectedNavPointIndex].second;
             case 'h': case 'b': case ctrlB:
             case specKey::arrowLeft: case specKey::pgUp:
                 if (selectedNavPointIndex != 0) {

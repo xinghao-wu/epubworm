@@ -383,10 +383,10 @@ namespace test {
         ::enableRawMode();
 
         std::cout << esc << clearScreen;
-        fs::path mysteriesTOCOutput {
-                ::displayTOC(mysteriesRootAbs / "toc.ncx", 55)};
-        fs::path parasiteTOCOutput {
-                ::displayTOC(parasiteRootAbs / "OEBPS/toc.ncx", 55)};
+        fs::path mysteriesTOCOutput {::displayTOC(
+                ::getTOC(mysteriesRootAbs / "toc.ncx"), 55, 100)};
+        fs::path parasiteTOCOutput {::displayTOC(
+                ::getTOC(parasiteRootAbs / "OEBPS/toc.ncx"), 55, 0)};
         eraseScreen();
 
         std::cout << "test::displayTOC() no failure cases\n";

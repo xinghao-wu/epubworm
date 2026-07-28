@@ -280,10 +280,14 @@ void tocDataToString(const TocData& data, std::string& str);
 // checks `TERM_PROGRAM` env var for whether or not running in tmux session
 bool inTmuxSession();
 
-// in raw mode, create a tui interface to view `tocAbs`;
-// returns absolute path of selected chapter, or an empty path if user
-// exited without selecting one
-fs::path displayTOC(const fs::path& tocAbs, int desiredMaxLen);
+// in raw mode, create a tui interface to view `tocData`;
+// lines wrapped at `desiredMaxLen`;
+// provide initial selected chapter through `selectedNavPointIndex`;
+// returns relative path found in `tocData` of selected chapter,
+// or an empty path if user exited without selecting one;
+// throws `std::logic_error` if provided nav point index is out of bounds
+fs::path displayTOC(const TocData& tocData,
+                    int desiredMaxLen, int selectedNavPointIndex);
 
 // helper for `displayTOC()`
 void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
