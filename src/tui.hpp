@@ -286,6 +286,5 @@ bool inTmuxSession();
 fs::path displayTOC(const fs::path& tocAbs, int desiredMaxLen);
 
 // helper for `displayTOC()`
-void setUpDisplayTOC(const TocData& tocData, double prog,
-        int desiredMaxLen, winsize& winInfo, std::string& tocStr,
-        int& tocLines, int& screenTopLine, int& screenBotLine);
+void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
+                     winsize& winInfo, std::string& tocStr, int& tocLines);

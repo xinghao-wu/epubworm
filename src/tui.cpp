@@ -797,10 +797,7 @@ fs::path displayTOC(const fs::path& tocAbs, int desiredMaxLen) {
     winsize winInfo {};
     std::string tocStr {};
     int tocLines {};
-    int screenTopLine {};
-    int screenBotLine {};
-    setUpDisplayTOC(tocData, 0, desiredMaxLen, winInfo, tocStr,
-                    tocLines, screenTopLine, screenBotLine);
+    setUpDisplayTOC(tocData, desiredMaxLen, winInfo, tocStr, tocLines);
 
     int selectedNavPointIndex {0};
     std::cout << esc << hideCursor;
@@ -822,17 +819,13 @@ fs::path displayTOC(const fs::path& tocAbs, int desiredMaxLen) {
         const int selectionEndLine {
                 getOccurences<std::string_view>(std::string_view{tocStr}
                 .substr(0, selectionEndIndex + 1), "\n") + 1};
+        const int selectionLines {selectionEndLine - selectionBeginLine + 1};
+        const int nonSelectionLines {winInfo.ws_row - selectionLines};
 
-        if (selectedNavPointIndex == 0) {
-            screenTopLine = 1;
-        }
-        screenTopLine = std::min(screenTopLine, selectionBeginLine);
-        screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
+        int screenTopLine {selectionBeginLine - nonSelectionLines / 2};
+        snapTopLineToBound(screenTopLine);
+        int screenBotLine {calcBotLineFromTopLine(screenTopLine, winInfo)};
         snapBotLineToBound(screenBotLine, tocLines);
-        if (selectedNavPointIndex == std::ssize(tocData) - 1) {
-            screenBotLine = tocLines;
-        }
-        screenBotLine = std::max(screenBotLine, selectionEndLine);
         screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
         snapTopLineToBound(screenTopLine);
 
@@ -864,8 +857,6 @@ fs::path displayTOC(const fs::path& tocAbs, int desiredMaxLen) {
         std::cout << esc << resetBold;
         std::cout << dispAfterSelection;
         std::cout << std::flush;
-
-        const double prog {static_cast<double>(screenTopLine) / tocLines};
 
         while (true) {
             std::tuple<Key, int, int> input {readRawInput()};
@@ -935,8 +926,8 @@ fs::path displayTOC(const fs::path& tocAbs, int desiredMaxLen) {
                 }
                 break;
             case specKey::winResize:
-                setUpDisplayTOC(tocData, prog, desiredMaxLen, winInfo, tocStr,
-                                tocLines, screenTopLine, screenBotLine);
+                setUpDisplayTOC(tocData, desiredMaxLen,
+                                winInfo, tocStr, tocLines);
                 goto redraw_screen;
             }
         }
@@ -944,10 +935,8 @@ redraw_screen:
     }
 }
 
-void setUpDisplayTOC(const TocData& tocData, double prog,
-        int desiredMaxLen, winsize& winInfo, std::string& tocStr,
-        int& tocLines, int& screenTopLine, int& screenBotLine) {
-
+void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
+                     winsize& winInfo, std::string& tocStr, int& tocLines) {
     ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
     tocStr.clear();
@@ -957,12 +946,4 @@ void setUpDisplayTOC(const TocData& tocData, double prog,
     processContentText(tocStr, maxLen);
 
     tocLines = getOccurences<std::string_view>(tocStr, "\n");
-
-    screenTopLine = static_cast<int>(std::lround(prog * tocLines));
-    snapTopLineToBound(screenTopLine);
-
-    screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
-    snapBotLineToBound(screenBotLine, tocLines);
-    screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
-    snapTopLineToBound(screenTopLine);
 }
