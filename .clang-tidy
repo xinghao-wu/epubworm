@@ -32,4 +32,5 @@ Checks: >
   -hicpp-braces-around-statements,
   -cppcoreguidelines-avoid-goto,
   -hicpp-avoid-goto,
-  -concurrency-mt-unsafe
+  -concurrency-mt-unsafe,
+  -readability-math-missing-parentheses
