@@ -476,6 +476,10 @@ std::tuple<Key, int, int> readRawInput() {
 exit_loop:
     seq.resize(i);
 
+    if (seq.size() == 0) {
+        return {'\033', 0, 0};
+    }
+
     if (seq == "[5~") return {specKey::pgUp, 0, 0};
     if (seq == "[6~") return {specKey::pgDown, 0, 0};
     if (seq == "[A") return {specKey::arrowUp, 0, 0};
@@ -765,9 +769,10 @@ void registerSigwinchHandler() {
 void tocDataToString(const TocData& data, std::string& str) {
     str += esc + blueFG;
     str += esc + bold;
-    str += "Table of Contents\n\n";
+    str += "Table of Contents";
     str += esc + resetFG;
     str += esc + resetBold;
+    str += "\n\n";
 
     for (const auto& navPoint : data) {
         str += navPoint.first + "\n\n";
@@ -776,12 +781,188 @@ void tocDataToString(const TocData& data, std::string& str) {
 
     str += esc + redFG;
     str += esc + bold;
-    str += "---\n";
+    str += "---";
     str += esc + resetFG;
     str += esc + resetBold;
+    str += '\n';
 }
 
 bool inTmuxSession() {
     const char* termProgram {std::getenv("TERM_PROGRAM")};
     return termProgram != nullptr && std::string_view{termProgram} == "tmux";
+}
+
+fs::path displayTOC(const fs::path& tocAbs, int desiredMaxLen) {
+    const TocData tocData {getTOC(tocAbs)};
+    winsize winInfo {};
+    std::string tocStr {};
+    int tocLines {};
+    int screenTopLine {};
+    int screenBotLine {};
+    setUpDisplayTOC(tocData, 0, desiredMaxLen, winInfo, tocStr,
+                    tocLines, screenTopLine, screenBotLine);
+
+    int selectedNavPointIndex {0};
+    std::cout << esc << hideCursor;
+
+    while (true) {
+        const std::size_t selectionBeginIndex {
+                findNth(tocStr, "\n\n", selectedNavPointIndex + 1) + 2};
+        std::size_t selectionEndIndex {};
+        if (selectedNavPointIndex == std::ssize(tocData) - 1) {
+            selectionEndIndex = tocStr.rfind('\n', tocStr.rfind('\n') - 1) - 1;
+        }
+        else {
+            selectionEndIndex =
+                    findNth(tocStr, "\n\n", selectedNavPointIndex + 2) - 1;
+        }
+        const int selectionBeginLine {
+                getOccurences<std::string_view>(std::string_view{tocStr}
+                .substr(0, selectionBeginIndex + 1), "\n") + 1};
+        const int selectionEndLine {
+                getOccurences<std::string_view>(std::string_view{tocStr}
+                .substr(0, selectionEndIndex + 1), "\n") + 1};
+
+        if (selectedNavPointIndex == 0) {
+            screenTopLine = 1;
+        }
+        screenTopLine = std::min(screenTopLine, selectionBeginLine);
+        screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
+        snapBotLineToBound(screenBotLine, tocLines);
+        if (selectedNavPointIndex == std::ssize(tocData) - 1) {
+            screenBotLine = tocLines;
+        }
+        screenBotLine = std::max(screenBotLine, selectionEndLine);
+        screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
+        snapTopLineToBound(screenTopLine);
+
+        std::size_t dispBeginIndex {};
+        if (screenTopLine == 1) {
+            dispBeginIndex = 0;
+        }
+        else {
+            dispBeginIndex = findNth(tocStr, "\n", screenTopLine - 1) + 1;
+        }
+        const std::size_t dispEndIndex {
+                findNth(tocStr, "\n", screenBotLine) - 1};
+
+        const std::string_view dispBeforeSelection {std::string_view{tocStr}
+                .substr(dispBeginIndex, selectionBeginIndex - dispBeginIndex)};
+        const std::string_view dispSelection {std::string_view{tocStr}
+                .substr(selectionBeginIndex,
+                        selectionEndIndex - selectionBeginIndex + 1)};
+        const std::string_view dispAfterSelection {std::string_view{tocStr}
+                .substr(selectionEndIndex + 1,
+                        dispEndIndex - selectionEndIndex)};
+
+        eraseScreen();
+        std::cout << dispBeforeSelection;
+        std::cout << esc << greenFG;
+        std::cout << esc << bold;
+        std::cout << dispSelection;
+        std::cout << esc << resetFG;
+        std::cout << esc << resetBold;
+        std::cout << dispAfterSelection;
+        std::cout << std::flush;
+
+        const double prog {static_cast<double>(screenTopLine) / tocLines};
+
+        while (true) {
+            std::tuple<Key, int, int> input {readRawInput()};
+            switch (std::get<0>(input)) {
+            case 't': case '\t': case 'q': case '\033':
+                std::cout << esc << showCursor;
+                return {};
+            case '\n':
+                std::cout << esc << showCursor;
+                return tocAbs.parent_path() /
+                        tocData.data()[selectedNavPointIndex].second;
+            case 'h': case 'b': case ctrlB:
+            case specKey::arrowLeft: case specKey::pgUp:
+                if (selectedNavPointIndex != 0) {
+                    selectedNavPointIndex -= winInfo.ws_row / 2;
+                    selectedNavPointIndex = std::max(selectedNavPointIndex, 0);
+                    goto redraw_screen;
+                }
+                break;
+            case 'l': case 'f': case ctrlF: case ' ':
+            case specKey::arrowRight: case specKey::pgDown:
+                if (selectedNavPointIndex != std::ssize(tocData) - 1) {
+                    selectedNavPointIndex += winInfo.ws_row / 2;
+                    selectedNavPointIndex = std::min(selectedNavPointIndex,
+                            static_cast<int>(tocData.size()) - 1);
+                    goto redraw_screen;
+                }
+                break;
+            case 'u': case ctrlU:
+                if (selectedNavPointIndex != 0) {
+                    selectedNavPointIndex -= winInfo.ws_row / 4;
+                    selectedNavPointIndex = std::max(selectedNavPointIndex, 0);
+                    goto redraw_screen;
+                }
+                break;
+            case 'd': case ctrlD:
+                if (selectedNavPointIndex != std::ssize(tocData) - 1) {
+                    selectedNavPointIndex += winInfo.ws_row / 4;
+                    selectedNavPointIndex = std::min(selectedNavPointIndex,
+                            static_cast<int>(tocData.size()) - 1);
+                    goto redraw_screen;
+                }
+                break;
+            case 'k': case specKey::arrowUp:
+                if (selectedNavPointIndex != 0) {
+                    --selectedNavPointIndex;
+                    goto redraw_screen;
+                }
+                break;
+            case 'j': case specKey::arrowDown:
+                if (selectedNavPointIndex != std::ssize(tocData) - 1) {
+                    ++selectedNavPointIndex;
+                    goto redraw_screen;
+                }
+                break;
+            case 'g': case specKey::home:
+                if (selectedNavPointIndex != 0) {
+                    selectedNavPointIndex = 0;
+                    goto redraw_screen;
+                }
+                break;
+            case 'G': case specKey::end:
+                if (selectedNavPointIndex != std::ssize(tocData) - 1) {
+                    selectedNavPointIndex =
+                            static_cast<int>(tocData.size() - 1);
+                    goto redraw_screen;
+                }
+                break;
+            case specKey::winResize:
+                setUpDisplayTOC(tocData, prog, desiredMaxLen, winInfo, tocStr,
+                                tocLines, screenTopLine, screenBotLine);
+                goto redraw_screen;
+            }
+        }
+redraw_screen:
+    }
+}
+
+void setUpDisplayTOC(const TocData& tocData, double prog,
+        int desiredMaxLen, winsize& winInfo, std::string& tocStr,
+        int& tocLines, int& screenTopLine, int& screenBotLine) {
+
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
+
+    tocStr.clear();
+    tocDataToString(tocData, tocStr);
+    const int maxLen {
+            std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col))};
+    processContentText(tocStr, maxLen);
+
+    tocLines = getOccurences<std::string_view>(tocStr, "\n");
+
+    screenTopLine = static_cast<int>(std::lround(prog * tocLines));
+    snapTopLineToBound(screenTopLine);
+
+    screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
+    snapBotLineToBound(screenBotLine, tocLines);
+    screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
+    snapTopLineToBound(screenTopLine);
 }

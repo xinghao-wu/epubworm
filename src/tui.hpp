@@ -279,3 +279,13 @@ void tocDataToString(const TocData& data, std::string& str);
 
 // checks `TERM_PROGRAM` env var for whether or not running in tmux session
 bool inTmuxSession();
+
+// in raw mode, create a tui interface to view `tocAbs`;
+// returns absolute path of selected chapter, or an empty path if user
+// exited without selecting one
+fs::path displayTOC(const fs::path& tocAbs, int desiredMaxLen);
+
+// helper for `displayTOC()`
+void setUpDisplayTOC(const TocData& tocData, double prog,
+        int desiredMaxLen, winsize& winInfo, std::string& tocStr,
+        int& tocLines, int& screenTopLine, int& screenBotLine);

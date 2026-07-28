@@ -377,4 +377,24 @@ namespace test {
         std::cout << "test::tocDataToString() success cases did not error, "
                      "verify correct table of content strings are shown\n";
     }
+
+    void displayTOC() {
+        ::useSystemLocale();
+        ::enableRawMode();
+
+        std::cout << esc << clearScreen;
+        fs::path mysteriesTOCOutput {
+                ::displayTOC(mysteriesRootAbs / "toc.ncx", 55)};
+        fs::path parasiteTOCOutput {
+                ::displayTOC(parasiteRootAbs / "OEBPS/toc.ncx", 55)};
+        eraseScreen();
+
+        std::cout << "test::displayTOC() no failure cases\n";
+        std::cout << "test::displayTOC() success cases require manual "
+                     "verification, a tui interface for mysteries' "
+                     "and parasite's TOCs should have been displayed.\n";
+
+        std::cout << "mysteries output: " << mysteriesTOCOutput << '\n';
+        std::cout << "parasite output: " << parasiteTOCOutput << '\n';
+    }
 }

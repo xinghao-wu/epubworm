@@ -52,4 +52,7 @@ namespace test {
     void displayChapter();
 
     void tocDataToString();
+
+    // also serves to test `setUpDisplayTOC()`
+    void displayTOC();
 }
