@@ -61,4 +61,6 @@ namespace test {
     void styleEachLineIndividually();
 
     void initConf ();
+
+    void initLibrary ();
 }

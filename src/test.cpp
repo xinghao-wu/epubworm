@@ -456,10 +456,20 @@ namespace test {
     void initConf () {
         std::cout << "test::initConf() no failure cases\n";
 
-        const fs::path mncConfAbs {dotConfigAbs / "conf.xml"};
+        const fs::path mncConfAbs {dotConfigAbs / "mnc/conf.xml"};
         ::initConf(mncConfAbs);
 
         std::cout << "test::initConf() success cases did not error, "
                      "check testing .config for correct conf file\n";
+    }
+
+    void initLibrary () {
+        std::cout << "test::initLibrary() no failure cases\n";
+
+        const fs::path mncLibraryAbs {shareAbs / "mnc/library.xml"};
+        ::initLibrary(mncLibraryAbs);
+
+        std::cout << "test::initLibrary() success cases did not error, "
+                     "check testing share for correct library file\n";
     }
 }
