@@ -59,4 +59,6 @@ namespace test {
     void displayEpub();
 
     void styleEachLineIndividually();
+
+    void initConf ();
 }

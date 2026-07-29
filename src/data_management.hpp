@@ -8,3 +8,6 @@ namespace fs = std::filesystem;
 // throws `std::runtime_error` for problematic `archiveAbs`;
 // throws `fs::filesystem_error` for problematic `destinationAbs`
 void unzip(const fs::path& archiveAbs, const fs::path& destinationAbs);
+
+// initialize a config xml file, writing the declaration and root elem `<conf>`
+void initConf(const fs::path& mncConfAbs);

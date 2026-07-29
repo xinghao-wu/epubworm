@@ -26,8 +26,8 @@ namespace test {
     const fs::path zuttomoRootAbs {epubsAbs / "zuttomo_vol_1_unzipped"};
 
     const fs::path xdgDirsAbs {projectRootAbs / ".testing_xdg_dirs"};
-    const fs::path cacheAbs {xdgDirsAbs / ".cache"};
-    const fs::path configAbs {xdgDirsAbs / ".config"};
+    const fs::path dotCacheAbs {xdgDirsAbs / ".cache"};
+    const fs::path dotConfigAbs {xdgDirsAbs / ".config"};
     const fs::path shareAbs {xdgDirsAbs / "share"};
 
     void unzip() {
@@ -451,5 +451,15 @@ namespace test {
         assert(str == "\033[1mfirst line\033[22m\n\033[1msec line\033[22mout");
 
         std::cout << "test::styleEachLineIndividually() success case passed\n";
+    }
+
+    void initConf () {
+        std::cout << "test::initConf() no failure cases\n";
+
+        const fs::path mncConfAbs {dotConfigAbs / "conf.xml"};
+        ::initConf(mncConfAbs);
+
+        std::cout << "test::initConf() success cases did not error, "
+                     "check testing .config for correct conf file\n";
     }
 }
