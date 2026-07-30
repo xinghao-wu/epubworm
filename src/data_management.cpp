@@ -34,3 +34,41 @@ void initLibrary(const fs::path& mncLibraryAbs) {
                 + XMLDocument::ErrorIDToName(mncLibrary.ErrorID())};
     }
 }
+
+ConfOpts readMncConf(const fs::path& mncConfAbs) {
+    XMLDocument mncConf {};
+    mncConf.LoadFile(mncConfAbs.c_str());
+
+    if (mncConf.Error()) {
+        throw std::runtime_error{mncConf.ErrorStr()};
+    }
+
+    XMLElement* const rootElem {mncConf.FirstChildElement("conf")};
+    if (rootElem == nullptr) {
+        throw std::runtime_error{"root element <conf> missing in config file"};
+    }
+
+    // write a default value for unfound options to support adding future
+    // conf options without making users edit config file every time
+    if (rootElem->FirstChildElement("line-length") == nullptr) {
+        rootElem->InsertEndChild(mncConf.NewElement("line-length"));
+    }
+
+    XMLElement* const lineLength {rootElem->FirstChildElement("line-length")};
+    if (lineLength->Attribute("chars") == nullptr) {
+        lineLength->SetAttribute("chars", 55);
+    }
+
+    int chars {0};
+    lineLength->QueryIntAttribute("chars", &chars);
+    if (chars <= 0) {
+        throw std::runtime_error{"conf option line-length has invalid value"};
+    }
+
+    if (mncConf.SaveFile(mncConfAbs.c_str()) != XML_SUCCESS) {
+        throw std::runtime_error{std::string{"error saving conf file: "}
+                + XMLDocument::ErrorIDToName(mncConf.ErrorID())};
+    }
+
+    return {chars};
+}

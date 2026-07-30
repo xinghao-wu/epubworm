@@ -63,4 +63,6 @@ namespace test {
     void initConf ();
 
     void initLibrary ();
+
+    void readMncConf();
 }

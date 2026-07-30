@@ -472,4 +472,14 @@ namespace test {
         std::cout << "test::initLibrary() success cases did not error, "
                      "check testing share for correct library file\n";
     }
+
+    void readMncConf() {
+        const fs::path mncConfAbs {dotConfigAbs / "mnc/conf.xml"};
+        const ConfOpts confOpts {::readMncConf(mncConfAbs)};
+
+        std::cout << "test::readMncConf() success cases and failure cases "
+                     "require manual verifications, change the config file "
+                     "in testing config to verify correct behavior in cases\n";
+        std::cout << "line-length chars: " << confOpts.lineLength << '\n';
+    }
 }
