@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Monocle (`mnc`) is a TUI epub reader in C++23. Source lives flat in `src/`; vendored libs (`tinyxml2`, `miniz_cpp.hpp`, `stb_image.hpp`, `base64.hpp`, `percent_encoding_decode.hpp`, `row_col_diacritics.hpp`) sit alongside project files.
+Monocle (`mnc`) is a TUI epub reader in C++23. Source lives flat in `src/`; vendored libs (`tinyxml2`, `miniz_cpp.hpp`, `stb_image.hpp`, `base64.hpp`) sit alongside project files.
 
 ## Build
 
