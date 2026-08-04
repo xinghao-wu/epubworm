@@ -2,8 +2,10 @@
 #include <cassert>
 #include <stdexcept>
 #include <iostream>
-#include <unistd.h>
 #include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 #include "tinyxml2.hpp"
 #include "data_management.hpp"
 #include "epub_parser.hpp"
@@ -336,9 +338,9 @@ namespace test {
         ::enableRawMode();
 
         std::cout << esc << clearScreen;
-        std::pair imgChapterOutput {::displayChapter(
+        const std::pair imgChapterOutput {::displayChapter(
                 spiceWolfRootAbs / "OEBPS/chap02.xhtml", 0, 55)};
-        std::pair textChapterOutput {::displayChapter(
+        const std::pair textChapterOutput {::displayChapter(
                 spiceWolfRootAbs / "OEBPS/chapter005.xhtml", 0.5, 55)};
         eraseScreen();
 
@@ -383,9 +385,9 @@ namespace test {
         ::enableRawMode();
 
         std::cout << esc << clearScreen;
-        fs::path mysteriesTOCOutput {::displayTOC(
+        const fs::path mysteriesTOCOutput {::displayTOC(
                 ::getTOC(mysteriesRootAbs / "toc.ncx"), 55, 100)};
-        fs::path parasiteTOCOutput {::displayTOC(
+        const fs::path parasiteTOCOutput {::displayTOC(
                 ::getTOC(parasiteRootAbs / "OEBPS/toc.ncx"), 55, 0)};
         eraseScreen();
 

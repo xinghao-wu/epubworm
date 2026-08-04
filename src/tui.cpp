@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <random>
 #include <fstream>
 #include <stdexcept>
@@ -6,10 +7,12 @@
 #include <string_view>
 #include <filesystem>
 #include <iostream>
+#include <locale>
 #include <thread>
 #include <chrono>
 #include <vector>
 #include <tuple>
+#include <utility>
 #include <cstdlib>
 #include <cwchar>
 #include <cmath>
@@ -19,10 +22,14 @@
 #include <cassert>
 #include <termios.h>
 #include <unistd.h>
+#include <wchar.h>
 #include <iconv.h>
 #include <asm-generic/ioctls.h>
+#include <signal.h>
+#include <sys/types.h>
 #include <sys/ioctl.h>
 #include <spawn.h>
+#include <stdlib.h>
 #include <sys/wait.h>
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
@@ -341,7 +348,7 @@ void wrapLines(std::string& str, int maxLen) {
             const std::wstring wideBeginToBreak {std::wstring_view{wideLine}
                     .substr(0, wideLineBreakIndex + 1)};
 
-            int beginToBreakLen {getVisualLen(wideBeginToBreak)};
+            const int beginToBreakLen {getVisualLen(wideBeginToBreak)};
             if (beginToBreakLen > maxLen + 1) {
                 break;
             }
@@ -388,7 +395,7 @@ void centerOnScreen(std::string& str, int maxLen) {
         }
 
         int contentWidth {};
-        std::string_view line {std::string_view{str}.substr(
+        const std::string_view line {std::string_view{str}.substr(
                 lineBeginIndex, lineEndIndex - lineBeginIndex + 1)};
 
         if (line.contains(imgCellPlaceholder)) {
@@ -400,7 +407,7 @@ void centerOnScreen(std::string& str, int maxLen) {
             contentWidth = maxLen;
         }
 
-        int paddingLen = (winInfo.ws_col - contentWidth) / 2;
+        const int paddingLen = (winInfo.ws_col - contentWidth) / 2;
         if (paddingLen <= 0) {
             continue;
         }
@@ -432,7 +439,7 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
                     utf8ToWide(std::string_view{str}.substr(
                     lineBeginIndex, lineEndIndex - lineBeginIndex + 1))};
 
-            int lineVisualLen {getVisualLen(wideLine)};
+            const int lineVisualLen {getVisualLen(wideLine)};
 
             const std::size_t paddingLen {
                     static_cast<std::size_t>((maxLen - lineVisualLen) / 2)};
@@ -476,7 +483,7 @@ std::tuple<Key, int, int> readRawInput() {
 exit_loop:
     seq.resize(i);
 
-    if (seq.size() == 0) {
+    if (seq.empty()) {
         return {'\033', 0, 0};
     }
 
@@ -752,8 +759,8 @@ void execute(const std::vector<std::string>& argV) {
     posixAPIArgV.push_back(nullptr);
 
     pid_t pid {};
-    int spawnStatus {posix_spawnp(&pid, posixAPIArgV.front(), nullptr,
-                                  nullptr, posixAPIArgV.data(), environ)};
+    const int spawnStatus {posix_spawnp(&pid, posixAPIArgV.front(), nullptr,
+            nullptr, posixAPIArgV.data(), environ)};
     if (spawnStatus != 0) {
         throw std::system_error{spawnStatus, std::generic_category(),
                                 "failed to spawn cmd: " + argV.front()};
@@ -994,8 +1001,9 @@ EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
     std::cout << esc << hideCursor;
     std::cout << esc << clearScreen;
     while (true) {
-        std::pair chapterOut {displayChapter(spineWithAbs[spineIndex],
-                                             chapterProg, desiredMaxLen)};
+        const std::pair chapterOut {
+                displayChapter(spineWithAbs[spineIndex],
+                               chapterProg, desiredMaxLen)};
         switch (chapterOut.first) {
         case ChapterExit::prev:
             if (spineIndex != 1) {
