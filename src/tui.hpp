@@ -1,40 +1,40 @@
 #pragma once
 
-#include <string>
-#include <string_view>
-#include <filesystem>
-#include <vector>
-#include <cstdint>
-#include <csignal>
-#include <sys/ioctl.h>
 #include "base64.hpp"
 #include "epub_parser.hpp"
+#include <csignal>
+#include <cstdint>
+#include <filesystem>
+#include <string>
+#include <string_view>
+#include <sys/ioctl.h>
+#include <vector>
 
 namespace fs = std::filesystem;
 
 using Key = std::int16_t;
 
 namespace specKey {
-    enum Values : Key {
-        // keyboard keys represented by esc seqs
-        arrowLeft = 1000, // don't conflict with normal 8 bit char values
-        arrowRight,
-        arrowUp,
-        arrowDown,
-        home,
-        end,
-        pgUp,
-        pgDown,
-        // mouse events
-        leftClickRelease,
-        rightClickRelease,
-        wheelUp,
-        wheelDown,
-        // signals
-        winResize,
-        // not recognized/supported
-        unknown,
-    };
+enum Values : Key {
+    // keyboard keys represented by esc seqs
+    arrowLeft = 1000, // don't conflict with normal 8 bit char values
+    arrowRight,
+    arrowUp,
+    arrowDown,
+    home,
+    end,
+    pgUp,
+    pgDown,
+    // mouse events
+    leftClickRelease,
+    rightClickRelease,
+    wheelUp,
+    wheelDown,
+    // signals
+    winResize,
+    // not recognized/supported
+    unknown,
+};
 }
 
 enum class ChapterExit {
@@ -45,38 +45,38 @@ enum class ChapterExit {
 };
 
 struct EpubProg {
-    fs::path chapterAbs {};
-    double chapterProg {};
+    fs::path chapterAbs{};
+    double chapterProg{};
 };
 
 extern volatile std::sig_atomic_t g_winResize;
 
-inline constexpr Key ctrlB {2};
-inline constexpr Key ctrlF {6};
-inline constexpr Key ctrlU {21};
-inline constexpr Key ctrlD {4};
-inline constexpr std::string esc {'\033'};
-inline constexpr std::string imgCellPlaceholder {"\U0010EEEE"};
+inline constexpr Key ctrlB{2};
+inline constexpr Key ctrlF{6};
+inline constexpr Key ctrlU{21};
+inline constexpr Key ctrlD{4};
+inline constexpr std::string esc{'\033'};
+inline constexpr std::string imgCellPlaceholder{"\U0010EEEE"};
 // don't forget to modify `getInvisEscSeqLen()` when you change constants below
-inline constexpr std::string escEnd {esc + '\\'};
-inline constexpr std::string clearScreen {"[2J"};
-inline constexpr std::string posCursorTopLeft {"[H"};
-inline constexpr std::string eraseLine {"[2K"};
-inline constexpr std::string hideCursor {"[?25l"};
-inline constexpr std::string showCursor {"[?25h"};
-inline constexpr std::string enableMouseEventReporting {"[?1003h"};
-inline constexpr std::string disableMouseEventReporting {"[?1003l"};
-inline constexpr std::string enableDecimalReportingFormat {"[?1006h"};
-inline constexpr std::string disableDecimalReportingFormat {"[?1006l"};
-inline constexpr std::string bold {"[1m"};
-inline constexpr std::string resetBold {"[22m"};
-inline constexpr std::string italic {"[3m"};
-inline constexpr std::string resetItalic {"[23m"};
-inline constexpr std::string yellowFG {"[33m"};
-inline constexpr std::string redFG {"[31m"};
-inline constexpr std::string greenFG {"[32m"};
-inline constexpr std::string blueFG {"[34m"};
-inline constexpr std::string resetFG {"[39m"};
+inline constexpr std::string escEnd{esc + '\\'};
+inline constexpr std::string clearScreen{"[2J"};
+inline constexpr std::string posCursorTopLeft{"[H"};
+inline constexpr std::string eraseLine{"[2K"};
+inline constexpr std::string hideCursor{"[?25l"};
+inline constexpr std::string showCursor{"[?25h"};
+inline constexpr std::string enableMouseEventReporting{"[?1003h"};
+inline constexpr std::string disableMouseEventReporting{"[?1003l"};
+inline constexpr std::string enableDecimalReportingFormat{"[?1006h"};
+inline constexpr std::string disableDecimalReportingFormat{"[?1006l"};
+inline constexpr std::string bold{"[1m"};
+inline constexpr std::string resetBold{"[22m"};
+inline constexpr std::string italic{"[3m"};
+inline constexpr std::string resetItalic{"[23m"};
+inline constexpr std::string yellowFG{"[33m"};
+inline constexpr std::string redFG{"[31m"};
+inline constexpr std::string greenFG{"[32m"};
+inline constexpr std::string blueFG{"[34m"};
+inline constexpr std::string resetFG{"[39m"};
 
 // load an image to the terminal (create a virtual placement)
 // to be displayed later using special unicode characters;
@@ -95,7 +95,7 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols);
 // appends unicode characters (the image) to `out`;
 //  `id` must be an integer between 1 and 2^24 - 1, inclusive;
 // throws `std::runtime_error` if `id` is not in valid range
-void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string &out);
+void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out);
 
 // using the kitty graphics protocol, display an image to the terminal;
 // appends unicode characters showing the image to `out`;
@@ -111,8 +111,8 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string &out);
 // throws `std::runtime_error` for bad `imgAbs`;
 // note: there's a bug on ghostty's end that images displayed on tmux panes on
 // the right side of the screen will be broken until tmux redraws the screen
-void displayImg(const fs::path& imgAbs, std::string& out,
-                int rows = 0, int cols = 0);
+void displayImg(const fs::path& imgAbs, std::string& out, int rows = 0,
+                int cols = 0);
 
 // constructs the appropriate graphics escape code of the kitty image protocol
 // to load an image (create a virtual placement) based on provided parameters
@@ -192,8 +192,8 @@ constexpr std::size_t findNth(std::string_view str, std::string_view target,
         return std::string_view::npos;
     }
 
-    std::size_t targetBeginIndex {startIndex};
-    int count {0};
+    std::size_t targetBeginIndex{startIndex};
+    int count{0};
 
     while ((targetBeginIndex = str.find(target, targetBeginIndex))
            != std::string_view::npos) {
@@ -209,7 +209,7 @@ constexpr std::size_t findNth(std::string_view str, std::string_view target,
 // in `str`, replace all occurences of `target` with `replacement`
 constexpr void findAndReplaceAll(std::string& str, std::string_view target,
                                  std::string_view replacement) {
-    std::size_t pos {str.find(target)};
+    std::size_t pos{str.find(target)};
     while (pos != std::string::npos) {
         str.replace(pos, target.size(), replacement);
         pos = str.find(target, pos + replacement.size());
@@ -228,8 +228,8 @@ constexpr void wrapForTmuxPassthrough(std::string& str) {
 // overlapping `target` occurences are not counted
 template <typename TStrView>
 constexpr int getOccurences(TStrView str, TStrView target) {
-    int count {0};
-    std::size_t pos {};
+    int count{0};
+    std::size_t pos{};
     while ((pos = str.find(target, pos)) != TStrView::npos) {
         ++count;
         pos += target.size();
@@ -248,13 +248,14 @@ void processContentText(std::string& str, int maxLen);
 // in raw mode, create a tui interface to view `chapterAbs`;
 // chapter displayed starting from `iniProg`, lines wrapped at `desiredMaxLen`;
 // returns reason for exit and progress at exit
-std::pair<ChapterExit, double> displayChapter(
-        const fs::path& chapterAbs, double iniProg, int desiredMaxLen);
+std::pair<ChapterExit, double>
+displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen);
 
 // helper for `displayChapter()`
 void setUpDisplayChapter(const fs::path& chapterAbs, double prog,
-        int desiredMaxLen, winsize& winInfo, std::string& chapter,
-        int& chapterLines, int& screenTopLine, int& screenBotLine);
+                         int desiredMaxLen, winsize& winInfo,
+                         std::string& chapter, int& chapterLines,
+                         int& screenTopLine, int& screenBotLine);
 
 // helper for `displayChapter()`
 void snapTopLineToBound(int& screenTopLine);
@@ -296,8 +297,8 @@ bool inTmuxSession();
 // returns relative path found in `tocData` of selected chapter,
 // or an empty path if user exited without selecting one;
 // throws `std::logic_error` if provided nav point index is out of bounds
-fs::path displayTOC(const TocData& tocData,
-                    int desiredMaxLen, int selectedNavPointIndex);
+fs::path displayTOC(const TocData& tocData, int desiredMaxLen,
+                    int selectedNavPointIndex);
 
 // helper for `displayTOC()`
 void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,

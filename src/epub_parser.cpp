@@ -1,20 +1,20 @@
+#include "epub_parser.hpp"
+#include "percent_encoding_decode.hpp"
+#include "tinyxml2.hpp"
+#include "tui.hpp"
 #include <filesystem>
 #include <stdexcept>
 #include <string>
 #include <string_view>
 #include <vector>
-#include "tinyxml2.hpp"
-#include "tui.hpp"
-#include "percent_encoding_decode.hpp"
-#include "epub_parser.hpp"
 
 using namespace tinyxml2;
 namespace fs = std::filesystem;
 
 fs::path getOPFRel(const fs::path& epubRootAbs) {
-    const fs::path containerAbs {epubRootAbs / "META-INF/container.xml"};
+    const fs::path containerAbs{epubRootAbs / "META-INF/container.xml"};
 
-    XMLDocument container {};
+    XMLDocument container{};
     container.LoadFile(containerAbs.c_str());
 
     if (container.Error()) {
@@ -22,9 +22,9 @@ fs::path getOPFRel(const fs::path& epubRootAbs) {
     }
 
     return container.FirstChildElement("container")
-                   ->FirstChildElement("rootfiles")
-                   ->FirstChildElement("rootfile")
-                   ->Attribute("full-path");
+            ->FirstChildElement("rootfiles")
+            ->FirstChildElement("rootfile")
+            ->Attribute("full-path");
 }
 
 const XMLElement* getMetadata(const XMLDocument& opf) {
@@ -40,8 +40,8 @@ std::string getAuthor(const XMLElement* metadata) {
 }
 
 const char* getHrefFromID(const XMLElement* manifest, std::string_view id) {
-    for (const XMLElement* item {manifest->FirstChildElement("item")};
-            item != nullptr; item = item->NextSiblingElement("item")) {
+    for (const XMLElement* item{manifest->FirstChildElement("item")};
+         item != nullptr; item = item->NextSiblingElement("item")) {
         if (item->Attribute("id") == id) {
             return item->Attribute("href");
         }
@@ -51,26 +51,26 @@ const char* getHrefFromID(const XMLElement* manifest, std::string_view id) {
 }
 
 std::vector<fs::path> getSpine(const XMLDocument& opf) {
-    const XMLElement* spine {opf.FirstChildElement("package")
-                               ->FirstChildElement("spine")};
-    const XMLElement* manifest {opf.FirstChildElement("package")
-                                  ->FirstChildElement("manifest")};
-    std::vector<fs::path> result {};
+    const XMLElement* spine{
+            opf.FirstChildElement("package")->FirstChildElement("spine")};
+    const XMLElement* manifest{
+            opf.FirstChildElement("package")->FirstChildElement("manifest")};
+    std::vector<fs::path> result{};
 
-    const char* tocID {spine->Attribute("toc")};
-    std::string tocHref {getHrefFromID(manifest, tocID)};
+    const char* tocID{spine->Attribute("toc")};
+    std::string tocHref{getHrefFromID(manifest, tocID)};
     decodePercentEncoding(tocHref);
     result.emplace_back(tocHref);
 
-    for (const XMLElement* itemref {spine->FirstChildElement("itemref")};
-            itemref != nullptr;
-            itemref = itemref->NextSiblingElement("itemref")) {
+    for (const XMLElement* itemref{spine->FirstChildElement("itemref")};
+         itemref != nullptr;
+         itemref = itemref->NextSiblingElement("itemref")) {
 
-        const char* idref {itemref->Attribute("idref")};
-        std::string href {getHrefFromID(manifest, idref)};
+        const char* idref{itemref->Attribute("idref")};
+        std::string href{getHrefFromID(manifest, idref)};
         decodePercentEncoding(href);
 
-        const char* linear {itemref->Attribute("linear")};
+        const char* linear{itemref->Attribute("linear")};
         if (linear != nullptr && std::string_view{linear} == "no") {
             continue;
         }
@@ -83,16 +83,16 @@ std::vector<fs::path> getSpine(const XMLDocument& opf) {
 
 void collectNavPoints(const XMLElement* parent, TocData& tocData,
                       const std::string& prefix) {
-    for (const XMLElement* navPoint {parent->FirstChildElement("navPoint")};
-            navPoint != nullptr;
-            navPoint = navPoint->NextSiblingElement("navPoint")) {
+    for (const XMLElement* navPoint{parent->FirstChildElement("navPoint")};
+         navPoint != nullptr;
+         navPoint = navPoint->NextSiblingElement("navPoint")) {
 
-        const char* name {navPoint->FirstChildElement("navLabel")
-                                  ->FirstChildElement("text")
-                                  ->GetText()};
+        const char* name{navPoint->FirstChildElement("navLabel")
+                                 ->FirstChildElement("text")
+                                 ->GetText()};
 
-        std::string srcFilePathRel {navPoint->FirstChildElement("content")
-                                            ->Attribute("src")};
+        std::string srcFilePathRel{
+                navPoint->FirstChildElement("content")->Attribute("src")};
         decodePercentEncoding(srcFilePathRel);
         if (srcFilePathRel.contains("#id")) {
             srcFilePathRel.resize(srcFilePathRel.find("#id"));
@@ -104,17 +104,17 @@ void collectNavPoints(const XMLElement* parent, TocData& tocData,
 }
 
 TocData getTOC(const fs::path& tocAbs) {
-    XMLDocument toc {};
+    XMLDocument toc{};
     toc.LoadFile(tocAbs.c_str());
 
     if (toc.Error()) {
         throw std::runtime_error{toc.ErrorStr()};
     }
 
-    const XMLElement* navMap {toc.FirstChildElement("ncx")
-                                ->FirstChildElement("navMap")};
+    const XMLElement* navMap{
+            toc.FirstChildElement("ncx")->FirstChildElement("navMap")};
 
-    TocData result {};
+    TocData result{};
     collectNavPoints(navMap, result);
 
     return result;
@@ -122,64 +122,57 @@ TocData getTOC(const fs::path& tocAbs) {
 
 void parseContentElem(const XMLElement* parent, std::string& out,
                       const fs::path& chapterAbs) {
-    for (const XMLNode* childNode {parent->FirstChild()};
-            childNode != nullptr; childNode = childNode->NextSibling()) {
+    for (const XMLNode* childNode{parent->FirstChild()}; childNode != nullptr;
+         childNode = childNode->NextSibling()) {
         if (const XMLText* childText = childNode->ToText()) {
             out += childText->Value();
         }
         if (const XMLElement* childElem = childNode->ToElement()) {
-            const std::string_view name {childElem->Name()};
+            const std::string_view name{childElem->Name()};
             if (name == "b" || name == "strong") {
                 out += esc + bold;
                 parseContentElem(childElem, out, chapterAbs);
                 out += esc + resetBold;
-            }
-            else if (name == "i" || name == "em") {
+            } else if (name == "i" || name == "em") {
                 out += esc + italic;
                 parseContentElem(childElem, out, chapterAbs);
                 out += esc + resetItalic;
-            }
-            else if (name == "br") {
+            } else if (name == "br") {
                 out += '\n';
-            }
-            else if (name == "h1" || name == "h2" || name == "h3"
-                     || name == "h4" || name == "h5" || name == "h6") {
+            } else if (name == "h1" || name == "h2" || name == "h3"
+                       || name == "h4" || name == "h5" || name == "h6") {
                 out += esc + bold;
                 out += esc + yellowFG;
                 parseContentElem(childElem, out, chapterAbs);
                 out += esc + resetBold;
                 out += esc + resetFG;
                 out += "\n\n";
-            }
-            else if (name == "p" || name == "li") {
+            } else if (name == "p" || name == "li") {
                 parseContentElem(childElem, out, chapterAbs);
                 out += "\n\n";
-            }
-            else if (name == "image" || name == "img") {
-                const std::string imgAttributeName {
+            } else if (name == "image" || name == "img") {
+                const std::string imgAttributeName{
                         (name == "image") ? "xlink:href" : "src"};
-                std::string imgPathAbs {chapterAbs.parent_path()
+                std::string imgPathAbs{
+                        chapterAbs.parent_path()
                         / childElem->Attribute(imgAttributeName.data())};
                 decodePercentEncoding(imgPathAbs);
 
                 try {
                     displayImg(imgPathAbs, out);
                     out += '\n';
-                }
-                catch (const std::runtime_error& e) {
+                } catch (const std::runtime_error& e) {
                     if (std::string_view{e.what()} == "Unable to open file") {
                         out += esc + bold;
                         out += "[image reference in epub "
                                "points to nonexistent file]";
                         out += esc + resetBold;
                         out += "\n\n";
-                    }
-                    else {
+                    } else {
                         throw;
                     }
                 }
-            }
-            else {
+            } else {
                 parseContentElem(childElem, out, chapterAbs);
             }
         }
@@ -187,15 +180,15 @@ void parseContentElem(const XMLElement* parent, std::string& out,
 }
 
 void parseChapter(const fs::path& chapterAbs, std::string& out) {
-    XMLDocument chapter {};
+    XMLDocument chapter{};
     chapter.LoadFile(chapterAbs.c_str());
 
     if (chapter.Error()) {
         throw std::runtime_error{chapter.ErrorStr()};
     }
 
-    const XMLElement* const body {chapter.FirstChildElement("html")
-                                        ->FirstChildElement("body")};
+    const XMLElement* const body{
+            chapter.FirstChildElement("html")->FirstChildElement("body")};
 
     parseContentElem(body, out, chapterAbs);
     out.pop_back(); // remove extraneous newline
@@ -208,17 +201,17 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
 }
 
 void dumpEpub(const fs::path& epubRootAbs, std::string& out) {
-    const fs::path opfAbs {epubRootAbs / getOPFRel(epubRootAbs)};
-    XMLDocument opf {};
+    const fs::path opfAbs{epubRootAbs / getOPFRel(epubRootAbs)};
+    XMLDocument opf{};
     opf.LoadFile(opfAbs.c_str());
 
     if (opf.Error()) {
         throw std::runtime_error{opf.ErrorStr()};
     }
 
-    const std::vector<fs::path> spine {getSpine(opf)};
+    const std::vector<fs::path> spine{getSpine(opf)};
 
-    for (int i {1}; i < std::ssize(spine); ++i) {
+    for (int i{1}; i < std::ssize(spine); ++i) {
         parseChapter(opfAbs.parent_path() / spine.data()[i], out);
     }
 }

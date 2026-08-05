@@ -1,72 +1,74 @@
-#include <algorithm>
-#include <random>
-#include <fstream>
-#include <stdexcept>
-#include <system_error>
-#include <string>
-#include <string_view>
-#include <filesystem>
-#include <iostream>
-#include <locale>
-#include <thread>
-#include <chrono>
-#include <vector>
-#include <tuple>
-#include <utility>
-#include <cstdlib>
-#include <cwchar>
-#include <cmath>
-#include <cerrno>
-#include <cstdint>
-#include <csignal>
-#include <cassert>
-#include <termios.h>
-#include <unistd.h>
-#include <wchar.h>
-#include <iconv.h>
-#include <asm-generic/ioctls.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <spawn.h>
-#include <stdlib.h>
-#include <sys/wait.h>
+#include "tui.hpp"
+#include "epub_parser.hpp"
+#include "row_col_diacritics.hpp"
+
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
 #include "stb_image.hpp"
-#include "row_col_diacritics.hpp"
-#include "epub_parser.hpp"
-#include "tui.hpp"
+
+#include <algorithm>
+#include <asm-generic/ioctls.h>
+#include <cassert>
+#include <cerrno>
+#include <chrono>
+#include <cmath>
+#include <csignal>
+#include <cstdint>
+#include <cstdlib>
+#include <cwchar>
+#include <filesystem>
+#include <fstream>
+#include <iconv.h>
+#include <iostream>
+#include <locale>
+#include <random>
+#include <signal.h>
+#include <spawn.h>
+#include <stdexcept>
+#include <stdlib.h>
+#include <string>
+#include <string_view>
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <system_error>
+#include <termios.h>
+#include <thread>
+#include <tuple>
+#include <unistd.h>
+#include <utility>
+#include <vector>
+#include <wchar.h>
 
 namespace fs = std::filesystem;
 
-static termios g_ogTermFlags {};
-volatile std::sig_atomic_t g_winResize {0};
+static termios g_ogTermFlags{};
+volatile std::sig_atomic_t g_winResize{0};
 
 void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     if (id == 0) {
         throw std::runtime_error{"image id not in valid range"};
     }
 
-    int xPixels {};
-    int yPixels {};
-    int channels {};
-    constexpr int noRequiredChannelNum {0};
+    int xPixels{};
+    int yPixels{};
+    int channels{};
+    constexpr int noRequiredChannelNum{0};
 
-    unsigned char* pixelData {stbi_load(imgAbs.c_str(), &xPixels, &yPixels,
-                                        &channels, noRequiredChannelNum)};
+    unsigned char* pixelData{stbi_load(imgAbs.c_str(), &xPixels, &yPixels,
+                                       &channels, noRequiredChannelNum)};
     if (pixelData == nullptr) {
         throw std::runtime_error{stbi_failure_reason()};
     }
 
-    const int pixelDataSize {xPixels * yPixels * channels};
-    const std::string_view pixelDataView {
+    const int pixelDataSize{xPixels * yPixels * channels};
+    const std::string_view pixelDataView{
             reinterpret_cast<const char*>(pixelData),
             static_cast<std::size_t>(pixelDataSize)};
 
-    const fs::path tempDataFileAbs {
+    const fs::path tempDataFileAbs{
             "/dev/shm/mnc-img-data-tty-graphics-protocol"};
-    std::ofstream tempDataFile {tempDataFileAbs};
+    std::ofstream tempDataFile{tempDataFileAbs};
     if (!tempDataFile.is_open()) {
         throw std::runtime_error{"image temp data file failed to open"};
     }
@@ -75,7 +77,7 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     tempDataFile.close();
     stbi_image_free(pixelData);
 
-    std::string graphicsEscCode {getGraphicsEscCode(
+    std::string graphicsEscCode{getGraphicsEscCode(
             tempDataFileAbs, channels, xPixels, yPixels, id, rows, cols)};
     if (inTmuxSession()) {
         wrapForTmuxPassthrough(graphicsEscCode);
@@ -88,17 +90,18 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out) {
         throw std::runtime_error{"image id not in valid range"};
     }
 
-    const std::uint32_t idRed {(id >> 16) & 255};
-    const std::uint32_t idGreen {(id >> 8) & 255};
-    const std::uint32_t idBlue {id & 255};
-    const std::string idInFG {"[38;2;" + std::to_string(idRed) + ';'
-            + std::to_string(idGreen) + ';' + std::to_string(idBlue) + 'm'};
+    const std::uint32_t idRed{(id >> 16) & 255};
+    const std::uint32_t idGreen{(id >> 8) & 255};
+    const std::uint32_t idBlue{id & 255};
+    const std::string idInFG{"[38;2;" + std::to_string(idRed) + ';'
+                             + std::to_string(idGreen) + ';'
+                             + std::to_string(idBlue) + 'm'};
 
-    for (int r {0}; r < rows; ++r) {
+    for (int r{0}; r < rows; ++r) {
         out += esc + idInFG;
         out += imgCellPlaceholder + rowColDiacritics.data()[r];
 
-        for (int c {1}; c < cols; ++c) {
+        for (int c{1}; c < cols; ++c) {
             out += imgCellPlaceholder;
         }
         out += esc + resetFG;
@@ -107,38 +110,39 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out) {
 }
 
 void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
-    constexpr std::uint32_t minID {1};
-    constexpr std::uint32_t maxID {(1 << 24) - 1};
+    constexpr std::uint32_t minID{1};
+    constexpr std::uint32_t maxID{(1 << 24) - 1};
 
-    static std::mt19937 s_rng {std::random_device{}()};
-    const std::uint32_t id {
-            std::uniform_int_distribution{minID, maxID}(s_rng)};
+    static std::mt19937 s_rng{std::random_device{}()};
+    const std::uint32_t id{std::uniform_int_distribution{minID, maxID}(s_rng)};
 
     if (rows == 0 || cols == 0) {
-        winsize winInfo {};
+        winsize winInfo{};
         ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
-        const int cellXPix {winInfo.ws_xpixel / winInfo.ws_col};
-        const int cellYPix {winInfo.ws_ypixel / winInfo.ws_row};
+        const int cellXPix{winInfo.ws_xpixel / winInfo.ws_col};
+        const int cellYPix{winInfo.ws_ypixel / winInfo.ws_row};
 
-        int imgXPix {};
-        int imgYPix {};
-        int imgChannels {};
+        int imgXPix{};
+        int imgYPix{};
+        int imgChannels{};
         stbi_info(imgAbs.c_str(), &imgXPix, &imgYPix, &imgChannels);
 
-        const int rowsDesired {(imgYPix / cellYPix) + 1};
-        const int colsDesired {(imgXPix / cellXPix) + 1};
+        const int rowsDesired{(imgYPix / cellYPix) + 1};
+        const int colsDesired{(imgXPix / cellXPix) + 1};
         rows = rowsDesired;
         cols = colsDesired;
 
         if (rowsDesired > winInfo.ws_row - 1) {
             rows = winInfo.ws_row - 1;
-            cols = static_cast<int>(static_cast<double>(rows)
-                                    / rowsDesired * cols) + 1;
+            cols = static_cast<int>(static_cast<double>(rows) / rowsDesired
+                                    * cols)
+                   + 1;
         }
         if (colsDesired > winInfo.ws_col) {
             cols = winInfo.ws_col;
-            rows = static_cast<int>(static_cast<double>(cols)
-                                    / colsDesired * rows) + 1;
+            rows = static_cast<int>(static_cast<double>(cols) / colsDesired
+                                    * rows)
+                   + 1;
         }
     }
     loadImg(imgAbs, id, rows, cols);
@@ -150,7 +154,7 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
 std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
                                int xPixels, int yPixels, std::uint32_t id,
                                int rows, int cols) {
-    std::string ctrlData {};
+    std::string ctrlData{};
     ctrlData += "f=" + std::to_string(channels * 8) + ',';
     ctrlData += "s=" + std::to_string(xPixels) + ',';
     ctrlData += "v=" + std::to_string(yPixels) + ',';
@@ -162,7 +166,7 @@ std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
     ctrlData += "a=T,";
     ctrlData += "q=2";
 
-    const std::string tempDataFileAbsEncoded {
+    const std::string tempDataFileAbsEncoded{
             base64::to_base64(tempDataFileAbs.string())};
 
     return esc + "_G" + ctrlData + ';' + tempDataFileAbsEncoded + escEnd;
@@ -188,7 +192,7 @@ void enableRawMode() {
                                  "at program exit"};
     }
 
-    termios rawTermFlags {g_ogTermFlags};
+    termios rawTermFlags{g_ogTermFlags};
     // disable echo and canonical mode
     rawTermFlags.c_lflag &= static_cast<unsigned int>(~(ECHO | ICANON));
     // let read() return 0 every 100ms when not receiving input
@@ -211,25 +215,25 @@ std::wstring utf8ToWide(std::string_view input) {
         return {};
     }
 
-    iconv_t convDescriptor {iconv_open("WCHAR_T", "UTF-8")};
+    iconv_t convDescriptor{iconv_open("WCHAR_T", "UTF-8")};
     // NOLINTNEXTLINE(performance-no-int-to-ptr)
     if (convDescriptor == reinterpret_cast<iconv_t>(-1)) {
         throw std::system_error{errno, std::generic_category(),
                                 "iconv_open failed"};
     }
 
-    char* inBuf {const_cast<char*>(input.data())};
-    std::size_t inBytesLeft {input.size()};
+    char* inBuf{const_cast<char*>(input.data())};
+    std::size_t inBytesLeft{input.size()};
 
-    std::wstring output {};
+    std::wstring output{};
     output.resize(input.size());
-    char* outBuf {reinterpret_cast<char*>(output.data())};
-    std::size_t outBytesLeft {output.size() * sizeof(wchar_t)};
+    char* outBuf{reinterpret_cast<char*>(output.data())};
+    std::size_t outBytesLeft{output.size() * sizeof(wchar_t)};
 
-    const std::size_t error {iconv(convDescriptor, &inBuf, &inBytesLeft,
-                                   &outBuf, &outBytesLeft)};
+    const std::size_t error{iconv(convDescriptor, &inBuf, &inBytesLeft,
+                                  &outBuf, &outBytesLeft)};
     if (error == static_cast<std::size_t>(-1)) {
-        const int err {errno};
+        const int err{errno};
         iconv_close(convDescriptor);
         throw std::system_error{err, std::generic_category(),
                                 "iconv conversion failed"};
@@ -237,8 +241,8 @@ std::wstring utf8ToWide(std::string_view input) {
 
     iconv_close(convDescriptor);
 
-    const std::size_t bytesWritten {(output.size() * sizeof(wchar_t))
-                                    - outBytesLeft};
+    const std::size_t bytesWritten{(output.size() * sizeof(wchar_t))
+                                   - outBytesLeft};
     output.resize(bytesWritten / sizeof(wchar_t));
 
     return output;
@@ -249,26 +253,26 @@ std::string wideToUTF8(std::wstring_view input) {
         return {};
     }
 
-    iconv_t convDescriptor {iconv_open("UTF-8", "WCHAR_T")};
+    iconv_t convDescriptor{iconv_open("UTF-8", "WCHAR_T")};
     // NOLINTNEXTLINE(performance-no-int-to-ptr)
     if (convDescriptor == reinterpret_cast<iconv_t>(-1)) {
         throw std::system_error{errno, std::generic_category(),
                                 "iconv_open failed"};
     }
 
-    char* inBuf {const_cast<char*>(
-                 reinterpret_cast<const char*>(input.data()))};
-    std::size_t inBytesLeft {input.size() * sizeof(wchar_t)};
+    char* inBuf{
+            const_cast<char*>(reinterpret_cast<const char*>(input.data()))};
+    std::size_t inBytesLeft{input.size() * sizeof(wchar_t)};
 
-    std::string output {};
+    std::string output{};
     output.resize(input.size() * sizeof(wchar_t));
-    char* outBuf {output.data()};
-    std::size_t outBytesLeft {output.size()};
+    char* outBuf{output.data()};
+    std::size_t outBytesLeft{output.size()};
 
-    const std::size_t error {iconv(convDescriptor, &inBuf, &inBytesLeft,
-                                   &outBuf, &outBytesLeft)};
+    const std::size_t error{iconv(convDescriptor, &inBuf, &inBytesLeft,
+                                  &outBuf, &outBytesLeft)};
     if (error == static_cast<std::size_t>(-1)) {
-        const int err {errno};
+        const int err{errno};
         iconv_close(convDescriptor);
         throw std::system_error{err, std::generic_category(),
                                 "iconv conversion failed"};
@@ -276,16 +280,16 @@ std::string wideToUTF8(std::wstring_view input) {
 
     iconv_close(convDescriptor);
 
-    const std::size_t bytesWritten {output.size() - outBytesLeft};
+    const std::size_t bytesWritten{output.size() - outBytesLeft};
     output.resize(bytesWritten);
 
     return output;
 }
 
 int getVisualLen(std::wstring_view str) {
-    int totalLen {0};
+    int totalLen{0};
     for (const auto& ch : str) {
-        int chLen {wcwidth(ch)};
+        int chLen{wcwidth(ch)};
         if (chLen == -1) {
             chLen = 0;
         }
@@ -296,7 +300,7 @@ int getVisualLen(std::wstring_view str) {
 }
 
 int getInvisEscSeqLen(std::wstring_view str) {
-    int totalLen {0};
+    int totalLen{0};
     totalLen += getOccurences<std::wstring_view>(str, L"\033\\") * 1;
     totalLen += getOccurences<std::wstring_view>(str, L"\033[2J") * 3;
     totalLen += getOccurences<std::wstring_view>(str, L"\033[H") * 2;
@@ -326,10 +330,10 @@ void useSystemLocale() {
 }
 
 void wrapLines(std::string& str, int maxLen) {
-    for (std::size_t lineBeginIndex {0}, lineEndIndex {str.find('\n')};
-            lineBeginIndex < str.size();
-            lineBeginIndex = lineEndIndex + 1,
-            lineEndIndex = str.find('\n', lineBeginIndex)) {
+    for (std::size_t lineBeginIndex{0}, lineEndIndex{str.find('\n')};
+         lineBeginIndex < str.size();
+         lineBeginIndex = lineEndIndex + 1,
+         lineEndIndex = str.find('\n', lineBeginIndex)) {
 
         if (lineEndIndex == lineBeginIndex) {
             continue;
@@ -338,17 +342,18 @@ void wrapLines(std::string& str, int maxLen) {
             lineEndIndex = str.size() - 1;
         }
 
-        const std::wstring wideLine {utf8ToWide(std::string_view{str}
-                .substr(lineBeginIndex, lineEndIndex - lineBeginIndex + 1))};
+        const std::wstring wideLine{utf8ToWide(std::string_view{str}.substr(
+                lineBeginIndex, lineEndIndex - lineBeginIndex + 1))};
 
-        bool lineDone {false};
-        std::size_t wideLineBreakIndex {};
+        bool lineDone{false};
+        std::size_t wideLineBreakIndex{};
         wideLineBreakIndex = wideLine.find_first_of(L" \n");
         while (wideLineBreakIndex != std::string::npos) {
-            const std::wstring wideBeginToBreak {std::wstring_view{wideLine}
-                    .substr(0, wideLineBreakIndex + 1)};
+            const std::wstring wideBeginToBreak{
+                    std::wstring_view{wideLine}.substr(0, wideLineBreakIndex
+                                                                  + 1)};
 
-            const int beginToBreakLen {getVisualLen(wideBeginToBreak)};
+            const int beginToBreakLen{getVisualLen(wideBeginToBreak)};
             if (beginToBreakLen > maxLen + 1) {
                 break;
             }
@@ -370,10 +375,11 @@ void wrapLines(std::string& str, int maxLen) {
             continue;
         }
 
-        const std::string beginToLineBreak {wideToUTF8(std::wstring_view{
-                wideLine}.substr(0, wideLineBreakIndex + 1))};
-        const std::size_t lineBreakIndex {
-                lineBeginIndex + beginToLineBreak.size() - 1};
+        const std::string beginToLineBreak{
+                wideToUTF8(std::wstring_view{wideLine}.substr(
+                        0, wideLineBreakIndex + 1))};
+        const std::size_t lineBreakIndex{lineBeginIndex
+                                         + beginToLineBreak.size() - 1};
 
         str.replace(lineBreakIndex, 1, "\n");
         lineEndIndex = lineBreakIndex;
@@ -381,29 +387,28 @@ void wrapLines(std::string& str, int maxLen) {
 }
 
 void centerOnScreen(std::string& str, int maxLen) {
-    winsize winInfo {};
+    winsize winInfo{};
     ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
-    for (std::size_t lineBeginIndex {0}; lineBeginIndex < str.size();
-            lineBeginIndex =
-                (str.find('\n', lineBeginIndex) == std::string::npos)
-                ? std::string::npos : str.find('\n', lineBeginIndex) + 1) {
+    for (std::size_t lineBeginIndex{0}; lineBeginIndex < str.size();
+         lineBeginIndex = (str.find('\n', lineBeginIndex) == std::string::npos)
+                                  ? std::string::npos
+                                  : str.find('\n', lineBeginIndex) + 1) {
 
-        const std::size_t lineEndIndex {str.find('\n', lineBeginIndex)};
+        const std::size_t lineEndIndex{str.find('\n', lineBeginIndex)};
         if (lineEndIndex == lineBeginIndex) {
             continue;
         }
 
-        int contentWidth {};
-        const std::string_view line {std::string_view{str}.substr(
+        int contentWidth{};
+        const std::string_view line{std::string_view{str}.substr(
                 lineBeginIndex, lineEndIndex - lineBeginIndex + 1)};
 
         if (line.contains(imgCellPlaceholder)) {
-            const int imgCols {
+            const int imgCols{
                     getOccurences<std::string_view>(line, imgCellPlaceholder)};
             contentWidth = imgCols;
-        }
-        else {
+        } else {
             contentWidth = maxLen;
         }
 
@@ -417,31 +422,34 @@ void centerOnScreen(std::string& str, int maxLen) {
 
 void centerJustify(std::string_view prefix, std::string_view postfix,
                    std::string& str, int maxLen) {
-    for (std::size_t specBeginIndex {str.find(prefix)},
-            specEndIndex {str.find(postfix, specBeginIndex + prefix.size())};
-            specBeginIndex != std::string::npos;
-            specBeginIndex = str.find(prefix, specEndIndex + postfix.size()),
-            specEndIndex = str.find(postfix, specBeginIndex + prefix.size())) {
+    for (std::size_t specBeginIndex{str.find(prefix)},
+         specEndIndex{str.find(postfix, specBeginIndex + prefix.size())};
+         specBeginIndex != std::string::npos;
+         specBeginIndex = str.find(prefix, specEndIndex + postfix.size()),
+         specEndIndex = str.find(postfix, specBeginIndex + prefix.size())) {
 
-        for (std::size_t lineBeginIndex {specBeginIndex},
-                lineEndIndex {str.find('\n', lineBeginIndex) > specEndIndex
-                    ? specEndIndex : str.find('\n', lineBeginIndex)};
-                lineBeginIndex <= specEndIndex;
-                lineBeginIndex = lineEndIndex + 1,
-                lineEndIndex = str.find('\n',lineBeginIndex) > specEndIndex
-                    ? specEndIndex : str.find('\n', lineBeginIndex)) {
+        for (std::size_t lineBeginIndex{specBeginIndex},
+             lineEndIndex{str.find('\n', lineBeginIndex) > specEndIndex
+                                  ? specEndIndex
+                                  : str.find('\n', lineBeginIndex)};
+             lineBeginIndex <= specEndIndex;
+             lineBeginIndex = lineEndIndex + 1,
+             lineEndIndex = str.find('\n', lineBeginIndex) > specEndIndex
+                                    ? specEndIndex
+                                    : str.find('\n', lineBeginIndex)) {
 
             if (lineEndIndex == lineBeginIndex) {
                 continue;
             }
 
-            const std::wstring wideLine {
+            const std::wstring wideLine{
                     utf8ToWide(std::string_view{str}.substr(
-                    lineBeginIndex, lineEndIndex - lineBeginIndex + 1))};
+                            lineBeginIndex,
+                            lineEndIndex - lineBeginIndex + 1))};
 
-            const int lineVisualLen {getVisualLen(wideLine)};
+            const int lineVisualLen{getVisualLen(wideLine)};
 
-            const std::size_t paddingLen {
+            const std::size_t paddingLen{
                     static_cast<std::size_t>((maxLen - lineVisualLen) / 2)};
 
             str.insert(lineBeginIndex, paddingLen, ' ');
@@ -452,8 +460,8 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
 }
 
 std::tuple<Key, int, int> readRawInput() {
-    ssize_t err {};
-    char startCh {};
+    ssize_t err{};
+    char startCh{};
     while ((err = read(STDIN_FILENO, &startCh, 1)) != 1 && g_winResize == 0) {
         if (err == -1 && errno != EAGAIN && errno != EINTR) {
             throw std::system_error{errno, std::generic_category(),
@@ -468,13 +476,20 @@ std::tuple<Key, int, int> readRawInput() {
         return {startCh, 0, 0};
     }
 
-    std::string seq {};
+    std::string seq{};
     seq.resize(100);
-    std::size_t i {0};
+    std::size_t i{0};
     while (read(STDIN_FILENO, &seq[i], 1) == 1) {
         switch (seq[i]) {
-        case '~': case 'A': case 'B': case 'C': case 'D':
-        case 'H': case 'F': case 'M': case 'm':
+        case '~':
+        case 'A':
+        case 'B':
+        case 'C':
+        case 'D':
+        case 'H':
+        case 'F':
+        case 'M':
+        case 'm':
             ++i;
             goto exit_loop;
         }
@@ -504,13 +519,15 @@ exit_loop:
         assert(seq.find_first_of("mM") == seq.size() - 1
                && "received incomplete or multiple mouse actions");
 
-        const std::size_t firstSemicolonIndex {findNth(seq, ";", 1)};
-        const std::size_t secSemicolonIndex {findNth(seq, ";", 2)};
-        const int action {std::stoi(seq.substr(2, firstSemicolonIndex - 2))};
-        const int col {std::stoi(seq.substr(firstSemicolonIndex + 1,
-                       secSemicolonIndex - firstSemicolonIndex - 1))};
-        const int row {std::stoi(seq.substr(secSemicolonIndex + 1,
-                       seq.find_first_of("mM") - secSemicolonIndex - 1))};
+        const std::size_t firstSemicolonIndex{findNth(seq, ";", 1)};
+        const std::size_t secSemicolonIndex{findNth(seq, ";", 2)};
+        const int action{std::stoi(seq.substr(2, firstSemicolonIndex - 2))};
+        const int col{std::stoi(
+                seq.substr(firstSemicolonIndex + 1,
+                           secSemicolonIndex - firstSemicolonIndex - 1))};
+        const int row{std::stoi(
+                seq.substr(secSemicolonIndex + 1,
+                           seq.find_first_of("mM") - secSemicolonIndex - 1))};
 
         if (seq.back() == 'm') {
             if (action == 0) return {specKey::leftClickRelease, row, col};
@@ -526,11 +543,11 @@ exit_loop:
 }
 
 void eraseScreen() {
-    winsize winInfo {};
+    winsize winInfo{};
     ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
     std::cout << esc << posCursorTopLeft;
-    for (int i {0}; i < winInfo.ws_row; ++i) {
+    for (int i{0}; i < winInfo.ws_row; ++i) {
         std::cout << esc << eraseLine;
         if (i < winInfo.ws_row - 1) {
             std::cout << '\n';
@@ -541,12 +558,12 @@ void eraseScreen() {
 
 void styleEachLineIndividually(std::string& str, std::string_view style,
                                std::string_view resetStyle) {
-    std::size_t styleBeginIndex {str.find(style)};
-    std::size_t styleEndIndex {
+    std::size_t styleBeginIndex{str.find(style)};
+    std::size_t styleEndIndex{
             str.find(resetStyle, styleBeginIndex + style.size())
             + resetStyle.size() - 1};
     while (styleBeginIndex != std::string::npos) {
-        std::size_t styleNewlineIndex {str.find('\n', styleBeginIndex)};
+        std::size_t styleNewlineIndex{str.find('\n', styleBeginIndex)};
         while (styleNewlineIndex < styleEndIndex) {
             str.insert(styleNewlineIndex, resetStyle);
             styleNewlineIndex += resetStyle.size();
@@ -578,28 +595,27 @@ void processContentText(std::string& str, int maxLen) {
     styleEachLineIndividually(str, esc + blueFG, esc + resetFG);
 }
 
-std::pair<ChapterExit, double> displayChapter(
-        const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
-    winsize winInfo {};
-    std::string chapter {};
-    int chapterLines {};
-    int screenTopLine {};
-    int screenBotLine {};
+std::pair<ChapterExit, double>
+displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
+    winsize winInfo{};
+    std::string chapter{};
+    int chapterLines{};
+    int screenTopLine{};
+    int screenBotLine{};
     setUpDisplayChapter(chapterAbs, iniProg, desiredMaxLen, winInfo, chapter,
                         chapterLines, screenTopLine, screenBotLine);
 
     while (true) {
-        std::size_t dispBeginIndex {};
+        std::size_t dispBeginIndex{};
         if (screenTopLine == 1) {
             dispBeginIndex = 0;
-        }
-        else {
+        } else {
             dispBeginIndex = findNth(chapter, "\n", screenTopLine - 1) + 1;
         }
-        const std::size_t dispEndIndex {
-                findNth(chapter, "\n", screenBotLine) - 1};
-        const std::string_view dispView {std::string_view{chapter}
-                .substr(dispBeginIndex, dispEndIndex - dispBeginIndex + 1)};
+        const std::size_t dispEndIndex{findNth(chapter, "\n", screenBotLine)
+                                       - 1};
+        const std::string_view dispView{std::string_view{chapter}.substr(
+                dispBeginIndex, dispEndIndex - dispBeginIndex + 1)};
 
         eraseScreen();
         std::cout << dispView << std::flush;
@@ -608,27 +624,30 @@ std::pair<ChapterExit, double> displayChapter(
             execute(std::vector<std::string>{"tmux", "refresh-client"});
         }
 
-        const double prog {static_cast<double>(screenTopLine) / chapterLines};
+        const double prog{static_cast<double>(screenTopLine) / chapterLines};
 
         while (true) {
-            std::tuple<Key, int, int> input {readRawInput()};
-            Key translatedInputKey {std::get<0>(input)};
+            std::tuple<Key, int, int> input{readRawInput()};
+            Key translatedInputKey{std::get<0>(input)};
             if (translatedInputKey == specKey::leftClickRelease) {
                 if (std::get<2>(input) <= winInfo.ws_col / 2) {
                     translatedInputKey = 'h';
-                }
-                else {
+                } else {
                     translatedInputKey = 'l';
                 }
             }
 
             switch (translatedInputKey) {
-            case 't': case '\t':
+            case 't':
+            case '\t':
                 return {ChapterExit::toc, prog};
             case 'q':
                 return {ChapterExit::quit, prog};
-            case 'h': case 'b': case ctrlB:
-            case specKey::arrowLeft: case specKey::pgUp:
+            case 'h':
+            case 'b':
+            case ctrlB:
+            case specKey::arrowLeft:
+            case specKey::pgUp:
                 if (screenTopLine == 1) {
                     return {ChapterExit::prev, prog};
                 }
@@ -637,8 +656,12 @@ std::pair<ChapterExit, double> displayChapter(
                 screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
                 snapBotLineToBound(screenBotLine, chapterLines);
                 goto redraw_screen;
-            case 'l': case 'f': case ctrlF: case ' ':
-            case specKey::arrowRight: case specKey::pgDown:
+            case 'l':
+            case 'f':
+            case ctrlF:
+            case ' ':
+            case specKey::arrowRight:
+            case specKey::pgDown:
                 if (screenBotLine == chapterLines) {
                     return {ChapterExit::next, prog};
                 }
@@ -647,7 +670,8 @@ std::pair<ChapterExit, double> displayChapter(
                 screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
                 snapTopLineToBound(screenTopLine);
                 goto redraw_screen;
-            case 'u': case ctrlU:
+            case 'u':
+            case ctrlU:
                 if (screenTopLine == 1) {
                     return {ChapterExit::prev, prog};
                 }
@@ -656,7 +680,8 @@ std::pair<ChapterExit, double> displayChapter(
                 screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
                 snapBotLineToBound(screenBotLine, chapterLines);
                 goto redraw_screen;
-            case 'd': case ctrlD:
+            case 'd':
+            case ctrlD:
                 if (screenBotLine == chapterLines) {
                     return {ChapterExit::next, prog};
                 }
@@ -665,21 +690,26 @@ std::pair<ChapterExit, double> displayChapter(
                 screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
                 snapTopLineToBound(screenTopLine);
                 goto redraw_screen;
-            case 'k': case specKey::arrowUp: case specKey::wheelUp:
+            case 'k':
+            case specKey::arrowUp:
+            case specKey::wheelUp:
                 if (screenTopLine == 1) {
                     return {ChapterExit::prev, prog};
                 }
                 --screenTopLine;
                 --screenBotLine;
                 goto redraw_screen;
-            case 'j': case specKey::arrowDown: case specKey::wheelDown:
+            case 'j':
+            case specKey::arrowDown:
+            case specKey::wheelDown:
                 if (screenBotLine == chapterLines) {
                     return {ChapterExit::next, prog};
                 }
                 ++screenTopLine;
                 ++screenBotLine;
                 goto redraw_screen;
-            case 'g': case specKey::home:
+            case 'g':
+            case specKey::home:
                 if (screenTopLine != 1) {
                     screenTopLine = 1;
                     screenBotLine =
@@ -688,7 +718,8 @@ std::pair<ChapterExit, double> displayChapter(
                     goto redraw_screen;
                 }
                 break;
-            case 'G': case specKey::end:
+            case 'G':
+            case specKey::end:
                 if (screenBotLine != chapterLines) {
                     screenBotLine = chapterLines;
                     screenTopLine =
@@ -699,7 +730,8 @@ std::pair<ChapterExit, double> displayChapter(
                 break;
             case specKey::winResize:
                 setUpDisplayChapter(chapterAbs, prog, desiredMaxLen, winInfo,
-                        chapter, chapterLines, screenTopLine, screenBotLine);
+                                    chapter, chapterLines, screenTopLine,
+                                    screenBotLine);
                 goto redraw_screen;
             }
         }
@@ -708,14 +740,15 @@ redraw_screen:
 }
 
 void setUpDisplayChapter(const fs::path& chapterAbs, double prog,
-        int desiredMaxLen, winsize& winInfo, std::string& chapter,
-        int& chapterLines, int& screenTopLine, int& screenBotLine) {
+                         int desiredMaxLen, winsize& winInfo,
+                         std::string& chapter, int& chapterLines,
+                         int& screenTopLine, int& screenBotLine) {
 
     ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
     chapter.clear();
     parseChapter(chapterAbs, chapter);
-    const int maxLen {
+    const int maxLen{
             std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col))};
     processContentText(chapter, maxLen);
 
@@ -751,22 +784,22 @@ void execute(const std::vector<std::string>& argV) {
         throw std::invalid_argument{"execute() cmd cannot be empty"};
     }
 
-    std::vector<char*> posixAPIArgV {};
+    std::vector<char*> posixAPIArgV{};
     posixAPIArgV.reserve(argV.size() + 1);
     for (const auto& arg : argV) {
         posixAPIArgV.push_back(const_cast<char*>(arg.c_str()));
     }
     posixAPIArgV.push_back(nullptr);
 
-    pid_t pid {};
-    const int spawnStatus {posix_spawnp(&pid, posixAPIArgV.front(), nullptr,
-            nullptr, posixAPIArgV.data(), environ)};
+    pid_t pid{};
+    const int spawnStatus{posix_spawnp(&pid, posixAPIArgV.front(), nullptr,
+                                       nullptr, posixAPIArgV.data(), environ)};
     if (spawnStatus != 0) {
         throw std::system_error{spawnStatus, std::generic_category(),
                                 "failed to spawn cmd: " + argV.front()};
     }
 
-    int waitStatus {};
+    int waitStatus{};
     while (waitpid(pid, &waitStatus, 0) == -1) {
         if (errno != EAGAIN && errno != EINTR) {
             throw std::system_error{errno, std::generic_category(),
@@ -783,10 +816,10 @@ extern "C" void handleSigwinch([[maybe_unused]] int signal) {
 }
 
 void registerSigwinchHandler() {
-    struct sigaction sigAct {};
+    struct sigaction sigAct{};
     sigAct.sa_handler = handleSigwinch;
-    sigemptyset(&sigAct.sa_mask);       // block no other signals when handling
-    sigAct.sa_flags = SA_RESTART;       // restart interrupted system calls
+    sigemptyset(&sigAct.sa_mask); // block no other signals when handling
+    sigAct.sa_flags = SA_RESTART; // restart interrupted system calls
 
     if (sigaction(SIGWINCH, &sigAct, nullptr) == -1) {
         throw std::runtime_error{"failed to register SIGWINCH handler"};
@@ -815,15 +848,15 @@ void tocDataToString(const TocData& data, std::string& str) {
 }
 
 bool inTmuxSession() {
-    const char* termProgram {std::getenv("TERM_PROGRAM")};
+    const char* termProgram{std::getenv("TERM_PROGRAM")};
     return termProgram != nullptr && std::string_view{termProgram} == "tmux";
 }
 
-fs::path displayTOC(const TocData& tocData,
-                    int desiredMaxLen, int selectedNavPointIndex) {
-    winsize winInfo {};
-    std::string tocStr {};
-    int tocLines {};
+fs::path displayTOC(const TocData& tocData, int desiredMaxLen,
+                    int selectedNavPointIndex) {
+    winsize winInfo{};
+    std::string tocStr{};
+    int tocLines{};
     setUpDisplayTOC(tocData, desiredMaxLen, winInfo, tocStr, tocLines);
 
     while (true) {
@@ -831,50 +864,55 @@ fs::path displayTOC(const TocData& tocData,
             throw std::logic_error{"selected nav point out of bounds"};
         }
 
-        const std::size_t selectionBeginIndex {
+        const std::size_t selectionBeginIndex{
                 findNth(tocStr, "\n\n", selectedNavPointIndex + 1) + 2};
-        std::size_t selectionEndIndex {};
+        std::size_t selectionEndIndex{};
         if (selectedNavPointIndex == std::ssize(tocData) - 1) {
             selectionEndIndex = tocStr.rfind('\n', tocStr.rfind('\n') - 1) - 1;
-        }
-        else {
+        } else {
             selectionEndIndex =
                     findNth(tocStr, "\n\n", selectedNavPointIndex + 2) - 1;
         }
-        const int selectionBeginLine {
-                getOccurences<std::string_view>(std::string_view{tocStr}
-                .substr(0, selectionBeginIndex + 1), "\n") + 1};
-        const int selectionEndLine {
-                getOccurences<std::string_view>(std::string_view{tocStr}
-                .substr(0, selectionEndIndex + 1), "\n") + 1};
-        const int selectionLines {selectionEndLine - selectionBeginLine + 1};
-        const int nonSelectionLines {winInfo.ws_row - selectionLines};
+        const int selectionBeginLine{
+                getOccurences<std::string_view>(
+                        std::string_view{tocStr}.substr(0, selectionBeginIndex
+                                                                   + 1),
+                        "\n")
+                + 1};
+        const int selectionEndLine{getOccurences<std::string_view>(
+                                           std::string_view{tocStr}.substr(
+                                                   0, selectionEndIndex + 1),
+                                           "\n")
+                                   + 1};
+        const int selectionLines{selectionEndLine - selectionBeginLine + 1};
+        const int nonSelectionLines{winInfo.ws_row - selectionLines};
 
-        int screenTopLine {selectionBeginLine - nonSelectionLines / 2};
+        int screenTopLine{selectionBeginLine - nonSelectionLines / 2};
         snapTopLineToBound(screenTopLine);
-        int screenBotLine {calcBotLineFromTopLine(screenTopLine, winInfo)};
+        int screenBotLine{calcBotLineFromTopLine(screenTopLine, winInfo)};
         snapBotLineToBound(screenBotLine, tocLines);
         screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
         snapTopLineToBound(screenTopLine);
 
-        std::size_t dispBeginIndex {};
+        std::size_t dispBeginIndex{};
         if (screenTopLine == 1) {
             dispBeginIndex = 0;
-        }
-        else {
+        } else {
             dispBeginIndex = findNth(tocStr, "\n", screenTopLine - 1) + 1;
         }
-        const std::size_t dispEndIndex {
-                findNth(tocStr, "\n", screenBotLine) - 1};
+        const std::size_t dispEndIndex{findNth(tocStr, "\n", screenBotLine)
+                                       - 1};
 
-        const std::string_view dispBeforeSelection {std::string_view{tocStr}
-                .substr(dispBeginIndex, selectionBeginIndex - dispBeginIndex)};
-        const std::string_view dispSelection {std::string_view{tocStr}
-                .substr(selectionBeginIndex,
-                        selectionEndIndex - selectionBeginIndex + 1)};
-        const std::string_view dispAfterSelection {std::string_view{tocStr}
-                .substr(selectionEndIndex + 1,
-                        dispEndIndex - selectionEndIndex)};
+        const std::string_view dispBeforeSelection{
+                std::string_view{tocStr}.substr(
+                        dispBeginIndex, selectionBeginIndex - dispBeginIndex)};
+        const std::string_view dispSelection{std::string_view{tocStr}.substr(
+                selectionBeginIndex,
+                selectionEndIndex - selectionBeginIndex + 1)};
+        const std::string_view dispAfterSelection{
+                std::string_view{tocStr}.substr(selectionEndIndex + 1,
+                                                dispEndIndex
+                                                        - selectionEndIndex)};
 
         eraseScreen();
         std::cout << dispBeforeSelection;
@@ -887,63 +925,81 @@ fs::path displayTOC(const TocData& tocData,
         std::cout << std::flush;
 
         while (true) {
-            std::tuple<Key, int, int> input {readRawInput()};
+            std::tuple<Key, int, int> input{readRawInput()};
             switch (std::get<0>(input)) {
-            case 't': case '\t': case 'q': case '\033':
+            case 't':
+            case '\t':
+            case 'q':
+            case '\033':
                 return {};
             case '\n':
                 return tocData.data()[selectedNavPointIndex].second;
-            case 'h': case 'b': case ctrlB:
-            case specKey::arrowLeft: case specKey::pgUp:
+            case 'h':
+            case 'b':
+            case ctrlB:
+            case specKey::arrowLeft:
+            case specKey::pgUp:
                 if (selectedNavPointIndex != 0) {
                     selectedNavPointIndex -= winInfo.ws_row / 2;
                     selectedNavPointIndex = std::max(selectedNavPointIndex, 0);
                     goto redraw_screen;
                 }
                 break;
-            case 'l': case 'f': case ctrlF: case ' ':
-            case specKey::arrowRight: case specKey::pgDown:
+            case 'l':
+            case 'f':
+            case ctrlF:
+            case ' ':
+            case specKey::arrowRight:
+            case specKey::pgDown:
                 if (selectedNavPointIndex != std::ssize(tocData) - 1) {
                     selectedNavPointIndex += winInfo.ws_row / 2;
-                    selectedNavPointIndex = std::min(selectedNavPointIndex,
-                            static_cast<int>(tocData.size()) - 1);
+                    selectedNavPointIndex =
+                            std::min(selectedNavPointIndex,
+                                     static_cast<int>(tocData.size()) - 1);
                     goto redraw_screen;
                 }
                 break;
-            case 'u': case ctrlU:
+            case 'u':
+            case ctrlU:
                 if (selectedNavPointIndex != 0) {
                     selectedNavPointIndex -= winInfo.ws_row / 4;
                     selectedNavPointIndex = std::max(selectedNavPointIndex, 0);
                     goto redraw_screen;
                 }
                 break;
-            case 'd': case ctrlD:
+            case 'd':
+            case ctrlD:
                 if (selectedNavPointIndex != std::ssize(tocData) - 1) {
                     selectedNavPointIndex += winInfo.ws_row / 4;
-                    selectedNavPointIndex = std::min(selectedNavPointIndex,
-                            static_cast<int>(tocData.size()) - 1);
+                    selectedNavPointIndex =
+                            std::min(selectedNavPointIndex,
+                                     static_cast<int>(tocData.size()) - 1);
                     goto redraw_screen;
                 }
                 break;
-            case 'k': case specKey::arrowUp:
+            case 'k':
+            case specKey::arrowUp:
                 if (selectedNavPointIndex != 0) {
                     --selectedNavPointIndex;
                     goto redraw_screen;
                 }
                 break;
-            case 'j': case specKey::arrowDown:
+            case 'j':
+            case specKey::arrowDown:
                 if (selectedNavPointIndex != std::ssize(tocData) - 1) {
                     ++selectedNavPointIndex;
                     goto redraw_screen;
                 }
                 break;
-            case 'g': case specKey::home:
+            case 'g':
+            case specKey::home:
                 if (selectedNavPointIndex != 0) {
                     selectedNavPointIndex = 0;
                     goto redraw_screen;
                 }
                 break;
-            case 'G': case specKey::end:
+            case 'G':
+            case specKey::end:
                 if (selectedNavPointIndex != std::ssize(tocData) - 1) {
                     selectedNavPointIndex =
                             static_cast<int>(tocData.size() - 1);
@@ -951,8 +1007,8 @@ fs::path displayTOC(const TocData& tocData,
                 }
                 break;
             case specKey::winResize:
-                setUpDisplayTOC(tocData, desiredMaxLen,
-                                winInfo, tocStr, tocLines);
+                setUpDisplayTOC(tocData, desiredMaxLen, winInfo, tocStr,
+                                tocLines);
                 goto redraw_screen;
             }
         }
@@ -966,7 +1022,7 @@ void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
 
     tocStr.clear();
     tocDataToString(tocData, tocStr);
-    const int maxLen {
+    const int maxLen{
             std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col))};
     processContentText(tocStr, maxLen);
 
@@ -975,42 +1031,40 @@ void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
 
 EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
                      int desiredMaxLen) {
-    const fs::path opfAbs {epubRootAbs / getOPFRel(epubRootAbs)};
-    XMLDocument opf {};
+    const fs::path opfAbs{epubRootAbs / getOPFRel(epubRootAbs)};
+    XMLDocument opf{};
     opf.LoadFile(opfAbs.c_str());
     if (opf.Error()) {
         throw std::runtime_error{opf.ErrorStr()};
     }
 
-    std::vector spineWithAbs {getSpine(opf)};
+    std::vector spineWithAbs{getSpine(opf)};
     for (auto& rel : spineWithAbs) {
         rel = opfAbs.parent_path() / rel;
     }
 
-    TocData tocDataWithAbs {getTOC(spineWithAbs[0])};
+    TocData tocDataWithAbs{getTOC(spineWithAbs[0])};
     for (auto& pair : tocDataWithAbs) {
         pair.second = spineWithAbs[0].parent_path() / pair.second;
     }
 
-    std::size_t spineIndex {1};
+    std::size_t spineIndex{1};
     while (spineWithAbs[spineIndex] != iniProg.chapterAbs) {
         ++spineIndex;
     }
-    double chapterProg {iniProg.chapterProg};
+    double chapterProg{iniProg.chapterProg};
 
     std::cout << esc << hideCursor;
     std::cout << esc << clearScreen;
     while (true) {
-        const std::pair chapterOut {
-                displayChapter(spineWithAbs[spineIndex],
-                               chapterProg, desiredMaxLen)};
+        const std::pair chapterOut{displayChapter(spineWithAbs[spineIndex],
+                                                  chapterProg, desiredMaxLen)};
         switch (chapterOut.first) {
         case ChapterExit::prev:
             if (spineIndex != 1) {
                 --spineIndex;
                 chapterProg = 1;
-            }
-            else {
+            } else {
                 chapterProg = 0;
             }
             break;
@@ -1018,40 +1072,38 @@ EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
             if (spineIndex != spineWithAbs.size() - 1) {
                 ++spineIndex;
                 chapterProg = 0;
-            }
-            else {
+            } else {
                 chapterProg = 1;
             }
             break;
-        case ChapterExit::toc:
-            {
-                int iniNavPointIndex {0};
-                for (int i {static_cast<int>(spineIndex)}; i >= 1; --i) {
-                    for (int j {0}; j < std::ssize(tocDataWithAbs); ++j) {
-                        if (spineWithAbs.data()[i]
-                                == tocDataWithAbs.data()[j].second) {
-                            iniNavPointIndex = j;
-                            goto exit_nested_loops;
-                        }
+        case ChapterExit::toc: {
+            int iniNavPointIndex{0};
+            for (int i{static_cast<int>(spineIndex)}; i >= 1; --i) {
+                for (int j{0}; j < std::ssize(tocDataWithAbs); ++j) {
+                    if (spineWithAbs.data()[i]
+                        == tocDataWithAbs.data()[j].second) {
+                        iniNavPointIndex = j;
+                        goto exit_nested_loops;
                     }
                 }
-exit_nested_loops:
-                const fs::path tocOut {displayTOC(tocDataWithAbs,
-                                       desiredMaxLen, iniNavPointIndex)};
-                bool found {false};
-                for (int i {1}; i < std::ssize(spineWithAbs); ++i) {
-                    if (spineWithAbs.data()[i] == tocOut) {
-                        found = true;
-                        spineIndex = static_cast<std::size_t>(i);
-                        chapterProg = 0;
-                        break;
-                    }
-                }
-                if (!found) {
-                    chapterProg = chapterOut.second;
-                }
-                break;
             }
+exit_nested_loops:
+            const fs::path tocOut{displayTOC(tocDataWithAbs, desiredMaxLen,
+                                             iniNavPointIndex)};
+            bool found{false};
+            for (int i{1}; i < std::ssize(spineWithAbs); ++i) {
+                if (spineWithAbs.data()[i] == tocOut) {
+                    found = true;
+                    spineIndex = static_cast<std::size_t>(i);
+                    chapterProg = 0;
+                    break;
+                }
+            }
+            if (!found) {
+                chapterProg = chapterOut.second;
+            }
+            break;
+        }
         case ChapterExit::quit:
             eraseScreen();
             std::cout << esc << showCursor;

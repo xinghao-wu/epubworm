@@ -5,7 +5,7 @@
 namespace fs = std::filesystem;
 
 struct ConfOpts {
-    int lineLength {55};
+    int lineLength{55};
 };
 
 // extracts zipped archive to `destinationAbs`, creating directories as needed;

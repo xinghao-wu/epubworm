@@ -1,68 +1,68 @@
 #pragma once
 
 namespace test {
-    void unzip();
+void unzip();
 
-    void getOPFRel();
+void getOPFRel();
 
-    void getMetadata();
+void getMetadata();
 
-    void getTitle();
+void getTitle();
 
-    void getAuthor();
+void getAuthor();
 
-    void findAndReplaceAll();
+void findAndReplaceAll();
 
-    void wrapForTmuxPassthrough();
+void wrapForTmuxPassthrough();
 
-    // also serves to test `loadImg()`, `displayLoadedImg()`,
-    //  `getGraphicsEscCode()`
-    void displayImg();
+// also serves to test `loadImg()`, `displayLoadedImg()`,
+//  `getGraphicsEscCode()`
+void displayImg();
 
-    // also serves to test `getHrefFromID()`, `decodePercentEncoding()`
-    void getSpine();
+// also serves to test `getHrefFromID()`, `decodePercentEncoding()`
+void getSpine();
 
-    // also serves to test `collectNavPoints()`
-    void getTOC();
+// also serves to test `collectNavPoints()`
+void getTOC();
 
-    // also serves to test `parseContentElem()`
-    void parseChapter();
+// also serves to test `parseContentElem()`
+void parseChapter();
 
-    // also serves to test `expandEllipsesAndTabs()`, `getVisualLen()`,
-    //  `centerOnScreen()`, `centerJustify()`, `processContentText()`,
-    //  `getOccurences()`, `getInvisEscSeqLen()`, `useSystemLocale()`,
-    //  `wrapLines()`
-    void dumpEpub();
+// also serves to test `expandEllipsesAndTabs()`, `getVisualLen()`,
+//  `centerOnScreen()`, `centerJustify()`, `processContentText()`,
+//  `getOccurences()`, `getInvisEscSeqLen()`, `useSystemLocale()`,
+//  `wrapLines()`
+void dumpEpub();
 
-    // also serves to test `disableRawMode()`, `enableRawMode()`
-    //  `registerSigwinchHandler`
-    void readRawInput();
+// also serves to test `disableRawMode()`, `enableRawMode()`
+//  `registerSigwinchHandler`
+void readRawInput();
 
-    void utf8ToWide();
+void utf8ToWide();
 
-    void wideToUTF8();
+void wideToUTF8();
 
-    void findNth();
+void findNth();
 
-    // also serves to test `execute()`, `handleSigwinch()`,
-    //  `registerSigwinchHandler()`, `setUpDisplayChapter()`,
-    //  `snapTopLineToBound()`, `snapBotLineToBound()`,
-    //  `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`,
-    //  `inTmuxSession()`
-    void displayChapter();
+// also serves to test `execute()`, `handleSigwinch()`,
+//  `registerSigwinchHandler()`, `setUpDisplayChapter()`,
+//  `snapTopLineToBound()`, `snapBotLineToBound()`,
+//  `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`,
+//  `inTmuxSession()`
+void displayChapter();
 
-    void tocDataToString();
+void tocDataToString();
 
-    // also serves to test `setUpDisplayTOC()`
-    void displayTOC();
+// also serves to test `setUpDisplayTOC()`
+void displayTOC();
 
-    void displayEpub();
+void displayEpub();
 
-    void styleEachLineIndividually();
+void styleEachLineIndividually();
 
-    void initConf ();
+void initConf();
 
-    void initLibrary ();
+void initLibrary();
 
-    void readMncConf();
-}
+void readMncConf();
+} // namespace test

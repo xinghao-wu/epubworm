@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
 #include "tui.hpp"
+#include <string>
 
 // decode percent (url) encoding, needed for file paths extracted from epubs
 constexpr void decodePercentEncoding(std::string& str) {
