@@ -2,6 +2,8 @@
 #include "miniz_cpp.hpp"
 #include "tinyxml2.hpp"
 #include <filesystem>
+#include <stdexcept>
+#include <string>
 
 using namespace tinyxml2;
 namespace fs = std::filesystem;

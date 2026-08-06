@@ -3,11 +3,14 @@
 #include "base64.hpp"
 #include "epub_parser.hpp"
 #include <csignal>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <string>
 #include <string_view>
 #include <sys/ioctl.h>
+#include <tuple>
+#include <utility>
 #include <vector>
 
 namespace fs = std::filesystem;
