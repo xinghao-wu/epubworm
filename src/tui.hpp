@@ -13,8 +13,6 @@
 #include <utility>
 #include <vector>
 
-namespace fs = std::filesystem;
-
 using Key = std::int16_t;
 
 namespace specKey {
@@ -48,7 +46,7 @@ enum class ChapterExit {
 };
 
 struct EpubProg {
-    fs::path chapterAbs{};
+    std::filesystem::path chapterAbs{};
     double chapterProg{};
 };
 
@@ -91,7 +89,8 @@ inline constexpr std::string resetFG{"[39m"};
 //  `id` is not in valid range,
 //  `imgAbs` could not be decoded into pixel data,
 // or the temp image data shared memory file failed to open
-void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols);
+void loadImg(const std::filesystem::path& imgAbs, std::uint32_t id, int rows,
+             int cols);
 
 // display a loaded image (existing virtual placement)
 // using `rows` * `cols` special unicode characters;
@@ -114,14 +113,14 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out);
 // throws `std::runtime_error` for bad `imgAbs`;
 // note: there's a bug on ghostty's end that images displayed on tmux panes on
 // the right side of the screen will be broken until tmux redraws the screen
-void displayImg(const fs::path& imgAbs, std::string& out, int rows = 0,
-                int cols = 0);
+void displayImg(const std::filesystem::path& imgAbs, std::string& out,
+                int rows = 0, int cols = 0);
 
 // constructs the appropriate graphics escape code of the kitty image protocol
 // to load an image (create a virtual placement) based on provided parameters
-std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
-                               int xPixels, int yPixels, std::uint32_t id,
-                               int rows, int cols);
+std::string getGraphicsEscCode(const std::filesystem::path& tempDataFileAbs,
+                               int channels, int xPixels, int yPixels,
+                               std::uint32_t id, int rows, int cols);
 
 // restore original terminal settings;
 // depends on `enableRawMode()` to retrieve original terminal setting flags;
@@ -252,10 +251,11 @@ void processContentText(std::string& str, int maxLen);
 // chapter displayed starting from `iniProg`, lines wrapped at `desiredMaxLen`;
 // returns reason for exit and progress at exit
 std::pair<ChapterExit, double>
-displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen);
+displayChapter(const std::filesystem::path& chapterAbs, double iniProg,
+               int desiredMaxLen);
 
 // helper for `displayChapter()`
-void setUpDisplayChapter(const fs::path& chapterAbs, double prog,
+void setUpDisplayChapter(const std::filesystem::path& chapterAbs, double prog,
                          int desiredMaxLen, winsize& winInfo,
                          std::string& chapter, int& chapterLines,
                          int& screenTopLine, int& screenBotLine);
@@ -300,8 +300,8 @@ bool inTmuxSession();
 // returns relative path found in `tocData` of selected chapter,
 // or an empty path if user exited without selecting one;
 // throws `std::logic_error` if provided nav point index is out of bounds
-fs::path displayTOC(const TocData& tocData, int desiredMaxLen,
-                    int selectedNavPointIndex);
+std::filesystem::path displayTOC(const TocData& tocData, int desiredMaxLen,
+                                 int selectedNavPointIndex);
 
 // helper for `displayTOC()`
 void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
@@ -311,5 +311,6 @@ void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
 // once in raw mode, with locale set, display an epub book;
 // takes an unzipped epub, desired visual length, and initial progress;
 // returns progress at exit from this function
-EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
+EpubProg displayEpub(const EpubProg& iniProg,
+                     const std::filesystem::path& epubRootAbs,
                      int desiredMaxLen);

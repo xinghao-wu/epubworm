@@ -13,8 +13,8 @@
 #include <utility>
 #include <vector>
 
-namespace fs = std::filesystem;
 using namespace tinyxml2;
+namespace fs = std::filesystem;
 
 namespace test {
 // assumes executable is ran with the working directory being build/

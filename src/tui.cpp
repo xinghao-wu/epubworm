@@ -40,6 +40,7 @@
 #include <vector>
 #include <wchar.h>
 
+using namespace tinyxml2;
 namespace fs = std::filesystem;
 
 static termios g_ogTermFlags{};
