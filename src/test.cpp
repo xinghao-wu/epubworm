@@ -438,8 +438,7 @@ void displayEpub() {
 
     const EpubProg mysteriesIniProg{mysteriesRootAbs / "index_split_117.html",
                                     0.5};
-    const EpubProg parasiteIniProg{parasiteRootAbs / "OEBPS/Text/cover.xhtml",
-                                   0};
+    const EpubProg parasiteIniProg{"", 0};
     const EpubProg spiceWolfIniProg{
             spiceWolfRootAbs / "OEBPS/epilogue-a.xhtml", 0.25};
     const EpubProg zuttomoIniProg{zuttomoRootAbs / "index_split_022.html",

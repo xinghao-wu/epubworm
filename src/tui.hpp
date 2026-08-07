@@ -317,7 +317,9 @@ void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
 // Highest level function for creating the core TUI interface.
 // Once in raw mode, with locale set, display an epub book.
 // Takes an unzipped epub, desired visual length, and initial progress.
+// If `iniProg.chapterAbs` is empty, it will be taken as the first chapter.
 // Returns progress at exit from this function.
+// Throws `std::runtime_error` for bad initial progress chapter.
 EpubProg displayEpub(const EpubProg& iniProg,
                      const std::filesystem::path& epubRootAbs,
                      int desiredMaxLen);

@@ -1121,13 +1121,28 @@ EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
     }
 
     std::size_t spineIndex{1};
-    while (spineWithAbs[spineIndex] != iniProg.chapterAbs) {
+    bool found{false};
+    while (spineIndex < spineWithAbs.size()) {
+        if (spineWithAbs[spineIndex] == iniProg.chapterAbs) {
+            found = true;
+            break;
+        }
         ++spineIndex;
     }
+    if (!found) {
+        if (iniProg.chapterAbs.empty()) {
+            spineIndex = 1;
+        } else {
+            throw std::runtime_error{
+                    "indicated epub progress chapter not found in spine"};
+        }
+    }
+
     double chapterProg{iniProg.chapterProg};
 
     std::cout << esc << hideCursor;
     std::cout << esc << clearScreen;
+
     while (true) {
         const std::pair chapterOut{displayChapter(spineWithAbs[spineIndex],
                                                   chapterProg, desiredMaxLen)};
