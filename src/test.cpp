@@ -65,7 +65,7 @@ void unzip() {
 
 void getOPFRel() {
     try {
-        ::getOPFRel("/bad epub root");
+        (void)::getOPFRel("/bad epub root");
         assert(false);
     } catch (const std::runtime_error& e) {
         assert(std::string_view{e.what()}
@@ -518,7 +518,7 @@ void readMncConf() {
 
 void getTruncatedSHA256Sum() {
     try {
-        ::getTruncatedSHA256Sum("/nonexistent_file_xyz");
+        (void)::getTruncatedSHA256Sum("/nonexistent_file_xyz");
         assert(false);
     } catch (const std::runtime_error& e) {
         assert(std::string_view{e.what()}

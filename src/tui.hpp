@@ -119,9 +119,10 @@ void displayImg(const std::filesystem::path& imgAbs, std::string& out,
 
 // Constructs the appropriate graphics escape code of the kitty image protocol
 // to load an image (create a virtual placement) based on provided parameters.
-std::string getGraphicsEscCode(const std::filesystem::path& tempDataFileAbs,
-                               int channels, int xPixels, int yPixels,
-                               std::uint32_t id, int rows, int cols);
+[[nodiscard]] std::string
+getGraphicsEscCode(const std::filesystem::path& tempDataFileAbs, int channels,
+                   int xPixels, int yPixels, std::uint32_t id, int rows,
+                   int cols);
 
 // Restore original terminal settings.
 // Depends on `enableRawMode()` to retrieve original terminal setting flags.
@@ -139,21 +140,21 @@ void enableRawMode();
 
 // Converts a utf-8 encoded string into a wide string (utf-32 on posix).
 // Throws `std::system_error` on failure.
-std::wstring utf8ToWide(std::string_view input);
+[[nodiscard]] std::wstring utf8ToWide(std::string_view input);
 
 // Converts a wide string (utf-32 on posix) to a utf-8 encoded string.
 // Throws `std::system_error` on failure.
-std::string wideToUTF8(std::wstring_view input);
+[[nodiscard]] std::string wideToUTF8(std::wstring_view input);
 
 // Queries `wcwidth()` for visual length (columns) of `str`.
 // `useSystemLocale()` should be called before using this function.
 // Overestimates length of `str` containing escape sequences not accounted for
 // by `getInvisEscSeqLen()`.
-int getVisualLen(std::wstring_view str);
+[[nodiscard]] int getVisualLen(std::wstring_view str);
 
 // Get length of invisible escape sequence chars in `str`.
 // Only looks for plausible escape sequences.
-int getInvisEscSeqLen(std::wstring_view str);
+[[nodiscard]] int getInvisEscSeqLen(std::wstring_view str);
 
 // Sets program's locale to system locale, updating `std::cout` and `std::cin`.
 // Should be called before functions which depend on correct locale.
@@ -180,7 +181,7 @@ void centerJustify(std::string_view prefix, std::string_view postfix,
 // Returns the key (normal keypress integer values + values in specKey::Values)
 // and the row, col position where the action happened, if applicable.
 // Throws `std::system_error` on error to read key.
-std::tuple<Key, int, int> readRawInput();
+[[nodiscard]] std::tuple<Key, int, int> readRawInput();
 
 // Equivalent to clearing the screen, removing its content from the scrollback
 // buffer, and setting cursor position to the screen's top left cell.
@@ -189,8 +190,9 @@ void eraseScreen();
 // Get index of nth occurrence of `target` in `str`, starting the search
 // from `startIndex`, doesn't count overlapping `target` occurrences.
 // Returns `std::string_view::npos` if nth occurrence does not exist.
-constexpr std::size_t findNth(std::string_view str, std::string_view target,
-                              int n, std::size_t startIndex = 0) {
+[[nodiscard]] constexpr std::size_t findNth(std::string_view str,
+                                            std::string_view target, int n,
+                                            std::size_t startIndex = 0) {
     if (n == 0 || target.empty()) {
         return std::string_view::npos;
     }
@@ -231,7 +233,7 @@ constexpr void wrapForTmuxPassthrough(std::string& str) {
 // Get number of occurrences of `target` in `str`.
 // Overlapping `target` occurrences are not counted.
 template <typename TStrView>
-constexpr int getOccurrences(TStrView str, TStrView target) {
+[[nodiscard]] constexpr int getOccurrences(TStrView str, TStrView target) {
     int count{0};
     std::size_t pos{};
     while ((pos = str.find(target, pos)) != TStrView::npos) {
@@ -253,7 +255,7 @@ void processContentText(std::string& str, int maxLen);
 // In raw mode, create a tui interface to view `chapterAbs`.
 // Chapter displayed starting from `iniProg`, lines wrapped at `desiredMaxLen`.
 // Returns reason for exit and progress at exit.
-std::pair<ChapterExit, double>
+[[nodiscard]] std::pair<ChapterExit, double>
 displayChapter(const std::filesystem::path& chapterAbs, double iniProg,
                int desiredMaxLen);
 
@@ -270,10 +272,12 @@ void snapTopLineToBound(int& screenTopLine);
 void snapBotLineToBound(int& screenBotLine, int chapterLines);
 
 // Helper for `displayChapter()`.
-int calcBotLineFromTopLine(int screenTopLine, const winsize& winInfo);
+[[nodiscard]] int calcBotLineFromTopLine(int screenTopLine,
+                                         const winsize& winInfo);
 
 // Helper for `displayChapter()`.
-int calcTopLineFromBotLine(int screenBotLine, const winsize& winInfo);
+[[nodiscard]] int calcTopLineFromBotLine(int screenBotLine,
+                                         const winsize& winInfo);
 
 // Execute a command using `posix_spawnp()`, waiting until the command exits.
 // `argV` first element should be the command binary name,
@@ -299,7 +303,7 @@ void tocDataToString(const TocData& data, std::string& str);
 
 // Checks `TERM_PROGRAM` environment variable for whether or not running in
 // tmux session.
-bool inTmuxSession();
+[[nodiscard]] bool inTmuxSession();
 
 // In raw mode, create a tui interface to view `tocData`.
 // Lines wrapped at `desiredMaxLen`.
@@ -307,8 +311,9 @@ bool inTmuxSession();
 // Returns relative path found in `tocData` of selected chapter,
 // or an empty path if user exited without selecting one.
 // Throws `std::logic_error` if provided nav point index is out of bounds.
-std::filesystem::path displayTOC(const TocData& tocData, int desiredMaxLen,
-                                 int selectedNavPointIndex);
+[[nodiscard]] std::filesystem::path displayTOC(const TocData& tocData,
+                                               int desiredMaxLen,
+                                               int selectedNavPointIndex);
 
 // Helper for `displayTOC()`.
 void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
@@ -320,6 +325,6 @@ void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
 // If `iniProg.chapterAbs` is empty, it will be taken as the first chapter.
 // Returns progress at exit from this function.
 // Throws `std::runtime_error` for bad initial progress chapter.
-EpubProg displayEpub(const EpubProg& iniProg,
-                     const std::filesystem::path& epubRootAbs,
-                     int desiredMaxLen);
+[[nodiscard]] EpubProg displayEpub(const EpubProg& iniProg,
+                                   const std::filesystem::path& epubRootAbs,
+                                   int desiredMaxLen);

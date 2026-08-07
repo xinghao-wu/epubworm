@@ -26,10 +26,11 @@ void initLibrary(const std::filesystem::path& mncLibraryAbs);
 // option is written to the file.
 // Throws `std::runtime_error` on failure to load `mncConfAbs`, failure to
 // find root element `<conf>`, and on encountering invalid config options.
-ConfOpts readMncConf(const std::filesystem::path& mncConfAbs);
+[[nodiscard]] ConfOpts readMncConf(const std::filesystem::path& mncConfAbs);
 
 // Generates a SHA-256 hash of `fileAbs` via `shasum` and returns it truncated
 // to 128 bits (32 hex characters).
 // Throws `std::invalid_argument`, `std::system_error`, or `std::runtime_error`
 // from `execute()` on failure to run `shasum`.
-std::string getTruncatedSHA256Sum(const std::filesystem::path& fileAbs);
+[[nodiscard]] std::string
+getTruncatedSHA256Sum(const std::filesystem::path& fileAbs);

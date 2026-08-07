@@ -19,28 +19,31 @@ using TocData = std::vector<std::pair<std::string, std::filesystem::path>>;
 
 // Returns .opf file's path relative to `epubRootAbs`.
 // Throws `std::runtime_error` if epub's `container.xml` failed to be loaded.
-std::filesystem::path getOPFRel(const std::filesystem::path& epubRootAbs);
+[[nodiscard]] std::filesystem::path
+getOPFRel(const std::filesystem::path& epubRootAbs);
 
-const tinyxml2::XMLElement* getMetadata(const tinyxml2::XMLDocument& opf);
+[[nodiscard]] const tinyxml2::XMLElement*
+getMetadata(const tinyxml2::XMLDocument& opf);
 
-std::string getTitle(const tinyxml2::XMLElement* metadata);
+[[nodiscard]] std::string getTitle(const tinyxml2::XMLElement* metadata);
 
-std::string getAuthor(const tinyxml2::XMLElement* metadata);
+[[nodiscard]] std::string getAuthor(const tinyxml2::XMLElement* metadata);
 
 // Searches `manifest` for child element with attribute of value `id`,
 // returning relative file path found in that element's `href` attribute.
 // Unless an exception is thrown, the caller can safely assume the return
 // value points to a valid, null-terminated string containing a file path.
 // Throws `std::runtime_error` if no element matching `id` is found.
-const char* getHrefFromID(const tinyxml2::XMLElement* manifest,
-                          std::string_view id);
+[[nodiscard]] const char* getHrefFromID(const tinyxml2::XMLElement* manifest,
+                                        std::string_view id);
 
 // Returns relative paths of the epub's xml files listed in `<spine>`,
 // paths are relative to opf file's parent directory.
 // In returned vector, the table of contents is the first element,
 // the rest follow in order of appearance.
 // Skips any elements with the attribute `linear="no"` (`nav.xhtml` usually).
-std::vector<std::filesystem::path> getSpine(const tinyxml2::XMLDocument& opf);
+[[nodiscard]] std::vector<std::filesystem::path>
+getSpine(const tinyxml2::XMLDocument& opf);
 
 // Recursive helper function for `getTOC()`.
 void collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
@@ -54,7 +57,7 @@ void collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
 // second element is its file's path relative to `toc.ncx`'s parent directory.
 // Nested nav points' names prefixed with four spaces for each level of
 // nesting. Throws `std::runtime_error` if unable to load `tocAbs`.
-TocData getTOC(const std::filesystem::path& tocAbs);
+[[nodiscard]] TocData getTOC(const std::filesystem::path& tocAbs);
 
 // Parse all text and elements contained within `parent` recursively,
 // appending result to `out`.
