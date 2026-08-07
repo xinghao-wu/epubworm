@@ -7,6 +7,7 @@
 #include "stb_image.hpp"
 
 #include <algorithm>
+#include <array>
 #include <asm-generic/ioctls.h>
 #include <cassert>
 #include <cerrno>
@@ -792,8 +793,8 @@ std::string execute(const std::vector<std::string>& argV) {
     }
     posixAPIArgV.push_back(nullptr);
 
-    int pipeFds[2]{};
-    if (pipe(pipeFds) == -1) {
+    std::array<int, 2> pipeFds{};
+    if (pipe(pipeFds.data()) == -1) {
         throw std::system_error{errno, std::generic_category(),
                                 "failed to create pipe for cmd: "
                                         + argV.front()};
