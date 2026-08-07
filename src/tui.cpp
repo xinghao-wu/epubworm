@@ -302,25 +302,25 @@ int getVisualLen(std::wstring_view str) {
 
 int getInvisEscSeqLen(std::wstring_view str) {
     int totalLen{0};
-    totalLen += getOccurences<std::wstring_view>(str, L"\033\\") * 1;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[2J") * 3;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[H") * 2;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[2K") * 3;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[?25l") * 5;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[?25h") * 5;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[?1003h") * 7;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[?1003l") * 7;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[?1006h") * 7;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[?1006l") * 7;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[1m") * 3;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[22m") * 4;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[3m") * 3;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[23m") * 4;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[33m") * 4;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[31m") * 4;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[32m") * 4;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[34m") * 4;
-    totalLen += getOccurences<std::wstring_view>(str, L"\033[39m") * 4;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033\\") * 1;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[2J") * 3;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[H") * 2;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[2K") * 3;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[?25l") * 5;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[?25h") * 5;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[?1003h") * 7;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[?1003l") * 7;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[?1006h") * 7;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[?1006l") * 7;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[1m") * 3;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[22m") * 4;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[3m") * 3;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[23m") * 4;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[33m") * 4;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[31m") * 4;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[32m") * 4;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[34m") * 4;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[39m") * 4;
     return totalLen;
 }
 
@@ -406,8 +406,8 @@ void centerOnScreen(std::string& str, int maxLen) {
                 lineBeginIndex, lineEndIndex - lineBeginIndex + 1)};
 
         if (line.contains(imgCellPlaceholder)) {
-            const int imgCols{
-                    getOccurences<std::string_view>(line, imgCellPlaceholder)};
+            const int imgCols{getOccurrences<std::string_view>(
+                    line, imgCellPlaceholder)};
             contentWidth = imgCols;
         } else {
             contentWidth = maxLen;
@@ -753,7 +753,7 @@ void setUpDisplayChapter(const fs::path& chapterAbs, double prog,
             std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col))};
     processContentText(chapter, maxLen);
 
-    chapterLines = getOccurences<std::string_view>(chapter, "\n");
+    chapterLines = getOccurrences<std::string_view>(chapter, "\n");
 
     screenTopLine = static_cast<int>(std::lround(prog * chapterLines));
     snapTopLineToBound(screenTopLine);
@@ -945,12 +945,12 @@ fs::path displayTOC(const TocData& tocData, int desiredMaxLen,
                     findNth(tocStr, "\n\n", selectedNavPointIndex + 2) - 1;
         }
         const int selectionBeginLine{
-                getOccurences<std::string_view>(
+                getOccurrences<std::string_view>(
                         std::string_view{tocStr}.substr(0, selectionBeginIndex
                                                                    + 1),
                         "\n")
                 + 1};
-        const int selectionEndLine{getOccurences<std::string_view>(
+        const int selectionEndLine{getOccurrences<std::string_view>(
                                            std::string_view{tocStr}.substr(
                                                    0, selectionEndIndex + 1),
                                            "\n")
@@ -1097,7 +1097,7 @@ void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
             std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col))};
     processContentText(tocStr, maxLen);
 
-    tocLines = getOccurences<std::string_view>(tocStr, "\n");
+    tocLines = getOccurrences<std::string_view>(tocStr, "\n");
 }
 
 EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,

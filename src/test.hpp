@@ -30,7 +30,7 @@ void parseChapter();
 
 // Also serves to test `expandEllipsesAndTabs()`, `getVisualLen()`,
 // `centerOnScreen()`, `centerJustify()`, `processContentText()`,
-// `getOccurences()`, `getInvisEscSeqLen()`, `useSystemLocale()`,
+// `getOccurrences()`, `getInvisEscSeqLen()`, `useSystemLocale()`,
 // `wrapLines()`.
 void dumpEpub();
 

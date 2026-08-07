@@ -231,7 +231,7 @@ constexpr void wrapForTmuxPassthrough(std::string& str) {
 // Get number of occurrences of `target` in `str`.
 // Overlapping `target` occurrences are not counted.
 template <typename TStrView>
-constexpr int getOccurences(TStrView str, TStrView target) {
+constexpr int getOccurrences(TStrView str, TStrView target) {
     int count{0};
     std::size_t pos{};
     while ((pos = str.find(target, pos)) != TStrView::npos) {
