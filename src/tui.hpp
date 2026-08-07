@@ -17,8 +17,8 @@ using Key = std::int16_t;
 
 namespace specKey {
 enum Values : Key {
-    // keyboard keys represented by esc seqs
-    arrowLeft = 1000, // don't conflict with normal 8 bit char values
+    // keyboard keys represented by escape sequences
+    arrowLeft = 1000, // don't conflict with normal 8-bit char values
     arrowRight,
     arrowUp,
     arrowDown,
@@ -82,10 +82,10 @@ inline constexpr std::string resetFG{"[39m"};
 
 // Load an image to the terminal (create a virtual placement)
 // to be displayed later using special unicode characters.
-// Image will be shrunk or enlargened, maintaining its aspect ratio,
+// Image will be shrunk or enlarged, maintaining its aspect ratio,
 // to fit centered within `rows` * `cols` characters.
 // `id` must be an integer between 1 and 2^32 - 1, inclusive.
-// Must be able to output to stdout through `std::cout` to load img data.
+// Must be able to output to stdout through `std::cout` to load image data.
 // Throws `std::runtime_error` if:
 // `id` is not in valid range,
 // `imgAbs` could not be decoded into pixel data,
@@ -107,9 +107,9 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out);
 // using the minimum amount of characters possible
 // (unless the image is larger than window size - hardcoded margin size,
 // in which case it will be shrunk down to fit, maintaining its aspect ratio).
-// Else, image will be shrunk or enlargened, maintaining its aspect ratio,
+// Else, image will be shrunk or enlarged, maintaining its aspect ratio,
 // to fit centered within `rows` * `cols` characters.
-// Requires `set -g allow-passthrough on` in ~/.tmux.conf to work.
+// Requires `set -g allow-passthrough on` in `~/.tmux.conf` to work.
 // Must be able to output to stdout through `std::cout` to send terminal data.
 // Throws `std::runtime_error` for bad `imgAbs`.
 // Note: there's a bug on ghostty's end that images displayed on tmux panes on
@@ -131,7 +131,7 @@ void disableRawMode();
 
 // Sets terminal to raw mode, disabling echo and canonical mode.
 // `read()` returns 0 every 100ms when not receiving input.
-// Enables mouse event reporting and register SIGWINCH handler.
+// Enables mouse event reporting and registers SIGWINCH handler.
 // Sets `disableRawMode()` to be called at program exit.
 // Throws `std::runtime_error` on failure to read or set terminal settings,
 // and on failure to register `disableRawMode()` to run at exit.
@@ -166,7 +166,7 @@ void useSystemLocale();
 // as most others depend on a correct `maxLen`.
 void wrapLines(std::string& str, int maxLen);
 
-// Based on screen width, center text using `maxLen`, images using img width.
+// Based on screen width, center text using `maxLen`, images using image width.
 // Note this will create lines longer than `maxLen`,
 // so it should be one of the last text content manipulation functions called.
 void centerOnScreen(std::string& str, int maxLen);
@@ -186,9 +186,9 @@ std::tuple<Key, int, int> readRawInput();
 // buffer, and setting cursor position to the screen's top left cell.
 void eraseScreen();
 
-// Get index of nth occurence of `target` in `str`, starting the search
-// from `startIndex`, doesn't count overlapping `target` occurences.
-// Returns `std::string_view::npos` if nth occurence does not exist.
+// Get index of nth occurrence of `target` in `str`, starting the search
+// from `startIndex`, doesn't count overlapping `target` occurrences.
+// Returns `std::string_view::npos` if nth occurrence does not exist.
 constexpr std::size_t findNth(std::string_view str, std::string_view target,
                               int n, std::size_t startIndex = 0) {
     if (n == 0 || target.empty()) {
@@ -209,7 +209,7 @@ constexpr std::size_t findNth(std::string_view str, std::string_view target,
     return std::string_view::npos;
 }
 
-// In `str`, replace all occurences of `target` with `replacement`.
+// In `str`, replace all occurrences of `target` with `replacement`.
 constexpr void findAndReplaceAll(std::string& str, std::string_view target,
                                  std::string_view replacement) {
     std::size_t pos{str.find(target)};
@@ -220,15 +220,16 @@ constexpr void findAndReplaceAll(std::string& str, std::string_view target,
 }
 
 // Modify `str` to wrap its content in tmux's passthrough escape sequence,
-// letting escape sequences tmux doesn't know abt reach the terminal emulator.
-// Requires `set -g allow-passthrough on` in ~/.tmux.conf for passthrough.
+// letting escape sequences tmux doesn't know about reach the terminal
+// emulator. Requires `set -g allow-passthrough on` in `~/.tmux.conf` for
+// passthrough.
 constexpr void wrapForTmuxPassthrough(std::string& str) {
     findAndReplaceAll(str, esc, esc + esc);
     str = esc + "Ptmux;" + str + escEnd;
 }
 
-// Get number of occurences of `target` in `str`.
-// Overlapping `target` occurences are not counted.
+// Get number of occurrences of `target` in `str`.
+// Overlapping `target` occurrences are not counted.
 template <typename TStrView>
 constexpr int getOccurences(TStrView str, TStrView target) {
     int count{0};
@@ -280,7 +281,7 @@ int calcTopLineFromBotLine(int screenBotLine, const winsize& winInfo);
 // Returns what the command printed to stdout.
 // Throws `std::invalid_argument` for empty command binary name.
 // Throws `std::system_error` on error creating pipe, setting up spawn file
-// actions, spawning, reading cmd output, or waiting for command.
+// actions, spawning, reading command output, or waiting for command.
 // Throws `std::runtime_error` for an abnormal exit from command.
 std::string execute(const std::vector<std::string>& argV);
 
@@ -296,7 +297,8 @@ void registerSigwinchHandler();
 // Output is appended to `str`.
 void tocDataToString(const TocData& data, std::string& str);
 
-// Checks `TERM_PROGRAM` env var for whether or not running in tmux session.
+// Checks `TERM_PROGRAM` environment variable for whether or not running in
+// tmux session.
 bool inTmuxSession();
 
 // In raw mode, create a tui interface to view `tocData`.

@@ -34,7 +34,7 @@ void parseChapter();
 // `wrapLines()`.
 void dumpEpub();
 
-// Also serves to test `disableRawMode()`, `enableRawMode()`
+// Also serves to test `disableRawMode()`, `enableRawMode()`,
 // `registerSigwinchHandler`.
 void readRawInput();
 

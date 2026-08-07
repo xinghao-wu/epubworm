@@ -18,7 +18,7 @@ using TocData = std::vector<std::pair<std::string, std::filesystem::path>>;
 // since encountering problematic xml is usually a fatal error anyways.
 
 // Returns .opf file's path relative to `epubRootAbs`.
-// Throws `std::runtime_error` if epub's container.xml failed to be loaded.
+// Throws `std::runtime_error` if epub's `container.xml` failed to be loaded.
 std::filesystem::path getOPFRel(const std::filesystem::path& epubRootAbs);
 
 const tinyxml2::XMLElement* getMetadata(const tinyxml2::XMLDocument& opf);
@@ -31,15 +31,15 @@ std::string getAuthor(const tinyxml2::XMLElement* metadata);
 // returning relative file path found in that element's `href` attribute.
 // Unless an exception is thrown, the caller can safely assume the return
 // value points to a valid, null-terminated string containing a file path.
-// Throws `std::runtime_error` if no element matching id is found.
+// Throws `std::runtime_error` if no element matching `id` is found.
 const char* getHrefFromID(const tinyxml2::XMLElement* manifest,
                           std::string_view id);
 
 // Returns relative paths of the epub's xml files listed in `<spine>`,
-// paths are relative to opf file's parent dir.
+// paths are relative to opf file's parent directory.
 // In returned vector, the table of contents is the first element,
 // the rest follow in order of appearance.
-// Skips any elements with the attribute `linear="no"` (nav.xhtml usually).
+// Skips any elements with the attribute `linear="no"` (`nav.xhtml` usually).
 std::vector<std::filesystem::path> getSpine(const tinyxml2::XMLDocument& opf);
 
 // Recursive helper function for `getTOC()`.
@@ -47,13 +47,13 @@ void collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
                       const std::string& prefix = "");
 
 // Returns a vector of pairs containing info about the TOC's navigation points.
-// Only works on toc.ncx files (EPUB 2, but found in most EPUB 3 epubs),
-// not nav.xhtml files (EPUB 3).
+// Only works on `toc.ncx` files (EPUB 2, but found in most EPUB 3 epubs),
+// not `nav.xhtml` files (EPUB 3).
 // Order of nav point pairs in vector is the same as their order in the TOC.
 // First element of pair is the nav point's name,
-// second element is its file's path relative to toc.nxc's parent dir.
-// Nested nav points' names prefixed w/ four spaces for each level of nesting.
-// Throws `std::runtime_error` if unable to load `tocAbs`.
+// second element is its file's path relative to `toc.ncx`'s parent directory.
+// Nested nav points' names prefixed with four spaces for each level of
+// nesting. Throws `std::runtime_error` if unable to load `tocAbs`.
 TocData getTOC(const std::filesystem::path& tocAbs);
 
 // Parse all text and elements contained within `parent` recursively,
@@ -66,13 +66,13 @@ void parseContentElem(const tinyxml2::XMLElement* parent, std::string& out,
 
 // Parse chapter content xhtml file using `parseContentElem()`,
 // appending result to `out`.
-// A red fg colored "---\n" is appended to chapter text.
+// A red foreground colored `"---\n"` is appended to chapter text.
 void parseChapter(const std::filesystem::path& chapterAbs, std::string& out);
 
-// Parse all chapters of epub, appending result to out.
+// Parse all chapters of epub, appending result to `out`.
 // Mostly for testing purposes, getting the whole epub at once is inefficient.
 void dumpEpub(const std::filesystem::path& epubRootAbs, std::string& out);
 
 // In `str`, expand the ugly unicode ellipses (…) into three normal dots (...)
-// and escaped tab characters (\t) into four spaces.
+// and escaped tab characters `(\t)` into four spaces.
 void expandEllipsesAndTabs(std::string& str);

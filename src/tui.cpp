@@ -148,7 +148,7 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
     }
     loadImg(imgAbs, id, rows, cols);
     displayLoadedImg(id, rows, cols, out);
-    // Fixs images breaking if multiple are displayed too fast in succession.
+    // Fixes images breaking if multiple are displayed too fast in succession.
     std::this_thread::sleep_for(std::chrono::milliseconds{5});
 }
 
@@ -196,7 +196,7 @@ void enableRawMode() {
     termios rawTermFlags{g_ogTermFlags};
     // disable echo and canonical mode
     rawTermFlags.c_lflag &= static_cast<unsigned int>(~(ECHO | ICANON));
-    // let read() return 0 every 100ms when not receiving input
+    // let `read()` return 0 every 100ms when not receiving input
     rawTermFlags.c_cc[VMIN] = 0;
     rawTermFlags.c_cc[VTIME] = 1;
 
@@ -843,7 +843,7 @@ std::string execute(const std::vector<std::string>& argV) {
                                        &fileActions, nullptr,
                                        posixAPIArgV.data(), environ)};
     posix_spawn_file_actions_destroy(&fileActions);
-    close(pipeFds[1]); // parent closes write end so read can hit EOF
+    close(pipeFds[1]); // parent closes write end so `read()` can hit EOF
     if (spawnStatus != 0) {
         close(pipeFds[0]);
         throw std::system_error{spawnStatus, std::generic_category(),
