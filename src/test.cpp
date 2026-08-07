@@ -53,14 +53,14 @@ void unzip() {
                == "filesystem error: cannot create directories: "
                   "Permission denied [/bad destination path/META-INF]");
     }
-    std::cout << "test::unzip() failure cases passed\n";
+    std::cout << "`test::unzip()` failure cases passed\n";
 
     ::unzip(mysteriesZippedAbs, shareAbs / "lord_of_mysteries_vol_1_unzipped");
     ::unzip(parasiteZippedAbs, shareAbs / "parasite_in_love_unzipped");
     ::unzip(spiceWolfZippedAbs, shareAbs / "spice_and_wolf_vol_1_unzipped");
     ::unzip(zuttomoZippedAbs, shareAbs / "zuttomo_vol_1_unzipped");
-    std::cout << "test::unzip() success cases did not error, "
-                 "check testing share dir to verify correct result\n";
+    std::cout << "`test::unzip()` success cases did not error, "
+                 "check `.testing_xdg_dirs/share/` to verify correct result\n";
 }
 
 void getOPFRel() {
@@ -73,13 +73,13 @@ void getOPFRel() {
                   "ErrorID=3 (0x3) Line number=0: "
                   "filename=/bad epub root/META-INF/container.xml");
     }
-    std::cout << "test::getOPFRel() failure cases passed\n";
+    std::cout << "`test::getOPFRel()` failure cases passed\n";
 
     assert(::getOPFRel(mysteriesRootAbs) == "content.opf");
     assert(::getOPFRel(parasiteRootAbs) == "OEBPS/content.opf");
     assert(::getOPFRel(spiceWolfRootAbs) == "content.opf");
     assert(::getOPFRel(zuttomoRootAbs) == "content.opf");
-    std::cout << "test::getOPFRel() success cases passed\n";
+    std::cout << "`test::getOPFRel()` success cases passed\n";
 }
 
 void getMetadata() {
@@ -93,7 +93,7 @@ void getMetadata() {
     const XMLElement* mysteriesMetadata{::getMetadata(mysteriesOPF)};
     const XMLElement* parasiteMetadata{::getMetadata(parasiteOPF)};
 
-    std::cout << "test::getMetadata() no failure cases\n";
+    std::cout << "`test::getMetadata()` no failure cases\n";
 
     assert(std::string_view{mysteriesMetadata->FirstChildElement("dc:language")
                                     ->GetText()}
@@ -101,7 +101,7 @@ void getMetadata() {
     assert(std::string_view{parasiteMetadata->FirstChildElement("dc:publisher")
                                     ->GetText()}
            == "ASCII Media Works");
-    std::cout << "test::getMetadata() success cases passed\n";
+    std::cout << "`test::getMetadata()` success cases passed\n";
 }
 
 void getTitle() {
@@ -115,12 +115,12 @@ void getTitle() {
     const XMLElement* mysteriesMetadata{::getMetadata(mysteriesOPF)};
     const XMLElement* spiceWolfMetadata{::getMetadata(spiceWolfOPF)};
 
-    std::cout << "test::getTitle() no failure cases\n";
+    std::cout << "`test::getTitle()` no failure cases\n";
 
     assert(::getTitle(mysteriesMetadata)
            == "Lord of Mysteries Volume 1: Clown");
     assert(::getTitle(spiceWolfMetadata) == "Spice and Wolf, Vol. 1");
-    std::cout << "test::getTitle() success cases passed\n";
+    std::cout << "`test::getTitle()` success cases passed\n";
 }
 
 void getAuthor() {
@@ -134,16 +134,16 @@ void getAuthor() {
     const XMLElement* mysteriesMetadata{::getMetadata(mysteriesOPF)};
     const XMLElement* spiceWolfMetadata{::getMetadata(spiceWolfOPF)};
 
-    std::cout << "test::getAuthor() no failure cases\n";
+    std::cout << "`test::getAuthor()` no failure cases\n";
 
     assert(::getAuthor(mysteriesMetadata)
            == "Cuttlefish That Loves Diving (爱潜水的乌贼)");
     assert(::getAuthor(spiceWolfMetadata) == "Isuna Hasekura");
-    std::cout << "test::getAuthor() success cases passed\n";
+    std::cout << "`test::getAuthor()` success cases passed\n";
 }
 
 void findAndReplaceAll() {
-    std::cout << "test::findAndReplaceAll() no failure cases\n";
+    std::cout << "`test::findAndReplaceAll()` no failure cases\n";
 
     std::string hasTarget{"target, target on the wall,"};
     ::findAndReplaceAll(hasTarget, "target", "mirror");
@@ -153,11 +153,11 @@ void findAndReplaceAll() {
     ::findAndReplaceAll(noTarget, "target", "mirror");
     assert(noTarget == "am I the fairest of them all?");
 
-    std::cout << "test::findAndReplaceAll() success cases passed\n";
+    std::cout << "`test::findAndReplaceAll()` success cases passed\n";
 }
 
 void wrapForTmuxPassthrough() {
-    std::cout << "test::wrapForTmuxPassthrough() no failure cases\n";
+    std::cout << "`test::wrapForTmuxPassthrough()` no failure cases\n";
 
     std::string notEmpty{"\033]1337;SetProfile=NewProfileName\007"};
     ::wrapForTmuxPassthrough(notEmpty);
@@ -168,7 +168,7 @@ void wrapForTmuxPassthrough() {
     ::wrapForTmuxPassthrough(empty);
     assert(empty == "\033Ptmux;\033\\");
 
-    std::cout << "test::wrapForTmuxPassthrough() success cases passed\n";
+    std::cout << "`test::wrapForTmuxPassthrough()` success cases passed\n";
 }
 
 void displayImg() {
@@ -180,7 +180,7 @@ void displayImg() {
     } catch (const std::runtime_error& e) {
         assert(std::string_view{e.what()} == "Unable to open file");
     }
-    std::cout << "test::displayImg() failure cases passed\n";
+    std::cout << "`test::displayImg()` failure cases passed\n";
 
     ::displayImg(mysteriesRootAbs / "images/Tarot Club - V01B - Justice.jpg",
                  output);
@@ -192,12 +192,12 @@ void displayImg() {
     ::displayImg(zuttomoRootAbs / "images/image3.png", output, 35, 80);
     std::cout << output;
 
-    std::cout << "test::displayImg() success cases did not error, "
-                 "check std::cout for expected images\n";
+    std::cout << "`test::displayImg()` success cases did not error, "
+                 "check `std::cout` for expected images\n";
 }
 
 void getSpine() {
-    std::cout << "test::getSpine() no failure cases\n";
+    std::cout << "`test::getSpine()` no failure cases\n";
 
     XMLDocument spiceWolfOPF{};
     spiceWolfOPF.LoadFile(
@@ -219,11 +219,11 @@ void getSpine() {
     assert(parasiteSpine[2] == "Text/TitlePage.xhtml");
     assert(parasiteSpine[3] == "Text/insert.xhtml");
 
-    std::cout << "test::getSpine() success cases passed\n";
+    std::cout << "`test::getSpine()` success cases passed\n";
 }
 
 void getTOC() {
-    std::cout << "test::getTOC() no failure cases\n";
+    std::cout << "`test::getTOC()` no failure cases\n";
 
     const TocData mysteriesTOC{::getTOC(mysteriesRootAbs / "toc.ncx")};
     assert(mysteriesTOC.size() == 227);
@@ -239,11 +239,11 @@ void getTOC() {
     assert(parasiteTOC[2].first == "Prologue");
     assert(parasiteTOC[2].second == "Text/insert.xhtml");
 
-    std::cout << "test::getTOC() success cases passed\n";
+    std::cout << "`test::getTOC()` success cases passed\n";
 }
 
 void parseChapter() {
-    std::cout << "test::parseChapter() no failure cases\n";
+    std::cout << "`test::parseChapter()` no failure cases\n";
 
     std::string result{};
     ::parseChapter(spiceWolfRootAbs / "OEBPS/chap01.xhtml", result);
@@ -251,12 +251,12 @@ void parseChapter() {
     ::parseChapter(spiceWolfRootAbs / "OEBPS/chapter005.xhtml", result);
     std::cout << result;
 
-    std::cout << "test::parseChapter() success cases did not error, "
-                 "check std::cout for correct images and text\n";
+    std::cout << "`test::parseChapter()` success cases did not error, "
+                 "check `std::cout` for correct images and text\n";
 }
 
 void dumpEpub() {
-    std::cout << "test::dumpEpub() no failure cases\n";
+    std::cout << "`test::dumpEpub()` no failure cases\n";
 
     useSystemLocale();
 
@@ -267,17 +267,17 @@ void dumpEpub() {
     ::processContentText(result, 55);
     std::cout << result;
 
-    std::cout << "test::dumpEpub() success cases did not error, "
-                 "check std::cout for content of three epubs. "
+    std::cout << "`test::dumpEpub()` success cases did not error, "
+                 "check `std::cout` for content of three epubs. "
                  "Ellipses should be expanded, lines wrapped to 55 cols, "
                  "chapter titles and ends center justified, "
                  "and content centered on the screen.\n";
 }
 
 void readRawInput() {
-    std::cout << "test::readRawInput() no failure cases\n";
+    std::cout << "`test::readRawInput()` no failure cases\n";
 
-    std::cout << "test::readRawInput() success cases needs manual check, "
+    std::cout << "`test::readRawInput()` success cases needs manual check, "
                  "the terminal should now be in raw mode. "
                  "Verify correct key, row, col values for inputs. "
                  "Press q to quit.\n";
@@ -314,13 +314,13 @@ void wideToUTF8() {
 }
 
 void findNth() {
-    std::cout << "test::findNth() no failure cases\n";
+    std::cout << "`test::findNth()` no failure cases\n";
 
     static_assert(::findNth("banana", "an", 2) == 3);
     static_assert(::findNth("mirra mirra on ze walle", "mirra", 1, 3) == 6);
     static_assert(::findNth("mirra mirra", "mirra", 3)
                   == std::string_view::npos);
-    std::cout << "test::findNth() success cases passed\n";
+    std::cout << "`test::findNth()` success cases passed\n";
 }
 
 void execute() {
@@ -350,7 +350,7 @@ void execute() {
         assert(std::string_view{e.what()}
                == "cmd did not exit properly: false");
     }
-    std::cout << "test::execute() failure cases passed\n";
+    std::cout << "`test::execute()` failure cases passed\n";
 
     assert(::execute(std::vector<std::string>{"true"}).empty());
     assert(::execute(std::vector<std::string>{"echo", "hello"}) == "hello\n");
@@ -363,7 +363,7 @@ void execute() {
     assert(largeOutput.starts_with("1\n"));
     assert(largeOutput.ends_with("50000\n"));
 
-    std::cout << "test::execute() success cases passed\n";
+    std::cout << "`test::execute()` success cases passed\n";
 }
 
 void displayChapter() {
@@ -377,8 +377,8 @@ void displayChapter() {
             spiceWolfRootAbs / "OEBPS/chapter005.xhtml", 0.5, 55)};
     eraseScreen();
 
-    std::cout << "test::displayChapter() no failure cases\n";
-    std::cout << "test::displayChapter() success cases require manual "
+    std::cout << "`test::displayChapter()` no failure cases\n";
+    std::cout << "`test::displayChapter()` success cases require manual "
                  "verification, a tui interface for an image and text "
                  "chapter should have been displayed.\n";
 
@@ -395,7 +395,7 @@ void displayChapter() {
 }
 
 void tocDataToString() {
-    std::cout << "test::tocDataToString() no failure cases\n";
+    std::cout << "`test::tocDataToString()` no failure cases\n";
 
     ::useSystemLocale();
 
@@ -408,7 +408,7 @@ void tocDataToString() {
     ::processContentText(str, 55);
     std::cout << str;
 
-    std::cout << "test::tocDataToString() success cases did not error, "
+    std::cout << "`test::tocDataToString()` success cases did not error, "
                  "verify correct table of content strings are shown\n";
 }
 
@@ -423,8 +423,8 @@ void displayTOC() {
             ::displayTOC(::getTOC(parasiteRootAbs / "OEBPS/toc.ncx"), 55, 0)};
     eraseScreen();
 
-    std::cout << "test::displayTOC() no failure cases\n";
-    std::cout << "test::displayTOC() success cases require manual "
+    std::cout << "`test::displayTOC()` no failure cases\n";
+    std::cout << "`test::displayTOC()` success cases require manual "
                  "verification, a tui interface for mysteries' "
                  "and parasite's TOCs should have been displayed.\n";
 
@@ -454,8 +454,8 @@ void displayEpub() {
     const EpubProg zuttomoOut{
             ::displayEpub(zuttomoIniProg, zuttomoRootAbs, 65)};
 
-    std::cout << "test::displayEpub() no failure cases\n";
-    std::cout << "test::displayEpub() success cases require manual "
+    std::cout << "`test::displayEpub()` no failure cases\n";
+    std::cout << "`test::displayEpub()` success cases require manual "
                  "verification, a tui interface for all four "
                  "test epubs should have been displayed.\n";
 
@@ -478,42 +478,42 @@ void displayEpub() {
 }
 
 void styleEachLineIndividually() {
-    std::cout << "test::styleEachLineIndividually() no failure cases\n";
+    std::cout << "`test::styleEachLineIndividually()` no failure cases\n";
 
     std::string str{"\033[1mfirst line\nsec line\033[22mout"};
     ::styleEachLineIndividually(str, "\033[1m", "\033[22m");
     assert(str == "\033[1mfirst line\033[22m\n\033[1msec line\033[22mout");
 
-    std::cout << "test::styleEachLineIndividually() success case passed\n";
+    std::cout << "`test::styleEachLineIndividually()` success case passed\n";
 }
 
 void initConf() {
-    std::cout << "test::initConf() no failure cases\n";
+    std::cout << "`test::initConf()` no failure cases\n";
 
     const fs::path mncConfAbs{dotConfigAbs / "mnc/conf.xml"};
     ::initConf(mncConfAbs);
 
-    std::cout << "test::initConf() success cases did not error, "
-                 "check testing .config for correct conf file\n";
+    std::cout << "`test::initConf()` success cases did not error, "
+                 "check `.testing_xdg_dirs/.config/` for correct conf file\n";
 }
 
 void initLibrary() {
-    std::cout << "test::initLibrary() no failure cases\n";
+    std::cout << "`test::initLibrary()` no failure cases\n";
 
     const fs::path mncLibraryAbs{shareAbs / "mnc/library.xml"};
     ::initLibrary(mncLibraryAbs);
 
-    std::cout << "test::initLibrary() success cases did not error, "
-                 "check testing share for correct library file\n";
+    std::cout << "`test::initLibrary()` success cases did not error, "
+                 "check `.testing_xdg_dirs/share/` for correct library file\n";
 }
 
 void readMncConf() {
     const fs::path mncConfAbs{dotConfigAbs / "mnc/conf.xml"};
     const ConfOpts confOpts{::readMncConf(mncConfAbs)};
 
-    std::cout << "test::readMncConf() success cases and failure cases "
+    std::cout << "`test::readMncConf()` success cases and failure cases "
                  "require manual verifications, change the config file "
                  "in testing config to verify correct behavior in cases\n";
-    std::cout << "line-length chars: " << confOpts.lineLength << '\n';
+    std::cout << "`<line-length>` chars: " << confOpts.lineLength << '\n';
 }
 } // namespace test
