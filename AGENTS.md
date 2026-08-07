@@ -3,13 +3,18 @@ Monocle (mnc) is a TUI epub reader written in C++23.
 
 ## Commands
 - Build: `make` produces `build/mnc`.
-- Format: `clang-format -i <file>` formats in-place.
-- Lint: `clang-tidy <file>` prints linter diagnostics.
+- Format: `clang-format -i <file>...` edits in-place.
+- Lint: `clang-tidy <file>...` prints linter diagnostics.
 
 ## Project Structure
 - Project source and vendored libraries live flat in `src/`.
 - Unzipped and zipped epubs used for testing are found in `test_epubs/`.
 - `.testing_xdg_dirs/` contains phony XDG directories used for testing.
+
+## Notable Files
+- `.clang-format`: LLVM style with minor modifications.
+- `.clang-tidy`: Enable all diagnostics with many exclusions.
+- `compile_flags.txt`: Compilation flags referenced by clangd and clang-tidy.
 
 ## Vendored Libraries
 - `tinyxml2.*`: XML handling.
