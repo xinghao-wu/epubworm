@@ -2,10 +2,9 @@
 Monocle (mnc) is a TUI epub reader written in C++23.
 
 ## Commands
-- Build: `make` in repo root produces `build/mnc`.
-- Format: `diff -u <file> <(clang-format <file>)` prints diff of original vs
-  formatted file, `clang-format -i <file>` edits the file in-place.
-- Lint: `clang-tidy <file>` prints linter diagnostics
+- Build: `make` produces `build/mnc`.
+- Format: `clang-format -i <file>` formats in-place.
+- Lint: `clang-tidy <file>` prints linter diagnostics.
 
 ## Project Structure
 - Project source and vendored libraries live flat in `src/`.
