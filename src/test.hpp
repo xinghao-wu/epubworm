@@ -15,27 +15,27 @@ void findAndReplaceAll();
 
 void wrapForTmuxPassthrough();
 
-// also serves to test `loadImg()`, `displayLoadedImg()`,
-//  `getGraphicsEscCode()`
+// Also serves to test `loadImg()`, `displayLoadedImg()`,
+// `getGraphicsEscCode()`.
 void displayImg();
 
-// also serves to test `getHrefFromID()`, `decodePercentEncoding()`
+// Also serves to test `getHrefFromID()`, `decodePercentEncoding()`.
 void getSpine();
 
-// also serves to test `collectNavPoints()`
+// Also serves to test `collectNavPoints()`.
 void getTOC();
 
-// also serves to test `parseContentElem()`
+// Also serves to test `parseContentElem()`.
 void parseChapter();
 
-// also serves to test `expandEllipsesAndTabs()`, `getVisualLen()`,
-//  `centerOnScreen()`, `centerJustify()`, `processContentText()`,
-//  `getOccurences()`, `getInvisEscSeqLen()`, `useSystemLocale()`,
-//  `wrapLines()`
+// Also serves to test `expandEllipsesAndTabs()`, `getVisualLen()`,
+// `centerOnScreen()`, `centerJustify()`, `processContentText()`,
+// `getOccurences()`, `getInvisEscSeqLen()`, `useSystemLocale()`,
+// `wrapLines()`.
 void dumpEpub();
 
-// also serves to test `disableRawMode()`, `enableRawMode()`
-//  `registerSigwinchHandler`
+// Also serves to test `disableRawMode()`, `enableRawMode()`
+// `registerSigwinchHandler`.
 void readRawInput();
 
 void utf8ToWide();
@@ -46,16 +46,16 @@ void findNth();
 
 void execute();
 
-// also serves to test `handleSigwinch()`,
-//  `registerSigwinchHandler()`, `setUpDisplayChapter()`,
-//  `snapTopLineToBound()`, `snapBotLineToBound()`,
-//  `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`,
-//  `inTmuxSession()`
+// Also serves to test `handleSigwinch()`,
+// `registerSigwinchHandler()`, `setUpDisplayChapter()`,
+// `snapTopLineToBound()`, `snapBotLineToBound()`,
+// `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`,
+// `inTmuxSession()`.
 void displayChapter();
 
 void tocDataToString();
 
-// also serves to test `setUpDisplayTOC()`
+// Also serves to test `setUpDisplayTOC()`.
 void displayTOC();
 
 void displayEpub();

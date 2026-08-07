@@ -148,7 +148,7 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
     }
     loadImg(imgAbs, id, rows, cols);
     displayLoadedImg(id, rows, cols, out);
-    // fixs images breaking if multiple are displayed too fast in succession
+    // Fixs images breaking if multiple are displayed too fast in succession.
     std::this_thread::sleep_for(std::chrono::milliseconds{5});
 }
 
@@ -620,7 +620,7 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
 
         eraseScreen();
         std::cout << dispView << std::flush;
-        // in ghostty, images on right-side tmux panes are broken until redraw
+        // In ghostty, images on right-side tmux panes are broken until redraw.
         if (inTmuxSession()) {
             execute(std::vector<std::string>{"tmux", "refresh-client"});
         }

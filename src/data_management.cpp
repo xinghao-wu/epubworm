@@ -52,8 +52,8 @@ ConfOpts readMncConf(const fs::path& mncConfAbs) {
         throw std::runtime_error{"root element <conf> missing in config file"};
     }
 
-    // write a default value for unfound options to support adding future
-    // conf options without making users edit config file every time
+    // Write a default value for unfound options to support adding future
+    // conf options without making users edit config file every time.
     if (rootElem->FirstChildElement("line-length") == nullptr) {
         rootElem->InsertEndChild(mncConf.NewElement("line-length"));
     }

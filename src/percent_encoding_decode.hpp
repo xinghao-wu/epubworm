@@ -3,7 +3,7 @@
 #include "tui.hpp"
 #include <string>
 
-// decode percent (url) encoding, needed for file paths extracted from epubs
+// Decode percent (url) encoding, needed for file paths extracted from epubs.
 constexpr void decodePercentEncoding(std::string& str) {
     if (!str.contains('%')) {
         return;

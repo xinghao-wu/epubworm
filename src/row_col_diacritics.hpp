@@ -2,9 +2,9 @@
 
 #include <array>
 
-// array containing unicode diacritics representing the row and column position
-// numbers of images cells for the kitty image protocol;
-// the number each diacritic represents is the same as its index
+// Array containing unicode diacritics representing the row and column position
+// numbers of images cells for the kitty image protocol.
+// The number each diacritic represents is the same as its index.
 inline constexpr std::array rowColDiacritics{
         "\U00000305", "\U0000030D", "\U0000030E", "\U00000310", "\U00000312",
         "\U0000033D", "\U0000033E", "\U0000033F", "\U00000346", "\U0000034A",

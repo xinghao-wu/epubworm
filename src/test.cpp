@@ -18,7 +18,7 @@ using namespace tinyxml2;
 namespace fs = std::filesystem;
 
 namespace test {
-// assumes executable is ran with the working directory being build/
+// Assumes executable is ran with the working directory being build/.
 const fs::path projectRootAbs{fs::current_path().parent_path()};
 
 const fs::path epubsAbs{projectRootAbs / "test_epubs"};

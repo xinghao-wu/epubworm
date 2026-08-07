@@ -58,7 +58,8 @@ inline constexpr Key ctrlU{21};
 inline constexpr Key ctrlD{4};
 inline constexpr std::string esc{'\033'};
 inline constexpr std::string imgCellPlaceholder{"\U0010EEEE"};
-// don't forget to modify `getInvisEscSeqLen()` when you change constants below
+// Don't forget to modify `getInvisEscSeqLen()` when you change constants
+// below.
 inline constexpr std::string escEnd{esc + '\\'};
 inline constexpr std::string clearScreen{"[2J"};
 inline constexpr std::string posCursorTopLeft{"[H"};
@@ -79,115 +80,115 @@ inline constexpr std::string greenFG{"[32m"};
 inline constexpr std::string blueFG{"[34m"};
 inline constexpr std::string resetFG{"[39m"};
 
-// load an image to the terminal (create a virtual placement)
-// to be displayed later using special unicode characters;
-// image will be shrunk or enlargened, maintaining its aspect ratio,
-// to fit centered within `rows` * `cols` characters;
-//  `id` must be an integer between 1 and 2^32 - 1, inclusive;
-// must be able to output to stdout through `std::cout` to load img data;
-// throws `std::runtime_error` if:
-//  `id` is not in valid range,
-//  `imgAbs` could not be decoded into pixel data,
-// or the temp image data shared memory file failed to open
+// Load an image to the terminal (create a virtual placement)
+// to be displayed later using special unicode characters.
+// Image will be shrunk or enlargened, maintaining its aspect ratio,
+// to fit centered within `rows` * `cols` characters.
+// `id` must be an integer between 1 and 2^32 - 1, inclusive.
+// Must be able to output to stdout through `std::cout` to load img data.
+// Throws `std::runtime_error` if:
+// `id` is not in valid range,
+// `imgAbs` could not be decoded into pixel data,
+// or the temp image data shared memory file failed to open.
 void loadImg(const std::filesystem::path& imgAbs, std::uint32_t id, int rows,
              int cols);
 
-// display a loaded image (existing virtual placement)
-// using `rows` * `cols` special unicode characters;
-// appends unicode characters (the image) to `out`;
-//  `id` must be an integer between 1 and 2^24 - 1, inclusive;
-// throws `std::runtime_error` if `id` is not in valid range
+// Display a loaded image (existing virtual placement)
+// using `rows` * `cols` special unicode characters.
+// Appends unicode characters (the image) to `out`.
+// `id` must be an integer between 1 and 2^24 - 1, inclusive.
+// Throws `std::runtime_error` if `id` is not in valid range.
 void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out);
 
-// using the kitty graphics protocol, display an image to the terminal;
-// appends unicode characters showing the image to `out`;
-// if `rows` and `cols` are not provided, image will be displayed
+// Using the kitty graphics protocol, display an image to the terminal.
+// Appends unicode characters showing the image to `out`.
+// If `rows` and `cols` are not provided, image will be displayed
 // at its original size, with its original aspect ratio,
 // using the minimum amount of characters possible
 // (unless the image is larger than window size - hardcoded margin size,
-// in which case it will be shrunk down to fit, maintaining its aspect ratio);
-// else, image will be shrunk or enlargened, maintaining its aspect ratio,
-// to fit centered within `rows` * `cols` characters;
-// requires `set -g allow-passthrough on` in ~/.tmux.conf to work;
-// must be able to output to stdout through `std::cout` to send terminal data;
-// throws `std::runtime_error` for bad `imgAbs`;
-// note: there's a bug on ghostty's end that images displayed on tmux panes on
-// the right side of the screen will be broken until tmux redraws the screen
+// in which case it will be shrunk down to fit, maintaining its aspect ratio).
+// Else, image will be shrunk or enlargened, maintaining its aspect ratio,
+// to fit centered within `rows` * `cols` characters.
+// Requires `set -g allow-passthrough on` in ~/.tmux.conf to work.
+// Must be able to output to stdout through `std::cout` to send terminal data.
+// Throws `std::runtime_error` for bad `imgAbs`.
+// Note: there's a bug on ghostty's end that images displayed on tmux panes on
+// the right side of the screen will be broken until tmux redraws the screen.
 void displayImg(const std::filesystem::path& imgAbs, std::string& out,
                 int rows = 0, int cols = 0);
 
-// constructs the appropriate graphics escape code of the kitty image protocol
-// to load an image (create a virtual placement) based on provided parameters
+// Constructs the appropriate graphics escape code of the kitty image protocol
+// to load an image (create a virtual placement) based on provided parameters.
 std::string getGraphicsEscCode(const std::filesystem::path& tempDataFileAbs,
                                int channels, int xPixels, int yPixels,
                                std::uint32_t id, int rows, int cols);
 
-// restore original terminal settings;
-// depends on `enableRawMode()` to retrieve original terminal setting flags;
-// never call this function before calling `enableRawMode()`;
-// throws `std::runtime_error` on failure to set terminal settings
+// Restore original terminal settings.
+// Depends on `enableRawMode()` to retrieve original terminal setting flags.
+// Never call this function before calling `enableRawMode()`.
+// Throws `std::runtime_error` on failure to set terminal settings.
 void disableRawMode();
 
-// sets terminal to raw mode, disabling echo and canonical mode;
-//  `read()` returns 0 every 100ms when not receiving input;
-// enables mouse event reporting and register SIGWINCH handler;
-// sets `disableRawMode()` to be called at program exit;
-// throws `std::runtime_error` on failure to read or set terminal settings,
-// and on failure to register `disableRawMode()` to run at exit
+// Sets terminal to raw mode, disabling echo and canonical mode.
+// `read()` returns 0 every 100ms when not receiving input.
+// Enables mouse event reporting and register SIGWINCH handler.
+// Sets `disableRawMode()` to be called at program exit.
+// Throws `std::runtime_error` on failure to read or set terminal settings,
+// and on failure to register `disableRawMode()` to run at exit.
 void enableRawMode();
 
-// converts a utf-8 encoded string into a wide string (utf-32 on posix);
-// throws `std::system_error` on failure
+// Converts a utf-8 encoded string into a wide string (utf-32 on posix).
+// Throws `std::system_error` on failure.
 std::wstring utf8ToWide(std::string_view input);
 
-// converts a wide string (utf-32 on posix) to a utf-8 encoded string;
-// throws `std::system_error` on failure
+// Converts a wide string (utf-32 on posix) to a utf-8 encoded string.
+// Throws `std::system_error` on failure.
 std::string wideToUTF8(std::wstring_view input);
 
-// queries `wcwidth()` for visual length (columns) of `str`;
-// `useSystemLocale()` should be called before using this function;
-// overestimates length of `str` containing escape sequences not accounted for
-// by `getInvisEscSeqLen()`
+// Queries `wcwidth()` for visual length (columns) of `str`.
+// `useSystemLocale()` should be called before using this function.
+// Overestimates length of `str` containing escape sequences not accounted for
+// by `getInvisEscSeqLen()`.
 int getVisualLen(std::wstring_view str);
 
-// get length of invisible escape sequence chars in `str`;
-// only looks for plausible escape sequences
+// Get length of invisible escape sequence chars in `str`.
+// Only looks for plausible escape sequences.
 int getInvisEscSeqLen(std::wstring_view str);
 
-// sets program's locale to system locale, updating `std::cout` and `std::cin`;
-// should be called before functions which depend on correct locale
+// Sets program's locale to system locale, updating `std::cout` and `std::cin`.
+// Should be called before functions which depend on correct locale.
 void useSystemLocale();
 
-// split lines with visual length longer than `maxLen` in `str` at spaces;
-// if a space is not encountered on a long line, it is left as is
-// (this is to support displaying images wider than `maxLen`);
-// this should be the first text content manipulation function called,
-// as most others depend on a correct `maxLen`
+// Split lines with visual length longer than `maxLen` in `str` at spaces.
+// If a space is not encountered on a long line, it is left as is
+// (this is to support displaying images wider than `maxLen`).
+// This should be the first text content manipulation function called,
+// as most others depend on a correct `maxLen`.
 void wrapLines(std::string& str, int maxLen);
 
-// based on screen width, center text using `maxLen`, images using img width;
-// note this will create lines longer than `maxLen`,
-// so it should be one of the last text content manipulation functions called
+// Based on screen width, center text using `maxLen`, images using img width.
+// Note this will create lines longer than `maxLen`,
+// so it should be one of the last text content manipulation functions called.
 void centerOnScreen(std::string& str, int maxLen);
 
-// in `str`, using `maxLen`, center justify text beginning with `prefix`
-// and ending with `postfix`
+// In `str`, using `maxLen`, center justify text beginning with `prefix`
+// and ending with `postfix`.
 void centerJustify(std::string_view prefix, std::string_view postfix,
                    std::string& str, int maxLen);
 
-// read one input in raw mode;
-// returns the key (normal keypress integer values + values in specKey::Values)
-// and the row, col position where the action happened, if applicable;
-// throws `std::system_error` on error to read key
+// Read one input in raw mode.
+// Returns the key (normal keypress integer values + values in specKey::Values)
+// and the row, col position where the action happened, if applicable.
+// Throws `std::system_error` on error to read key.
 std::tuple<Key, int, int> readRawInput();
 
-// equivalent to clearing the screen, removing its content from the scrollback
-// buffer, and setting cursor position to the screen's top left cell
+// Equivalent to clearing the screen, removing its content from the scrollback
+// buffer, and setting cursor position to the screen's top left cell.
 void eraseScreen();
 
-// get index of nth occurence of `target` in `str`, starting the search
-// from `startIndex`, doesn't count overlapping `target` occurences;
-// returns `std::string_view::npos` if nth occurence does not exist
+// Get index of nth occurence of `target` in `str`, starting the search
+// from `startIndex`, doesn't count overlapping `target` occurences.
+// Returns `std::string_view::npos` if nth occurence does not exist.
 constexpr std::size_t findNth(std::string_view str, std::string_view target,
                               int n, std::size_t startIndex = 0) {
     if (n == 0 || target.empty()) {
@@ -208,7 +209,7 @@ constexpr std::size_t findNth(std::string_view str, std::string_view target,
     return std::string_view::npos;
 }
 
-// in `str`, replace all occurences of `target` with `replacement`
+// In `str`, replace all occurences of `target` with `replacement`.
 constexpr void findAndReplaceAll(std::string& str, std::string_view target,
                                  std::string_view replacement) {
     std::size_t pos{str.find(target)};
@@ -218,16 +219,16 @@ constexpr void findAndReplaceAll(std::string& str, std::string_view target,
     }
 }
 
-// modify `str` to wrap its content in tmux's passthrough escape sequence,
-// letting escape sequences tmux doesn't know abt reach the terminal emulator;
-// requires `set -g allow-passthrough on` in ~/.tmux.conf for passthrough
+// Modify `str` to wrap its content in tmux's passthrough escape sequence,
+// letting escape sequences tmux doesn't know abt reach the terminal emulator.
+// Requires `set -g allow-passthrough on` in ~/.tmux.conf for passthrough.
 constexpr void wrapForTmuxPassthrough(std::string& str) {
     findAndReplaceAll(str, esc, esc + esc);
     str = esc + "Ptmux;" + str + escEnd;
 }
 
-// get number of occurences of `target` in `str`;
-// overlapping `target` occurences are not counted
+// Get number of occurences of `target` in `str`.
+// Overlapping `target` occurences are not counted.
 template <typename TStrView>
 constexpr int getOccurences(TStrView str, TStrView target) {
     int count{0};
@@ -239,80 +240,82 @@ constexpr int getOccurences(TStrView str, TStrView target) {
     return count;
 }
 
-// in `str`, if `style` and `resetStyle` encompass multiple lines,
-// give each line its own `style` and `resetStyle`
+// In `str`, if `style` and `resetStyle` encompass multiple lines,
+// give each line its own `style` and `resetStyle`.
 void styleEachLineIndividually(std::string& str, std::string_view style,
                                std::string_view resetStyle);
 
-// process content text of epubs extracted from chapter xhtml files for display
+// Process content text of epubs extracted from chapter xhtml files for
+// display.
 void processContentText(std::string& str, int maxLen);
 
-// in raw mode, create a tui interface to view `chapterAbs`;
-// chapter displayed starting from `iniProg`, lines wrapped at `desiredMaxLen`;
-// returns reason for exit and progress at exit
+// In raw mode, create a tui interface to view `chapterAbs`.
+// Chapter displayed starting from `iniProg`, lines wrapped at `desiredMaxLen`.
+// Returns reason for exit and progress at exit.
 std::pair<ChapterExit, double>
 displayChapter(const std::filesystem::path& chapterAbs, double iniProg,
                int desiredMaxLen);
 
-// helper for `displayChapter()`
+// Helper for `displayChapter()`.
 void setUpDisplayChapter(const std::filesystem::path& chapterAbs, double prog,
                          int desiredMaxLen, winsize& winInfo,
                          std::string& chapter, int& chapterLines,
                          int& screenTopLine, int& screenBotLine);
 
-// helper for `displayChapter()`
+// Helper for `displayChapter()`.
 void snapTopLineToBound(int& screenTopLine);
 
-// helper for `displayChapter()`
+// Helper for `displayChapter()`.
 void snapBotLineToBound(int& screenBotLine, int chapterLines);
 
-// helper for `displayChapter()`
+// Helper for `displayChapter()`.
 int calcBotLineFromTopLine(int screenTopLine, const winsize& winInfo);
 
-// helper for `displayChapter()`
+// Helper for `displayChapter()`.
 int calcTopLineFromBotLine(int screenBotLine, const winsize& winInfo);
 
-// execute a command using `posix_spawnp()`, waiting until the command exits;
-//  `argV` first element should be the command binary name,
-// following elements should be the individual arguments;
-// returns what the command printed to stdout;
-// throws `std::invalid_argument` for empty command binary name;
-// throws `std::system_error` on error creating pipe, setting up spawn file
-// actions, spawning, reading cmd output, or waiting for command;
-// throws `std::runtime_error` for an abnormal exit from command
+// Execute a command using `posix_spawnp()`, waiting until the command exits.
+// `argV` first element should be the command binary name,
+// following elements should be the individual arguments.
+// Returns what the command printed to stdout.
+// Throws `std::invalid_argument` for empty command binary name.
+// Throws `std::system_error` on error creating pipe, setting up spawn file
+// actions, spawning, reading cmd output, or waiting for command.
+// Throws `std::runtime_error` for an abnormal exit from command.
 std::string execute(const std::vector<std::string>& argV);
 
-// sets `g_winResize` to 1
+// Sets `g_winResize` to 1.
 extern "C" void handleSigwinch([[maybe_unused]] int signal);
 
-// start listening for SIGWINCH signals, setting `g_winResize` to 1 on receive;
-// throws `std::runtime_error` on failure to register handler via `sigaction()`
+// Start listening for SIGWINCH signals, setting `g_winResize` to 1 on receive.
+// Throws `std::runtime_error` on failure to register handler via
+// `sigaction()`.
 void registerSigwinchHandler();
 
-// translate `data` into a chapter-like string suitable for display;
-// output is appended to `str`
+// Translate `data` into a chapter-like string suitable for display.
+// Output is appended to `str`.
 void tocDataToString(const TocData& data, std::string& str);
 
-// checks `TERM_PROGRAM` env var for whether or not running in tmux session
+// Checks `TERM_PROGRAM` env var for whether or not running in tmux session.
 bool inTmuxSession();
 
-// in raw mode, create a tui interface to view `tocData`;
-// lines wrapped at `desiredMaxLen`;
-// provide initial selected chapter through `selectedNavPointIndex`;
-// returns relative path found in `tocData` of selected chapter,
-// or an empty path if user exited without selecting one;
-// throws `std::logic_error` if provided nav point index is out of bounds
+// In raw mode, create a tui interface to view `tocData`.
+// Lines wrapped at `desiredMaxLen`.
+// Provide initial selected chapter through `selectedNavPointIndex`.
+// Returns relative path found in `tocData` of selected chapter,
+// or an empty path if user exited without selecting one.
+// Throws `std::logic_error` if provided nav point index is out of bounds.
 std::filesystem::path displayTOC(const TocData& tocData, int desiredMaxLen,
                                  int selectedNavPointIndex);
 
-// helper for `displayTOC()`
+// Helper for `displayTOC()`.
 void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
                      winsize& winInfo, std::string& tocStr, int& tocLines);
 
-// highest level function for creating the core TUI interface;
-// once in raw mode, with locale set, display an epub book;
-// takes an unzipped epub, desired visual length, and initial progress;
-// returns progress at exit from this function
+// Highest level function for creating the core TUI interface.
+// Once in raw mode, with locale set, display an epub book.
+// Takes an unzipped epub, desired visual length, and initial progress.
+// Returns progress at exit from this function.
 EpubProg displayEpub(const EpubProg& iniProg,
                      const std::filesystem::path& epubRootAbs,
                      int desiredMaxLen);
