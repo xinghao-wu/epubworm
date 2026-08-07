@@ -44,7 +44,9 @@ void wideToUTF8();
 
 void findNth();
 
-// also serves to test `execute()`, `handleSigwinch()`,
+void execute();
+
+// also serves to test `handleSigwinch()`,
 //  `registerSigwinchHandler()`, `setUpDisplayChapter()`,
 //  `snapTopLineToBound()`, `snapBotLineToBound()`,
 //  `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`,

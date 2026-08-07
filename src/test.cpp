@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -320,6 +321,49 @@ void findNth() {
     static_assert(::findNth("mirra mirra", "mirra", 3)
                   == std::string_view::npos);
     std::cout << "test::findNth() success cases passed\n";
+}
+
+void execute() {
+    try {
+        ::execute(std::vector<std::string>{});
+        assert(false);
+    } catch (const std::invalid_argument& e) {
+        assert(std::string_view{e.what()} == "execute() cmd cannot be empty");
+    }
+    try {
+        ::execute(std::vector<std::string>{""});
+        assert(false);
+    } catch (const std::invalid_argument& e) {
+        assert(std::string_view{e.what()} == "execute() cmd cannot be empty");
+    }
+    try {
+        ::execute(std::vector<std::string>{"nonexistent_cmd_xyz"});
+        assert(false);
+    } catch (const std::system_error& e) {
+        assert(std::string_view{e.what()}.starts_with(
+                "failed to spawn cmd: "));
+    }
+    try {
+        ::execute(std::vector<std::string>{"false"});
+        assert(false);
+    } catch (const std::runtime_error& e) {
+        assert(std::string_view{e.what()}
+               == "cmd did not exit properly: false");
+    }
+    std::cout << "test::execute() failure cases passed\n";
+
+    assert(::execute(std::vector<std::string>{"true"}).empty());
+    assert(::execute(std::vector<std::string>{"echo", "hello"}) == "hello\n");
+    assert(::execute(std::vector<std::string>{"printf", "a\\nb\\nc\\n"})
+           == "a\nb\nc\n");
+
+    const std::string largeOutput{
+            ::execute(std::vector<std::string>{"seq", "50000"})};
+    assert(largeOutput.size() > 65536);
+    assert(largeOutput.starts_with("1\n"));
+    assert(largeOutput.ends_with("50000\n"));
+
+    std::cout << "test::execute() success cases passed\n";
 }
 
 void displayChapter() {
