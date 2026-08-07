@@ -275,10 +275,12 @@ int calcTopLineFromBotLine(int screenBotLine, const winsize& winInfo);
 // execute a command using `posix_spawnp()`, waiting until the command exits;
 //  `argV` first element should be the command binary name,
 // following elements should be the individual arguments;
+// returns what the command printed to stdout;
 // throws `std::invalid_argument` for empty command binary name;
-// throws `std::system_error` on error spawning or waiting for command;
+// throws `std::system_error` on error creating pipe, setting up spawn file
+// actions, spawning, reading cmd output, or waiting for command;
 // throws `std::runtime_error` for an abnormal exit from command
-void execute(const std::vector<std::string>& argV);
+std::string execute(const std::vector<std::string>& argV);
 
 // sets `g_winResize` to 1
 extern "C" void handleSigwinch([[maybe_unused]] int signal);

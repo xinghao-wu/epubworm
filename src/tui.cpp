@@ -780,7 +780,7 @@ int calcTopLineFromBotLine(int screenBotLine, const winsize& winInfo) {
     return screenBotLine - winInfo.ws_row + 1;
 }
 
-void execute(const std::vector<std::string>& argV) {
+std::string execute(const std::vector<std::string>& argV) {
     if (argV.empty() || argV.front().empty()) {
         throw std::invalid_argument{"execute() cmd cannot be empty"};
     }
@@ -792,13 +792,81 @@ void execute(const std::vector<std::string>& argV) {
     }
     posixAPIArgV.push_back(nullptr);
 
+    int pipeFds[2]{};
+    if (pipe(pipeFds) == -1) {
+        throw std::system_error{errno, std::generic_category(),
+                                "failed to create pipe for cmd: "
+                                        + argV.front()};
+    }
+
+    posix_spawn_file_actions_t fileActions{};
+    int faStatus{posix_spawn_file_actions_init(&fileActions)};
+    if (faStatus != 0) {
+        close(pipeFds[0]);
+        close(pipeFds[1]);
+        throw std::system_error{faStatus, std::generic_category(),
+                                "failed to init file actions for cmd: "
+                                        + argV.front()};
+    }
+
+    faStatus = posix_spawn_file_actions_adddup2(&fileActions, pipeFds[1],
+                                                STDOUT_FILENO);
+    if (faStatus != 0) {
+        posix_spawn_file_actions_destroy(&fileActions);
+        close(pipeFds[0]);
+        close(pipeFds[1]);
+        throw std::system_error{faStatus, std::generic_category(),
+                                "failed to dup2 pipe write end for cmd: "
+                                        + argV.front()};
+    }
+    faStatus = posix_spawn_file_actions_addclose(&fileActions, pipeFds[0]);
+    if (faStatus != 0) {
+        posix_spawn_file_actions_destroy(&fileActions);
+        close(pipeFds[0]);
+        close(pipeFds[1]);
+        throw std::system_error{faStatus, std::generic_category(),
+                                "failed to close pipe read end for cmd: "
+                                        + argV.front()};
+    }
+    faStatus = posix_spawn_file_actions_addclose(&fileActions, pipeFds[1]);
+    if (faStatus != 0) {
+        posix_spawn_file_actions_destroy(&fileActions);
+        close(pipeFds[0]);
+        close(pipeFds[1]);
+        throw std::system_error{faStatus, std::generic_category(),
+                                "failed to close pipe write end for cmd: "
+                                        + argV.front()};
+    }
+
     pid_t pid{};
-    const int spawnStatus{posix_spawnp(&pid, posixAPIArgV.front(), nullptr,
-                                       nullptr, posixAPIArgV.data(), environ)};
+    const int spawnStatus{posix_spawnp(&pid, posixAPIArgV.front(),
+                                       &fileActions, nullptr,
+                                       posixAPIArgV.data(), environ)};
+    posix_spawn_file_actions_destroy(&fileActions);
+    close(pipeFds[1]); // parent closes write end so read can hit EOF
     if (spawnStatus != 0) {
+        close(pipeFds[0]);
         throw std::system_error{spawnStatus, std::generic_category(),
                                 "failed to spawn cmd: " + argV.front()};
     }
+
+    std::string output{};
+    std::string buf(4096, '\0');
+    while (true) {
+        const ssize_t bytesRead{read(pipeFds[0], buf.data(), buf.size())};
+        if (bytesRead > 0) {
+            output.append(buf, 0, static_cast<std::size_t>(bytesRead));
+        } else if (bytesRead == 0) {
+            break; // EOF
+        } else if (errno != EAGAIN && errno != EINTR) {
+            const int err{errno};
+            close(pipeFds[0]);
+            throw std::system_error{err, std::generic_category(),
+                                    "error reading cmd output: "
+                                            + argV.front()};
+        }
+    }
+    close(pipeFds[0]);
 
     int waitStatus{};
     while (waitpid(pid, &waitStatus, 0) == -1) {
@@ -810,6 +878,8 @@ void execute(const std::vector<std::string>& argV) {
     if (!WIFEXITED(waitStatus) || WEXITSTATUS(waitStatus) != 0) {
         throw std::runtime_error{"cmd did not exit properly: " + argV.front()};
     }
+
+    return output;
 }
 
 extern "C" void handleSigwinch([[maybe_unused]] int signal) {
