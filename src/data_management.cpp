@@ -1,9 +1,11 @@
 #include "data_management.hpp"
 #include "miniz_cpp.hpp"
 #include "tinyxml2.hpp"
+#include "tui.hpp"
 #include <filesystem>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 using namespace tinyxml2;
 namespace fs = std::filesystem;
@@ -76,4 +78,10 @@ ConfOpts readMncConf(const fs::path& mncConfAbs) {
     }
 
     return {chars};
+}
+
+std::string getTruncatedSHA256Sum(const fs::path& fileAbs) {
+    const std::string sha256{execute(std::vector<std::string>{
+            "shasum", "-a", "256", fileAbs.string()})};
+    return sha256.substr(0, 32); // 128 bits = 32 hex chars
 }

@@ -67,4 +67,6 @@ void initConf();
 void initLibrary();
 
 void readMncConf();
+
+void getTruncatedSHA256Sum();
 } // namespace test

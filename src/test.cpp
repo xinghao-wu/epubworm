@@ -515,4 +515,26 @@ void readMncConf() {
                  "in testing config to verify correct behavior in cases\n";
     std::cout << "`<line-length>` chars: " << confOpts.lineLength << '\n';
 }
+
+void getTruncatedSHA256Sum() {
+    try {
+        ::getTruncatedSHA256Sum("/nonexistent_file_xyz");
+        assert(false);
+    } catch (const std::runtime_error& e) {
+        assert(std::string_view{e.what()}
+               == "cmd did not exit properly: shasum");
+    }
+    std::cout << "`test::getTruncatedSHA256Sum()` failure cases passed\n";
+
+    assert(::getTruncatedSHA256Sum(epubsAbs / "lord_of_mysteries_vol_1.epub")
+           == "53760b7bdcdfa01a43ccf243f41dd912");
+    assert(::getTruncatedSHA256Sum(epubsAbs / "parasite_in_love.epub")
+           == "40c5f7dce4a5576956a094eb7fb18cf8");
+    assert(::getTruncatedSHA256Sum(epubsAbs / "spice_and_wolf_vol_1.epub")
+           == "a6ce475b738e1cd7def7ed1e958426b3");
+    assert(::getTruncatedSHA256Sum(epubsAbs / "zuttomo_vol_1.epub")
+           == "8d070ee9c3292df13dfb8471f099565a");
+
+    std::cout << "`test::getTruncatedSHA256Sum()` success cases passed\n";
+}
 } // namespace test
