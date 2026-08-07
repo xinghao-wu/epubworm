@@ -3,11 +3,23 @@ Monocle (mnc) is a TUI epub reader written in C++23.
 
 ## Command Reference
 ```bash
-make            # debug build
-make fmt-diff   # show clang-format formatting proposal
-make fmt        # make suggested formatting edits in-place
-make lint       # run clang-tidy
-make lint-fix   # apply safe clang-tidy fixes
+# debug build
+make
+
+# Make clang-format proposed formatting edits in-place.
+make fmt
+
+# Runs clang-format read-only. If source code is incorrectly formatted, error.
+make fmt-check
+
+# Same as fmt-check, but also shows proposed formatting edits.
+make fmt-check-diff
+
+# Run clang-tidy, error on any diagnostic.
+make lint
+
+# Apply safe clang-tidy fixes.
+make lint-fix
 ```
 
 ## Project Structure
