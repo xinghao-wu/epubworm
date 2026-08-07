@@ -42,7 +42,7 @@ fmt-diff:
 	exit $$status
 
 lint:
-	clang-tidy $(PROJECT_FILES)
+	clang-tidy --warnings-as-errors='*' $(PROJECT_FILES)
 
 lint-fix:
 	clang-tidy --fix $(PROJECT_FILES)
