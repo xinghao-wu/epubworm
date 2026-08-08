@@ -63,6 +63,10 @@ queryEpubElem(const tinyxml2::XMLElement* epub,
 void writeProgress(tinyxml2::XMLElement* epub, const EpubProg& prog,
                    const std::filesystem::path& shareAbs);
 
+// Sets `<last-read>`'s `id` attribute to `id`.
+// Throws `std::runtime_error` if `<library>` or `<last-read>` is missing.
+void setLastRead(tinyxml2::XMLDocument& libraryDoc, std::string_view id);
+
 // Adds `zippedEpubAbs` to the library at `shareAbs/mnc`.
 // Computes the id hash, checks if already present, and if not, extracts the
 // epub to `shareAbs/mnc/extracted_epubs/<id>/`, adds an `<epub>` entry to

@@ -70,13 +70,13 @@ void readMncConf();
 
 void getTruncatedSHA256Sum();
 
-// Also serves to test `findEpubById`
+// Also serves to test `findEpubById()`, `setLastRead()`.
 void addToLibrary();
 
-// Also serves to test `findEpubById`.
+// Also serves to test `findEpubById()`.
 void queryEpubElem();
 
-// Also serves to test `queryEpubElem` round-trip.
+// Also serves to test `queryEpubElem()`.
 void writeProgress();
 
 void deleteFromLibrary();

@@ -155,6 +155,20 @@ void writeProgress(XMLElement* epub, const EpubProg& prog,
     epub->SetAttribute("opened-chapter", openedChapter.string().c_str());
 }
 
+void setLastRead(XMLDocument& libraryDoc, std::string_view id) {
+    XMLElement* const libraryRoot{libraryDoc.FirstChildElement("library")};
+    if (libraryRoot == nullptr) {
+        throw std::runtime_error{
+                "root element `<library>` missing in library file"};
+    }
+    XMLElement* const lastRead{libraryRoot->FirstChildElement("last-read")};
+    if (lastRead == nullptr) {
+        throw std::runtime_error{
+                "`<last-read>` element missing in library file"};
+    }
+    lastRead->SetAttribute("id", std::string{id}.c_str());
+}
+
 bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     const std::string id{getTruncatedSHA256Sum(zippedEpubAbs)};
 
@@ -190,12 +204,7 @@ bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     libraryRoot->InsertEndChild(epubElem);
 
     // Update `<last-read>` to the new id.
-    XMLElement* const lastRead{libraryRoot->FirstChildElement("last-read")};
-    if (lastRead == nullptr) {
-        throw std::runtime_error{
-                "`<last-read>` element missing in library file"};
-    }
-    lastRead->SetAttribute("id", id.c_str());
+    setLastRead(mncLibrary, id);
 
     if (mncLibrary.SaveFile(mncLibraryAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
