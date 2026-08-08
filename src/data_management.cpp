@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 using namespace tinyxml2;
@@ -101,6 +102,36 @@ XMLElement* findEpubById(XMLElement* libraryRoot, const std::string& id) {
         }
     }
     return nullptr;
+}
+
+std::pair<std::string, EpubProg> queryEpubElem(const XMLElement* epub,
+                                               const fs::path& shareAbs) {
+    const char* const id{epub->Attribute("id")};
+    if (id == nullptr) {
+        throw std::runtime_error{"epub entry missing `id` attribute"};
+    }
+
+    EpubProg prog{};
+    double chapterProg{};
+    const XMLError progErr{
+            epub->QueryDoubleAttribute("chapter-progress", &chapterProg)};
+    if (progErr == XML_NO_ATTRIBUTE) {
+        throw std::runtime_error{
+                "epub entry missing `chapter-progress` attribute"};
+    }
+    if (progErr != XML_SUCCESS) {
+        throw std::runtime_error{
+                "epub entry has invalid `chapter-progress` attribute"};
+    }
+    prog.chapterProg = chapterProg;
+
+    if (const char* const openedChapter{epub->Attribute("opened-chapter")};
+        openedChapter != nullptr && openedChapter[0] != '\0') {
+        prog.chapterAbs =
+                shareAbs / "mnc/extracted_epubs" / id / openedChapter;
+    }
+
+    return {id, prog};
 }
 
 bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {

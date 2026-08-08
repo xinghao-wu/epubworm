@@ -73,5 +73,8 @@ void getTruncatedSHA256Sum();
 // Also serves to test `findEpubById`
 void addToLibrary();
 
+// Also serves to test `findEpubById`.
+void queryEpubElem();
+
 void deleteFromLibrary();
 } // namespace test

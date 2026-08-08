@@ -1,8 +1,10 @@
 #pragma once
 
 #include "tinyxml2.hpp"
+#include "tui.hpp"
 #include <filesystem>
 #include <string>
+#include <utility>
 
 struct ConfOpts {
     int lineLength{55};
@@ -40,6 +42,17 @@ getTruncatedSHA256Sum(const std::filesystem::path& fileAbs);
 // nullptr if not found.
 [[nodiscard]] tinyxml2::XMLElement*
 findEpubById(tinyxml2::XMLElement* libraryRoot, const std::string& id);
+
+// Queries an `<epub>` element for its id and `EpubProg`.
+// `chapterAbs` is built as an absolute path:
+// `shareAbs/mnc/extracted_epubs/<id>/<opened-chapter>`.
+// If `opened-chapter` is absent or empty, `chapterAbs` is left empty
+// (so `displayEpub()` takes it as the first chapter).
+// Throws `std::runtime_error` if the `<epub>` element is missing its `id`
+// attribute, or if `chapter-progress` is missing or not a valid double.
+[[nodiscard]] std::pair<std::string, EpubProg>
+queryEpubElem(const tinyxml2::XMLElement* epub,
+              const std::filesystem::path& shareAbs);
 
 // Adds `zippedEpubAbs` to the library at `shareAbs/mnc`.
 // Computes the id hash, checks if already present, and if not, extracts the

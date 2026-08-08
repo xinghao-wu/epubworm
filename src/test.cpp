@@ -552,6 +552,111 @@ void addToLibrary() {
                  "correct library file and extracted epub\n";
 }
 
+void queryEpubElem() {
+    const std::string idA{"53760b7bdcdfa01a43ccf243f41dd912"};
+    const std::string idB{"40c5f7dce4a5576956a094eb7fb18cf8"};
+
+    XMLDocument library{};
+    library.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                  "<library>"
+                  "<last-read id=\"53760b7bdcdfa01a43ccf243f41dd912\"/>"
+                  "<epub id=\"53760b7bdcdfa01a43ccf243f41dd912\" "
+                  "opened-chapter=\"index_split_117.html\" "
+                  "chapter-progress=\"0.5\"/>"
+                  "<epub id=\"40c5f7dce4a5576956a094eb7fb18cf8\" "
+                  "opened-chapter=\"\" chapter-progress=\"0\"/>"
+                  "</library>");
+    assert(!library.Error());
+
+    XMLElement* const libraryRoot{library.FirstChildElement("library")};
+    assert(libraryRoot != nullptr);
+
+    // Success case A: non-empty opened-chapter, non-zero progress.
+    const XMLElement* const epubA{::findEpubById(libraryRoot, idA)};
+    assert(epubA != nullptr);
+    const std::pair<std::string, EpubProg> outA{
+            ::queryEpubElem(epubA, shareAbs)};
+    assert(outA.first == idA);
+    assert(outA.second.chapterAbs
+           == shareAbs / "mnc/extracted_epubs" / idA / "index_split_117.html");
+    assert(outA.second.chapterProg == 0.5);
+
+    // Success case B: empty opened-chapter -> empty chapterAbs, zero progress.
+    const XMLElement* const epubB{::findEpubById(libraryRoot, idB)};
+    assert(epubB != nullptr);
+    const std::pair<std::string, EpubProg> outB{
+            ::queryEpubElem(epubB, shareAbs)};
+    assert(outB.first == idB);
+    assert(outB.second.chapterAbs.empty());
+    assert(outB.second.chapterProg == 0.0);
+
+    std::cout << "`test::queryEpubElem()` success cases passed\n";
+
+    // Failure case: missing `id` attribute.
+    XMLDocument badLibrary{};
+    badLibrary.Parse(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            "<library>"
+            "<epub opened-chapter=\"x.html\" chapter-progress=\"0.1\"/>"
+            "</library>");
+    assert(!badLibrary.Error());
+    XMLElement* const badRoot{badLibrary.FirstChildElement("library")};
+    assert(badRoot != nullptr);
+    const XMLElement* const badEpub{badRoot->FirstChildElement("epub")};
+    assert(badEpub != nullptr);
+
+    try {
+        (void)::queryEpubElem(badEpub, shareAbs);
+        assert(false);
+    } catch (const std::runtime_error& e) {
+        assert(std::string_view{e.what()}
+               == "epub entry missing `id` attribute");
+    }
+
+    // Failure case: missing `chapter-progress` attribute.
+    XMLDocument noProgLibrary{};
+    noProgLibrary.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                        "<library>"
+                        "<epub id=\"abc\" opened-chapter=\"x.html\"/>"
+                        "</library>");
+    assert(!noProgLibrary.Error());
+    const XMLElement* const noProgEpub{
+            noProgLibrary.FirstChildElement("library")->FirstChildElement(
+                    "epub")};
+    assert(noProgEpub != nullptr);
+
+    try {
+        (void)::queryEpubElem(noProgEpub, shareAbs);
+        assert(false);
+    } catch (const std::runtime_error& e) {
+        assert(std::string_view{e.what()}
+               == "epub entry missing `chapter-progress` attribute");
+    }
+
+    // Failure case: `chapter-progress` not a valid double.
+    XMLDocument badProgLibrary{};
+    badProgLibrary.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                         "<library>"
+                         "<epub id=\"abc\" opened-chapter=\"x.html\" "
+                         "chapter-progress=\"not-a-number\"/>"
+                         "</library>");
+    assert(!badProgLibrary.Error());
+    const XMLElement* const badProgEpub{
+            badProgLibrary.FirstChildElement("library")->FirstChildElement(
+                    "epub")};
+    assert(badProgEpub != nullptr);
+
+    try {
+        (void)::queryEpubElem(badProgEpub, shareAbs);
+        assert(false);
+    } catch (const std::runtime_error& e) {
+        assert(std::string_view{e.what()}
+               == "epub entry has invalid `chapter-progress` attribute");
+    }
+
+    std::cout << "`test::queryEpubElem()` failure cases passed\n";
+}
+
 void deleteFromLibrary() {
     std::cout << "`test::deleteFromLibrary()` no failure cases\n";
 
