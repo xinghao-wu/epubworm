@@ -31,7 +31,11 @@ void initConf(const fs::path& mncConfAbs) {
 void initLibrary(const fs::path& mncLibraryAbs) {
     XMLDocument mncLibrary{};
     mncLibrary.InsertFirstChild(mncLibrary.NewDeclaration());
-    mncLibrary.InsertEndChild(mncLibrary.NewElement("library"));
+    XMLElement* const libraryRoot{mncLibrary.NewElement("library")};
+    mncLibrary.InsertEndChild(libraryRoot);
+    XMLElement* const lastRead{mncLibrary.NewElement("last-read")};
+    lastRead->SetAttribute("id", "");
+    libraryRoot->InsertEndChild(lastRead);
 
     fs::create_directories(mncLibraryAbs.parent_path());
     if (mncLibrary.SaveFile(mncLibraryAbs.c_str()) != XML_SUCCESS) {
