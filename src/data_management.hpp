@@ -34,3 +34,14 @@ void initLibrary(const std::filesystem::path& mncLibraryAbs);
 // from `execute()` on failure to run `shasum`.
 [[nodiscard]] std::string
 getTruncatedSHA256Sum(const std::filesystem::path& fileAbs);
+
+// Adds `zippedEpubAbs` to the library at `shareAbs/mnc`.
+// Computes the id hash, checks if already present, and if not, extracts the
+// epub to `shareAbs/mnc/extracted_epubs/<id>/`, adds an `<epub>` entry to
+// `shareAbs/mnc/library.xml`, and sets `<last-read>` to the new id.
+// Returns false if the epub is already in the library; returns true on
+// success.
+// Throws `std::runtime_error` on library load/save failure and on missing
+// `<library>` or `<last-read>` elements.
+[[nodiscard]] bool addToLibrary(const std::filesystem::path& zippedEpubAbs,
+                                const std::filesystem::path& shareAbs);

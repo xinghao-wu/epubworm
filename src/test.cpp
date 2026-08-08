@@ -537,4 +537,18 @@ void getTruncatedSHA256Sum() {
 
     std::cout << "`test::getTruncatedSHA256Sum()` success cases passed\n";
 }
+
+void addToLibrary() {
+    std::cout << "`test::addToLibrary()` no failure cases\n";
+
+    const fs::path mncLibraryAbs{shareAbs / "mnc/library.xml"};
+    ::initLibrary(mncLibraryAbs);
+
+    const fs::path zippedEpubAbs{epubsAbs / "lord_of_mysteries_vol_1.epub"};
+    assert(::addToLibrary(zippedEpubAbs, shareAbs));
+
+    std::cout << "`test::addToLibrary()` success cases did not error, "
+                 "check `.testing_xdg_dirs/share/` for correct library file "
+                 "and extracted epub\n";
+}
 } // namespace test

@@ -89,3 +89,58 @@ std::string getTruncatedSHA256Sum(const fs::path& fileAbs) {
             "shasum", "-a", "256", fileAbs.string()})};
     return sha256.substr(0, 32); // 128 bits = 32 hex chars
 }
+
+bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
+    const std::string id{getTruncatedSHA256Sum(zippedEpubAbs)};
+
+    const fs::path mncLibraryAbs{shareAbs / "mnc/library.xml"};
+    XMLDocument mncLibrary{};
+    if (mncLibrary.LoadFile(mncLibraryAbs.c_str()) != XML_SUCCESS) {
+        throw std::runtime_error{
+                std::string{"error loading library file: "}
+                + XMLDocument::ErrorIDToName(mncLibrary.ErrorID())};
+    }
+
+    XMLElement* const libraryRoot{mncLibrary.FirstChildElement("library")};
+    if (libraryRoot == nullptr) {
+        throw std::runtime_error{
+                "root element <library> missing in library file"};
+    }
+
+    // Check if epub already in library.
+    for (XMLElement* epub{libraryRoot->FirstChildElement("epub")};
+         epub != nullptr; epub = epub->NextSiblingElement("epub")) {
+        if (const char* const epubId{epub->Attribute("id")};
+            epubId != nullptr && std::string{epubId} == id) {
+            return false;
+        }
+    }
+
+    // Extract epub to its directory.
+    const fs::path extractDest{shareAbs / "mnc/extracted_epubs" / id};
+    fs::create_directories(extractDest);
+    unzip(zippedEpubAbs, extractDest);
+
+    // Add new <epub> entry.
+    XMLElement* const epubElem{mncLibrary.NewElement("epub")};
+    epubElem->SetAttribute("id", id.c_str());
+    epubElem->SetAttribute("opened-chapter", "");
+    epubElem->SetAttribute("chapter-progress", 0.0);
+    libraryRoot->InsertEndChild(epubElem);
+
+    // Update <last-read> to the new id.
+    XMLElement* const lastRead{libraryRoot->FirstChildElement("last-read")};
+    if (lastRead == nullptr) {
+        throw std::runtime_error{
+                "<last-read> element missing in library file"};
+    }
+    lastRead->SetAttribute("id", id.c_str());
+
+    if (mncLibrary.SaveFile(mncLibraryAbs.c_str()) != XML_SUCCESS) {
+        throw std::runtime_error{
+                std::string{"error saving library file: "}
+                + XMLDocument::ErrorIDToName(mncLibrary.ErrorID())};
+    }
+
+    return true;
+}
