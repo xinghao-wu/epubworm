@@ -43,5 +43,15 @@ getTruncatedSHA256Sum(const std::filesystem::path& fileAbs);
 // success.
 // Throws `std::runtime_error` on library load/save failure and on missing
 // `<library>` or `<last-read>` elements.
-[[nodiscard]] bool addToLibrary(const std::filesystem::path& zippedEpubAbs,
-                                const std::filesystem::path& shareAbs);
+bool addToLibrary(const std::filesystem::path& zippedEpubAbs,
+                  const std::filesystem::path& shareAbs);
+
+// Removes the epub with `id` from the library at `shareAbs/mnc`.
+// Deletes the extracted epub at `shareAbs/mnc/extracted_epubs/<id>/`, removes
+// the `<epub>` entry from `shareAbs/mnc/library.xml`, and resets `<last-read>`
+// to a blank id if it referenced the removed epub.
+// Returns false if the epub is not in the library; returns true on success.
+// Throws `std::runtime_error` on library load/save failure and on missing
+// `<library>` or `<last-read>` elements.
+bool deleteFromLibrary(const std::string& id,
+                       const std::filesystem::path& shareAbs);

@@ -146,3 +146,60 @@ bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
 
     return true;
 }
+
+bool deleteFromLibrary(const std::string& id, const fs::path& shareAbs) {
+    const fs::path mncLibraryAbs{shareAbs / "mnc/library.xml"};
+    XMLDocument mncLibrary{};
+    if (mncLibrary.LoadFile(mncLibraryAbs.c_str()) != XML_SUCCESS) {
+        throw std::runtime_error{
+                std::string{"error loading library file: "}
+                + XMLDocument::ErrorIDToName(mncLibrary.ErrorID())};
+    }
+
+    XMLElement* const libraryRoot{mncLibrary.FirstChildElement("library")};
+    if (libraryRoot == nullptr) {
+        throw std::runtime_error{
+                "root element `<library>` missing in library file"};
+    }
+
+    XMLElement* const lastRead{libraryRoot->FirstChildElement("last-read")};
+    if (lastRead == nullptr) {
+        throw std::runtime_error{
+                "`<last-read>` element missing in library file"};
+    }
+
+    // Find the `<epub>` entry matching `id`.
+    XMLElement* epubElem{nullptr};
+    for (XMLElement* epub{libraryRoot->FirstChildElement("epub")};
+         epub != nullptr; epub = epub->NextSiblingElement("epub")) {
+        if (const char* const epubId{epub->Attribute("id")};
+            epubId != nullptr && std::string{epubId} == id) {
+            epubElem = epub;
+            break;
+        }
+    }
+
+    if (epubElem == nullptr) {
+        return false;
+    }
+
+    // Delete the extracted epub directory.
+    fs::remove_all(shareAbs / "mnc/extracted_epubs" / id);
+
+    // Remove the `<epub>` entry.
+    libraryRoot->DeleteChild(epubElem);
+
+    // Reset `<last-read>` if it referenced the removed epub.
+    if (const char* const lastReadId{lastRead->Attribute("id")};
+        lastReadId != nullptr && std::string{lastReadId} == id) {
+        lastRead->SetAttribute("id", "");
+    }
+
+    if (mncLibrary.SaveFile(mncLibraryAbs.c_str()) != XML_SUCCESS) {
+        throw std::runtime_error{
+                std::string{"error saving library file: "}
+                + XMLDocument::ErrorIDToName(mncLibrary.ErrorID())};
+    }
+
+    return true;
+}

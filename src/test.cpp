@@ -551,4 +551,22 @@ void addToLibrary() {
                  "check `.testing_xdg_dirs/share/` for correct library file "
                  "and extracted epub\n";
 }
+
+void deleteFromLibrary() {
+    std::cout << "`test::deleteFromLibrary()` no failure cases\n";
+
+    const fs::path mncLibraryAbs{shareAbs / "mnc/library.xml"};
+    ::initLibrary(mncLibraryAbs);
+
+    const fs::path zippedEpubAbs{epubsAbs / "lord_of_mysteries_vol_1.epub"};
+    ::addToLibrary(zippedEpubAbs, shareAbs);
+
+    const std::string id{"53760b7bdcdfa01a43ccf243f41dd912"};
+    assert(::deleteFromLibrary(id, shareAbs));
+    assert(!::deleteFromLibrary(id, shareAbs));
+
+    std::cout << "`test::deleteFromLibrary()` success cases did not error, "
+                 "check `.testing_xdg_dirs/share/` for correct library file "
+                 "and removed extracted epub\n";
+}
 } // namespace test
