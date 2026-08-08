@@ -46,8 +46,8 @@ const char* getHrefFromID(const XMLElement* manifest, std::string_view id) {
             return item->Attribute("href");
         }
     }
-    throw std::runtime_error{
-            "element matching provided spine ID not found in manifest"};
+    throw std::runtime_error{"element matching provided `<spine>` ID not "
+                             "found in `<manifest>`"};
 }
 
 std::vector<fs::path> getSpine(const XMLDocument& opf) {

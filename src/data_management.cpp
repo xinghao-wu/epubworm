@@ -55,7 +55,8 @@ ConfOpts readMncConf(const fs::path& mncConfAbs) {
 
     XMLElement* const rootElem{mncConf.FirstChildElement("conf")};
     if (rootElem == nullptr) {
-        throw std::runtime_error{"root element <conf> missing in config file"};
+        throw std::runtime_error{
+                "root element `<conf>` missing in config file"};
     }
 
     // Write a default value for unfound options to support adding future
@@ -72,7 +73,8 @@ ConfOpts readMncConf(const fs::path& mncConfAbs) {
     int chars{0};
     lineLength->QueryIntAttribute("chars", &chars);
     if (chars <= 0) {
-        throw std::runtime_error{"conf option line-length has invalid value"};
+        throw std::runtime_error{
+                "conf option `<line-length>` has invalid value"};
     }
 
     if (mncConf.SaveFile(mncConfAbs.c_str()) != XML_SUCCESS) {
@@ -104,7 +106,7 @@ bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     XMLElement* const libraryRoot{mncLibrary.FirstChildElement("library")};
     if (libraryRoot == nullptr) {
         throw std::runtime_error{
-                "root element <library> missing in library file"};
+                "root element `<library>` missing in library file"};
     }
 
     // Check if epub already in library.
@@ -121,18 +123,18 @@ bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     fs::create_directories(extractDest);
     unzip(zippedEpubAbs, extractDest);
 
-    // Add new <epub> entry.
+    // Add new `<epub>` entry.
     XMLElement* const epubElem{mncLibrary.NewElement("epub")};
     epubElem->SetAttribute("id", id.c_str());
     epubElem->SetAttribute("opened-chapter", "");
     epubElem->SetAttribute("chapter-progress", 0.0);
     libraryRoot->InsertEndChild(epubElem);
 
-    // Update <last-read> to the new id.
+    // Update `<last-read>` to the new id.
     XMLElement* const lastRead{libraryRoot->FirstChildElement("last-read")};
     if (lastRead == nullptr) {
         throw std::runtime_error{
-                "<last-read> element missing in library file"};
+                "`<last-read>` element missing in library file"};
     }
     lastRead->SetAttribute("id", id.c_str());
 
