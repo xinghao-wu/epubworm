@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -93,11 +94,11 @@ std::string getTruncatedSHA256Sum(const fs::path& fileAbs) {
     return sha256.substr(0, 32); // 128 bits = 32 hex chars
 }
 
-XMLElement* findEpubById(XMLElement* libraryRoot, const std::string& id) {
+XMLElement* findEpubById(XMLElement* libraryRoot, std::string_view id) {
     for (XMLElement* epub{libraryRoot->FirstChildElement("epub")};
          epub != nullptr; epub = epub->NextSiblingElement("epub")) {
         if (const char* const epubId{epub->Attribute("id")};
-            epubId != nullptr && std::string{epubId} == id) {
+            epubId != nullptr && std::string_view{epubId} == id) {
             return epub;
         }
     }
@@ -185,7 +186,7 @@ bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     return true;
 }
 
-bool deleteFromLibrary(const std::string& id, const fs::path& shareAbs) {
+bool deleteFromLibrary(std::string_view id, const fs::path& shareAbs) {
     const fs::path mncLibraryAbs{shareAbs / "mnc/library.xml"};
     XMLDocument mncLibrary{};
     if (mncLibrary.LoadFile(mncLibraryAbs.c_str()) != XML_SUCCESS) {
@@ -219,7 +220,7 @@ bool deleteFromLibrary(const std::string& id, const fs::path& shareAbs) {
 
     // Reset `<last-read>` if it referenced the removed epub.
     if (const char* const lastReadId{lastRead->Attribute("id")};
-        lastReadId != nullptr && std::string{lastReadId} == id) {
+        lastReadId != nullptr && std::string_view{lastReadId} == id) {
         lastRead->SetAttribute("id", "");
     }
 

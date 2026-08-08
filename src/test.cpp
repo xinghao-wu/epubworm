@@ -553,8 +553,8 @@ void addToLibrary() {
 }
 
 void queryEpubElem() {
-    const std::string idA{"53760b7bdcdfa01a43ccf243f41dd912"};
-    const std::string idB{"40c5f7dce4a5576956a094eb7fb18cf8"};
+    const std::string_view idA{"53760b7bdcdfa01a43ccf243f41dd912"};
+    const std::string_view idB{"40c5f7dce4a5576956a094eb7fb18cf8"};
 
     XMLDocument library{};
     library.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"

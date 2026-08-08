@@ -4,6 +4,7 @@
 #include "tui.hpp"
 #include <filesystem>
 #include <string>
+#include <string_view>
 #include <utility>
 
 struct ConfOpts {
@@ -41,7 +42,7 @@ getTruncatedSHA256Sum(const std::filesystem::path& fileAbs);
 // Returns pointer to `<epub>` child of `libraryRoot` with matching `id`, or
 // nullptr if not found.
 [[nodiscard]] tinyxml2::XMLElement*
-findEpubById(tinyxml2::XMLElement* libraryRoot, const std::string& id);
+findEpubById(tinyxml2::XMLElement* libraryRoot, std::string_view id);
 
 // Queries an `<epub>` element for its id and `EpubProg`.
 // `chapterAbs` is built as an absolute path:
@@ -72,5 +73,5 @@ bool addToLibrary(const std::filesystem::path& zippedEpubAbs,
 // Returns false if the epub is not in the library; returns true on success.
 // Throws `std::runtime_error` on library load/save failure and on missing
 // `<library>` or `<last-read>` elements.
-bool deleteFromLibrary(const std::string& id,
+bool deleteFromLibrary(std::string_view id,
                        const std::filesystem::path& shareAbs);
