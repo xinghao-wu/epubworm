@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tinyxml2.hpp"
 #include <filesystem>
 #include <string>
 
@@ -34,6 +35,11 @@ void initLibrary(const std::filesystem::path& mncLibraryAbs);
 // from `execute()` on failure to run `shasum`.
 [[nodiscard]] std::string
 getTruncatedSHA256Sum(const std::filesystem::path& fileAbs);
+
+// Returns pointer to `<epub>` child of `libraryRoot` with matching `id`, or
+// nullptr if not found.
+[[nodiscard]] tinyxml2::XMLElement*
+findEpubById(const tinyxml2::XMLElement* libraryRoot, const std::string& id);
 
 // Adds `zippedEpubAbs` to the library at `shareAbs/mnc`.
 // Computes the id hash, checks if already present, and if not, extracts the

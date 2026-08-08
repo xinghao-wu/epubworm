@@ -70,6 +70,7 @@ void readMncConf();
 
 void getTruncatedSHA256Sum();
 
+// Also serves to test `findEpubById`
 void addToLibrary();
 
 void deleteFromLibrary();

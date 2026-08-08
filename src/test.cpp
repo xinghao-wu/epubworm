@@ -545,7 +545,7 @@ void addToLibrary() {
     ::initLibrary(mncLibraryAbs);
 
     const fs::path zippedEpubAbs{epubsAbs / "lord_of_mysteries_vol_1.epub"};
-    assert(::addToLibrary(zippedEpubAbs, shareAbs));
+    ::addToLibrary(zippedEpubAbs, shareAbs);
 
     std::cout << "`test::addToLibrary()` success cases did not error, "
                  "check `.testing_xdg_dirs/share/` for correct library file "

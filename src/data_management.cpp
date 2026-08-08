@@ -92,6 +92,17 @@ std::string getTruncatedSHA256Sum(const fs::path& fileAbs) {
     return sha256.substr(0, 32); // 128 bits = 32 hex chars
 }
 
+XMLElement* findEpubById(XMLElement* libraryRoot, const std::string& id) {
+    for (XMLElement* epub{libraryRoot->FirstChildElement("epub")};
+         epub != nullptr; epub = epub->NextSiblingElement("epub")) {
+        if (const char* const epubId{epub->Attribute("id")};
+            epubId != nullptr && std::string{epubId} == id) {
+            return epub;
+        }
+    }
+    return nullptr;
+}
+
 bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     const std::string id{getTruncatedSHA256Sum(zippedEpubAbs)};
 
@@ -110,12 +121,8 @@ bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     }
 
     // Check if epub already in library.
-    for (XMLElement* epub{libraryRoot->FirstChildElement("epub")};
-         epub != nullptr; epub = epub->NextSiblingElement("epub")) {
-        if (const char* const epubId{epub->Attribute("id")};
-            epubId != nullptr && std::string{epubId} == id) {
-            return false;
-        }
+    if (findEpubById(libraryRoot, id) != nullptr) {
+        return false;
     }
 
     // Extract epub to its directory.
@@ -168,17 +175,7 @@ bool deleteFromLibrary(const std::string& id, const fs::path& shareAbs) {
                 "`<last-read>` element missing in library file"};
     }
 
-    // Find the `<epub>` entry matching `id`.
-    XMLElement* epubElem{nullptr};
-    for (XMLElement* epub{libraryRoot->FirstChildElement("epub")};
-         epub != nullptr; epub = epub->NextSiblingElement("epub")) {
-        if (const char* const epubId{epub->Attribute("id")};
-            epubId != nullptr && std::string{epubId} == id) {
-            epubElem = epub;
-            break;
-        }
-    }
-
+    XMLElement* const epubElem{findEpubById(libraryRoot, id)};
     if (epubElem == nullptr) {
         return false;
     }
