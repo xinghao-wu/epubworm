@@ -657,6 +657,68 @@ void queryEpubElem() {
     std::cout << "`test::queryEpubElem()` failure cases passed\n";
 }
 
+void writeProgress() {
+    const std::string_view id{"53760b7bdcdfa01a43ccf243f41dd912"};
+
+    XMLDocument library{};
+    library.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                  "<library>"
+                  "<epub id=\"53760b7bdcdfa01a43ccf243f41dd912\" "
+                  "opened-chapter=\"\" chapter-progress=\"0\"/>"
+                  "</library>");
+    assert(!library.Error());
+    XMLElement* const libraryRoot{library.FirstChildElement("library")};
+    assert(libraryRoot != nullptr);
+    XMLElement* const epub{libraryRoot->FirstChildElement("epub")};
+    assert(epub != nullptr);
+
+    // Success case A: non-empty chapterAbs, non-zero progress.
+    const EpubProg prog{shareAbs / "mnc/extracted_epubs" / id
+                                / "index_split_117.html",
+                        0.5};
+    ::writeProgress(epub, prog, shareAbs);
+    assert(std::string_view{epub->Attribute("opened-chapter")}
+           == "index_split_117.html");
+    assert(epub->DoubleAttribute("chapter-progress") == 0.5);
+
+    // Round-trip: queryEpubElem should reconstruct the original prog.
+    const std::pair<std::string, EpubProg> out{
+            ::queryEpubElem(epub, shareAbs)};
+    assert(out.second.chapterAbs == prog.chapterAbs);
+    assert(out.second.chapterProg == 0.5);
+
+    // Success case B: empty chapterAbs -> empty opened-chapter, zero progress.
+    const EpubProg emptyProg{};
+    ::writeProgress(epub, emptyProg, shareAbs);
+    assert(std::string_view{epub->Attribute("opened-chapter")}.empty());
+    assert(epub->DoubleAttribute("chapter-progress") == 0.0);
+
+    std::cout << "`test::writeProgress()` success cases passed\n";
+
+    // Failure case: missing `id` attribute.
+    XMLDocument badLibrary{};
+    badLibrary.Parse(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+            "<library>"
+            "<epub opened-chapter=\"x.html\" chapter-progress=\"0.1\"/>"
+            "</library>");
+    assert(!badLibrary.Error());
+    const XMLElement* const badEpub{
+            badLibrary.FirstChildElement("library")->FirstChildElement(
+                    "epub")};
+    assert(badEpub != nullptr);
+
+    try {
+        ::writeProgress(const_cast<XMLElement*>(badEpub), prog, shareAbs);
+        assert(false);
+    } catch (const std::runtime_error& e) {
+        assert(std::string_view{e.what()}
+               == "epub entry missing `id` attribute");
+    }
+
+    std::cout << "`test::writeProgress()` failure cases passed\n";
+}
+
 void deleteFromLibrary() {
     std::cout << "`test::deleteFromLibrary()` no failure cases\n";
 

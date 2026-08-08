@@ -55,6 +55,14 @@ findEpubById(tinyxml2::XMLElement* libraryRoot, std::string_view id);
 queryEpubElem(const tinyxml2::XMLElement* epub,
               const std::filesystem::path& shareAbs);
 
+// Writes `prog` into an `<epub>` element's `opened-chapter` and
+// `chapter-progress` attributes.
+// `opened-chapter` is stored relative to `shareAbs/mnc/extracted_epubs/<id>/`
+// (the `<id>` is read from the element); an empty `chapterAbs` writes `""`.
+// Throws `std::runtime_error` if the element is missing its `id` attribute.
+void writeProgress(tinyxml2::XMLElement* epub, const EpubProg& prog,
+                   const std::filesystem::path& shareAbs);
+
 // Adds `zippedEpubAbs` to the library at `shareAbs/mnc`.
 // Computes the id hash, checks if already present, and if not, extracts the
 // epub to `shareAbs/mnc/extracted_epubs/<id>/`, adds an `<epub>` entry to

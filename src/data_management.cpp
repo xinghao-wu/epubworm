@@ -135,6 +135,26 @@ std::pair<std::string, EpubProg> queryEpubElem(const XMLElement* epub,
     return {id, prog};
 }
 
+void writeProgress(XMLElement* epub, const EpubProg& prog,
+                   const fs::path& shareAbs) {
+    const char* const id{epub->Attribute("id")};
+    if (id == nullptr) {
+        throw std::runtime_error{"epub entry missing `id` attribute"};
+    }
+
+    epub->SetAttribute("chapter-progress", prog.chapterProg);
+
+    if (prog.chapterAbs.empty()) {
+        epub->SetAttribute("opened-chapter", "");
+        return;
+    }
+
+    const fs::path epubRootAbs{shareAbs / "mnc/extracted_epubs" / id};
+    const fs::path openedChapter{
+            prog.chapterAbs.lexically_relative(epubRootAbs)};
+    epub->SetAttribute("opened-chapter", openedChapter.string().c_str());
+}
+
 bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     const std::string id{getTruncatedSHA256Sum(zippedEpubAbs)};
 

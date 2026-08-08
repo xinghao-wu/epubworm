@@ -76,5 +76,8 @@ void addToLibrary();
 // Also serves to test `findEpubById`.
 void queryEpubElem();
 
+// Also serves to test `queryEpubElem` round-trip.
+void writeProgress();
+
 void deleteFromLibrary();
 } // namespace test
