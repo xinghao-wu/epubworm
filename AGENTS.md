@@ -3,35 +3,37 @@ Monocle (mnc) is a TUI epub reader written in C++23.
 
 ## Command Reference
 ```bash
-## Run in repo root:
-# debug build
+# release build (default); produces `build/mnc`
 make
 
-# Runs clang-format read-only. If source code is incorrectly formatted, error.
+# debug build; produces `build/mnc_debug`
+make debug
+
+# Build and run the test suite.
+# Produces `build/mnc_test` and runs it with `build/` as the CWD.
+make test
+
+# Runs clang-format read-only to check for incorrect formatting.
 make fmt-check
 
-# Same as fmt-check, but also shows proposed formatting edits.
+# Show clang-format's proposed formatting edits.
 make fmt-check-diff
 
-# Make clang-format proposed formatting edits in-place.
+# Make clang-format's proposed formatting edits in-place.
 make fmt
 
-# Run clang-tidy, error on any diagnostic.
+# run clang-tidy
 make lint
 
-# Apply safe clang-tidy fixes.
+# apply safe clang-tidy fixes
 make lint-fix
-
-## Run in `build/`:
-# Run built binary.
-./mnc
 ```
 
 ## Project Structure
 - Project source and vendored libraries live flat in `src/`.
 - Unzipped and zipped epubs used for testing are found in `test_epubs/`.
 - `.testing_xdg_dirs/` contains phony XDG directories used for testing.
-- `build/` houses object files and final binary from the build process.
+- `build/` houses built binaries and object files.
 
 ## Notable Files
 - `.clang-format`: LLVM style with minor modifications
@@ -52,12 +54,13 @@ files.
 - `epub_parser.*`: Parses data from unzipped epubs.
 - `tui.*`: Prepares parsed epub data for display and draws the TUI.
 - `test.*`: where all tests live in the `test` namespace
-- `main.cpp`: stub entry point
+- `test_main.cpp`: test runner entry point, invokes every self-validating test
+- `main.cpp`: stub program entry point
 
 Helpers factored out into their own files because of length:
 - `percent_encoding_decode.hpp`
 - `row_col_diacritics.hpp`
 
-## Testing
-To run a test, add a call to it in `main()`, rebuild, and run the binary. Tests
-depend on the executable being ran with `build/` as the CWD.
+## Non-Self-Validating Tests
+To run a non-self-validating test, add a call to it in `test_main.cpp`'s
+`main()` after the self-validating tests and run `make test`.
