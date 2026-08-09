@@ -1,8 +1,8 @@
 CXX := g++
 CXXFLAGS := -std=c++23 -O2 -Wall -Wextra -Wpedantic -Wconversion \
-	    -Wsign-conversion -Weffc++
-DEBUG_CXXFLAGS := -std=c++23 -g3 -fsanitize=address -Wall -Wextra \
-		   -Wpedantic -Wconversion -Wsign-conversion -Weffc++
+	    -Wsign-conversion -Weffc++ -MMD -MP
+DEBUG_CXXFLAGS := -std=c++23 -g3 -fsanitize=address -Wall -Wextra -Wpedantic \
+		  -Wconversion -Wsign-conversion -Weffc++ -MMD -MP
 SRC_DIR := src
 BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj
@@ -41,21 +41,18 @@ $(DEBUG_BIN): $(BUILD_DIR) $(OBJ_DIR_DEBUG) $(MAIN_OBJS_DEBUG)
 $(TEST_BIN): $(BUILD_DIR) $(OBJ_DIR_DEBUG) $(TEST_OBJS)
 	$(CXX) $(DEBUG_CXXFLAGS) $(TEST_OBJS) -o $@
 
-# object compilation, every object gets recompiled for any change in src
-$(OBJ_DIR)/%.o: $(wildcard $(SRC_DIR)/*)
-	$(CXX) $(CXXFLAGS) -c $(@:$(OBJ_DIR)/%.o=$(SRC_DIR)/%.cpp) -o $@
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-$(OBJ_DIR_DEBUG)/%.o: $(wildcard $(SRC_DIR)/*)
-	$(CXX) $(DEBUG_CXXFLAGS) \
-	    -c $(@:$(OBJ_DIR_DEBUG)/%.o=$(SRC_DIR)/%.cpp) -o $@
+$(OBJ_DIR_DEBUG)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(DEBUG_CXXFLAGS) -c $< -o $@
 
 # specialized object compilation for tinyxml2.cpp to suppress warnings
-$(OBJ_DIR)/tinyxml2.o: $(wildcard $(SRC_DIR)/*)
-	$(CXX) $(CXXFLAGS) -w -c $(@:$(OBJ_DIR)/%.o=$(SRC_DIR)/%.cpp) -o $@
+$(OBJ_DIR)/tinyxml2.o: $(SRC_DIR)/tinyxml2.cpp
+	$(CXX) $(CXXFLAGS) -w -c $< -o $@
 
-$(OBJ_DIR_DEBUG)/tinyxml2.o: $(wildcard $(SRC_DIR)/*)
-	$(CXX) $(DEBUG_CXXFLAGS) \
-	    -w -c $(@:$(OBJ_DIR_DEBUG)/%.o=$(SRC_DIR)/%.cpp) -o $@
+$(OBJ_DIR_DEBUG)/tinyxml2.o: $(SRC_DIR)/tinyxml2.cpp
+	$(CXX) $(DEBUG_CXXFLAGS) -w -c $< -o $@
 
 $(BUILD_DIR) $(OBJ_DIR) $(OBJ_DIR_DEBUG):
 	mkdir -p $@
@@ -84,3 +81,7 @@ lint:
 
 lint-fix:
 	clang-tidy --fix $(PROJECT_FILES)
+
+# g++-generated dependency files for incremental rebuilds on header changes
+DEPS := $(MAIN_OBJS:.o=.d) $(MAIN_OBJS_DEBUG:.o=.d) $(TEST_OBJS:.o=.d)
+-include $(DEPS)
