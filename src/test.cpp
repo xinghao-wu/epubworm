@@ -777,6 +777,38 @@ void deleteFromLibrary() {
                  "correct library file and removed extracted epub\n";
 }
 
+void readEpubInLibrary() {
+    const fs::path tmpShareAbs{fs::temp_directory_path()
+                               / "mnc_test_readEpubInLibrary"};
+    fs::remove_all(tmpShareAbs);
+    const fs::path mncLibraryAbs{tmpShareAbs / "mnc/library.xml"};
+    fs::create_directories(mncLibraryAbs.parent_path());
+    ::initLibrary(mncLibraryAbs);
+
+    assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
+                          tmpShareAbs));
+    assert(::addToLibrary(epubsAbs / "parasite_in_love.epub", tmpShareAbs));
+    assert(::addToLibrary(epubsAbs / "zuttomo_vol_1.epub", tmpShareAbs));
+    assert(::addToLibrary(epubsAbs / "spice_and_wolf_vol_1.epub",
+                          tmpShareAbs));
+
+    // Success cases: launch the TUI for each epub for manual verification.
+    assert(::readEpubInLibrary("53760b", tmpShareAbs, 50));
+    assert(::readEpubInLibrary("40c5f7", tmpShareAbs, 55));
+    assert(::readEpubInLibrary("a6ce47", tmpShareAbs, 60));
+    assert(::readEpubInLibrary("8d070e", tmpShareAbs, 65));
+    std::cout << "`test::readEpubInLibrary()` success cases partially passed. "
+                 "Verify that the working TUI interface for the test epubs "
+                 "were displayed.\n";
+
+    // Failure cases: no match and ambiguous prefix.
+    assert(!::readEpubInLibrary("000000", tmpShareAbs, 55));
+    assert(!::readEpubInLibrary("", tmpShareAbs, 55));
+    std::cout << "`test::readEpubInLibrary()` failure cases passed\n";
+
+    fs::remove_all(tmpShareAbs);
+}
+
 void getLastRead() {
     XMLDocument library{};
     library.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"

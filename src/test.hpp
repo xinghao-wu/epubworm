@@ -96,5 +96,8 @@ void writeProgress();
 // non-self-validating
 void deleteFromLibrary();
 
+// non-self-validating
+void readEpubInLibrary();
+
 void getLastRead();
 } // namespace test
