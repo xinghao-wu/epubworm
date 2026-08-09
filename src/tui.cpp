@@ -185,6 +185,12 @@ void disableRawMode() {
 }
 
 void enableRawMode() {
+    static bool hasRun {false};
+    if (hasRun) {
+        return;
+    }
+    hasRun = true;
+
     if (tcgetattr(STDIN_FILENO, &g_ogTermFlags) == -1) {
         throw std::runtime_error{"failed to get original terminal settings"};
     }

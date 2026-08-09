@@ -134,6 +134,7 @@ void disableRawMode();
 // `read()` returns 0 every 100ms when not receiving input.
 // Enables mouse event reporting and registers SIGWINCH handler.
 // Sets `disableRawMode()` to be called at program exit.
+// Has no effect on repeated calls.
 // Throws `std::runtime_error` on failure to read or set terminal settings,
 // and on failure to register `disableRawMode()` to run at exit.
 void enableRawMode();
