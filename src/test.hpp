@@ -17,29 +17,29 @@ void findAndReplaceAll();
 void wrapForTmuxPassthrough();
 
 // non-self-validating
-// Also serves to test `loadImg()`, `displayLoadedImg()`,
+// Also exercises `loadImg()`, `displayLoadedImg()`,
 // `getGraphicsEscCode()`.
 void displayImg();
 
-// Also serves to test `getHrefFromID()`, `decodePercentEncoding()`.
+// Also exercises `getHrefFromID()`, `decodePercentEncoding()`.
 void getSpine();
 
-// Also serves to test `collectNavPoints()`.
+// Also exercises `collectNavPoints()`.
 void getTOC();
 
 // non-self-validating
-// Also serves to test `parseContentElem()`.
+// Also exercises `parseContentElem()`.
 void parseChapter();
 
 // non-self-validating
-// Also serves to test `expandEllipsesAndTabs()`, `getVisualLen()`,
+// Also exercises `expandEllipsesAndTabs()`, `getVisualLen()`,
 // `centerOnScreen()`, `centerJustify()`, `processContentText()`,
 // `getOccurrences()`, `getInvisEscSeqLen()`, `useSystemLocale()`,
 // `wrapLines()`.
 void dumpEpub();
 
 // non-self-validating
-// Also serves to test `disableRawMode()`, `enableRawMode()`,
+// Also exercises `disableRawMode()`, `enableRawMode()`,
 // `registerSigwinchHandler`.
 void readRawInput();
 
@@ -52,7 +52,7 @@ void findNth();
 void execute();
 
 // non-self-validating
-// Also serves to test `handleSigwinch()`,
+// Also exercises `handleSigwinch()`,
 // `registerSigwinchHandler()`, `setUpDisplayChapter()`,
 // `snapTopLineToBound()`, `snapBotLineToBound()`,
 // `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`,
@@ -63,7 +63,7 @@ void displayChapter();
 void tocDataToString();
 
 // non-self-validating
-// Also serves to test `setUpDisplayTOC()`.
+// Also exercises `setUpDisplayTOC()`.
 void displayTOC();
 
 // non-self-validating
@@ -82,14 +82,15 @@ void readMncConf();
 
 void getTruncatedSHA256Sum();
 
+void findEpubById();
+
 // non-self-validating
-// Also serves to test `findEpubById()`, `setLastRead()`.
+// Also exercises `setLastRead()`.
 void addToLibrary();
 
-// Also serves to test `findEpubById()`.
 void queryEpubElem();
 
-// Also serves to test `queryEpubElem()`.
+// Also exercises `queryEpubElem()`.
 void writeProgress();
 
 // non-self-validating

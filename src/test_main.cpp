@@ -20,6 +20,7 @@ int main() {
         test::execute();
         test::styleEachLineIndividually();
         test::getTruncatedSHA256Sum();
+        test::findEpubById();
         test::queryEpubElem();
         test::writeProgress();
         test::getLastRead();

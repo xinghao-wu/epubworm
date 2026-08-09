@@ -39,10 +39,11 @@ void initLibrary(const std::filesystem::path& mncLibraryAbs);
 [[nodiscard]] std::string
 getTruncatedSHA256Sum(const std::filesystem::path& fileAbs);
 
-// Returns pointer to `<epub>` child of `libraryRoot` with matching `id`, or
-// nullptr if not found.
+// Returns pointer to the `<epub>` child of `libraryRoot` whose `id` attribute
+// starts with `idPrefix`, or nullptr if there is no match or the prefix is
+// ambiguous (matches more than one epub).
 [[nodiscard]] tinyxml2::XMLElement*
-findEpubById(tinyxml2::XMLElement* libraryRoot, std::string_view id);
+findEpubById(tinyxml2::XMLElement* libraryRoot, std::string_view idPrefix);
 
 // Queries an `<epub>` element for its id and `EpubProg`.
 // `chapterAbs` is built as an absolute path:
@@ -83,12 +84,14 @@ void setLastRead(tinyxml2::XMLDocument& libraryDoc, std::string_view id);
 bool addToLibrary(const std::filesystem::path& zippedEpubAbs,
                   const std::filesystem::path& shareAbs);
 
-// Removes the epub with `id` from the library at `shareAbs/mnc`.
-// Deletes the extracted epub at `shareAbs/mnc/extracted_epubs/<id>/`, removes
-// the `<epub>` entry from `shareAbs/mnc/library.xml`, and resets `<last-read>`
-// to a blank id if it referenced the removed epub.
-// Returns false if the epub is not in the library; returns true on success.
+// Removes the epub whose `id` starts with `idPrefix` from the library at
+// `shareAbs/mnc`. Deletes the extracted epub at
+// `shareAbs/mnc/extracted_epubs/<full-id>/`, removes the `<epub>` entry from
+// `shareAbs/mnc/library.xml`, and resets `<last-read>` to a blank id if it
+// referenced the removed epub.
+// Returns false if no epub matches `idPrefix` or the prefix is ambiguous;
+// returns true on success.
 // Throws `std::runtime_error` on library load/save failure and on missing
 // `<library>` or `<last-read>` elements.
-bool deleteFromLibrary(std::string_view id,
+bool deleteFromLibrary(std::string_view idPrefix,
                        const std::filesystem::path& shareAbs);

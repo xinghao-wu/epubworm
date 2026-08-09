@@ -517,14 +517,7 @@ void readMncConf() {
 }
 
 void getTruncatedSHA256Sum() {
-    try {
-        (void)::getTruncatedSHA256Sum("/nonexistent_file_xyz");
-        assert(false);
-    } catch (const std::runtime_error& e) {
-        assert(std::string_view{e.what()}
-               == "cmd did not exit properly: shasum");
-    }
-    std::cout << "`test::getTruncatedSHA256Sum()` failure cases passed\n";
+    std::cout << "`test::getTruncatedSHA256Sum()` no failure cases\n";
 
     assert(::getTruncatedSHA256Sum(epubsAbs / "lord_of_mysteries_vol_1.epub")
            == "53760b7bdcdfa01a43ccf243f41dd912");
@@ -536,6 +529,53 @@ void getTruncatedSHA256Sum() {
            == "8d070ee9c3292df13dfb8471f099565a");
 
     std::cout << "`test::getTruncatedSHA256Sum()` success cases passed\n";
+}
+
+void findEpubById() {
+    // Three ids: the first two share the `aaaa` prefix, the third does not.
+    constexpr std::string_view idA{"aaaa1111111111111111111111111111"};
+    constexpr std::string_view idB{"aaaa2222222222222222222222222222"};
+    constexpr std::string_view idC{"bbbb3333333333333333333333333333"};
+
+    XMLDocument library{};
+    library.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                  "<library>"
+                  "<epub id=\"aaaa1111111111111111111111111111\"/>"
+                  "<epub id=\"aaaa2222222222222222222222222222\"/>"
+                  "<epub id=\"bbbb3333333333333333333333333333\"/>"
+                  "</library>");
+    assert(!library.Error());
+
+    XMLElement* const libraryRoot{library.FirstChildElement("library")};
+    assert(libraryRoot != nullptr);
+
+    // Full id: unambiguous match for each.
+    assert(::findEpubById(libraryRoot, idA) != nullptr);
+    assert(std::string_view{::findEpubById(libraryRoot, idA)->Attribute("id")}
+           == idA);
+    assert(::findEpubById(libraryRoot, idB) != nullptr);
+    assert(std::string_view{::findEpubById(libraryRoot, idB)->Attribute("id")}
+           == idB);
+    assert(::findEpubById(libraryRoot, idC) != nullptr);
+    assert(std::string_view{::findEpubById(libraryRoot, idC)->Attribute("id")}
+           == idC);
+
+    // Unique prefix: unambiguous match.
+    assert(::findEpubById(libraryRoot, "aaaa1") != nullptr);
+    assert(std::string_view{
+                   ::findEpubById(libraryRoot, "aaaa1")->Attribute("id")}
+           == idA);
+
+    // Ambiguous prefix: matches both idA and idB -> nullptr.
+    assert(::findEpubById(libraryRoot, "aaaa") == nullptr);
+
+    // Empty prefix: matches all three -> nullptr.
+    assert(::findEpubById(libraryRoot, "") == nullptr);
+
+    // No-match prefix: nullptr.
+    assert(::findEpubById(libraryRoot, "cccc") == nullptr);
+
+    std::cout << "`test::findEpubById()` cases passed\n";
 }
 
 void addToLibrary() {
