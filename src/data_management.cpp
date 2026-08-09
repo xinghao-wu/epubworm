@@ -289,3 +289,43 @@ bool deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs) {
 
     return true;
 }
+
+bool readEpubInLibrary(std::string_view idPrefix, const fs::path& shareAbs,
+                       int desiredMaxLen) {
+    const fs::path mncLibraryAbs{shareAbs / "mnc/library.xml"};
+    XMLDocument mncLibrary{};
+    if (mncLibrary.LoadFile(mncLibraryAbs.c_str()) != XML_SUCCESS) {
+        throw std::runtime_error{
+                std::string{"error loading library file: "}
+                + XMLDocument::ErrorIDToName(mncLibrary.ErrorID())};
+    }
+
+    XMLElement* const libraryRoot{mncLibrary.FirstChildElement("library")};
+    if (libraryRoot == nullptr) {
+        throw std::runtime_error{
+                "root element `<library>` missing in library file"};
+    }
+
+    XMLElement* const epubElem{findEpubById(libraryRoot, idPrefix)};
+    if (epubElem == nullptr) {
+        return false;
+    }
+
+    const auto [id, iniProg]{queryEpubElem(epubElem, shareAbs)};
+    const fs::path epubRootAbs{shareAbs / "mnc/extracted_epubs" / id};
+
+    useSystemLocale();
+    enableRawMode();
+    const EpubProg exitProg{displayEpub(iniProg, epubRootAbs, desiredMaxLen)};
+
+    writeProgress(epubElem, exitProg, shareAbs);
+    setLastRead(mncLibrary, id);
+
+    if (mncLibrary.SaveFile(mncLibraryAbs.c_str()) != XML_SUCCESS) {
+        throw std::runtime_error{
+                std::string{"error saving library file: "}
+                + XMLDocument::ErrorIDToName(mncLibrary.ErrorID())};
+    }
+
+    return true;
+}

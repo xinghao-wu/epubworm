@@ -95,3 +95,15 @@ bool addToLibrary(const std::filesystem::path& zippedEpubAbs,
 // `<library>` or `<last-read>` elements.
 bool deleteFromLibrary(std::string_view idPrefix,
                        const std::filesystem::path& shareAbs);
+
+// Displays the epub whose `id` starts with `idPrefix` from the library at
+// `shareAbs/mnc`, using `desiredMaxLen` as the visual line length, and
+// persists the exit progress back into `shareAbs/mnc/library.xml`.
+// Returns false if no epub matches `idPrefix` or the prefix is ambiguous;
+// returns true on success.
+// Throws `std::runtime_error` on library load/save failure, missing
+// `<library>` or `<last-read>` elements, and from
+// `displayEpub`/`queryEpubElem` on malformed data or bad initial progress.
+bool readEpubInLibrary(std::string_view idPrefix,
+                       const std::filesystem::path& shareAbs,
+                       int desiredMaxLen);
