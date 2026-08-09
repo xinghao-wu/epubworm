@@ -80,4 +80,6 @@ void queryEpubElem();
 void writeProgress();
 
 void deleteFromLibrary();
+
+void getLastRead();
 } // namespace test

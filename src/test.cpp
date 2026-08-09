@@ -736,4 +736,58 @@ void deleteFromLibrary() {
                  "check `.testing_xdg_dirs/share/mnc` for "
                  "correct library file and removed extracted epub\n";
 }
+
+void getLastRead() {
+    XMLDocument library{};
+    library.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                  "<library>"
+                  "<last-read id=\"53760b7bdcdfa01a43ccf243f41dd912\"/>"
+                  "</library>");
+    assert(!library.Error());
+    assert(::getLastRead(library) == "53760b7bdcdfa01a43ccf243f41dd912");
+
+    std::cout << "`test::getLastRead()` success cases passed\n";
+
+    XMLDocument noLibraryRoot{};
+    noLibraryRoot.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                        "<not-library/>");
+    assert(!noLibraryRoot.Error());
+    try {
+        (void)::getLastRead(noLibraryRoot);
+        assert(false);
+    } catch (const std::runtime_error& e) {
+        assert(std::string_view{e.what()}
+               == "root element `<library>` missing in library file");
+    }
+
+    XMLDocument noLastRead{};
+    noLastRead.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                     "<library>"
+                     "<epub id=\"abc\"/>"
+                     "</library>");
+    assert(!noLastRead.Error());
+    try {
+        (void)::getLastRead(noLastRead);
+        assert(false);
+    } catch (const std::runtime_error& e) {
+        assert(std::string_view{e.what()}
+               == "`<last-read>` element missing in library file");
+    }
+
+    XMLDocument noId{};
+    noId.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+               "<library>"
+               "<last-read/>"
+               "</library>");
+    assert(!noId.Error());
+    try {
+        (void)::getLastRead(noId);
+        assert(false);
+    } catch (const std::runtime_error& e) {
+        assert(std::string_view{e.what()}
+               == "`<last-read>` element missing `id` attribute");
+    }
+
+    std::cout << "`test::getLastRead()` failure cases passed\n";
+}
 } // namespace test

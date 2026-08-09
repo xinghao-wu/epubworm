@@ -169,6 +169,27 @@ void setLastRead(XMLDocument& libraryDoc, std::string_view id) {
     lastRead->SetAttribute("id", std::string{id}.c_str());
 }
 
+std::string getLastRead(const XMLDocument& libraryDoc) {
+    const XMLElement* const libraryRoot{
+            libraryDoc.FirstChildElement("library")};
+    if (libraryRoot == nullptr) {
+        throw std::runtime_error{
+                "root element `<library>` missing in library file"};
+    }
+    const XMLElement* const lastRead{
+            libraryRoot->FirstChildElement("last-read")};
+    if (lastRead == nullptr) {
+        throw std::runtime_error{
+                "`<last-read>` element missing in library file"};
+    }
+    const char* const id{lastRead->Attribute("id")};
+    if (id == nullptr) {
+        throw std::runtime_error{
+                "`<last-read>` element missing `id` attribute"};
+    }
+    return id;
+}
+
 bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     const std::string id{getTruncatedSHA256Sum(zippedEpubAbs)};
 
