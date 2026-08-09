@@ -31,6 +31,7 @@ const fs::path xdgDirsAbs{projectRootAbs / ".testing_xdg_dirs"};
 const fs::path dotCacheAbs{xdgDirsAbs / ".cache"};
 const fs::path dotConfigAbs{xdgDirsAbs / ".config"};
 const fs::path shareAbs{xdgDirsAbs / "share"};
+const fs::path testOutputsAbs{projectRootAbs / "test_outputs"};
 
 void unzip() {
     const fs::path mysteriesZippedAbs{epubsAbs
@@ -781,8 +782,12 @@ void readEpubInLibrary() {
     const fs::path tmpShareAbs{fs::temp_directory_path()
                                / "mnc_test_readEpubInLibrary"};
     fs::remove_all(tmpShareAbs);
-    const fs::path mncLibraryAbs{tmpShareAbs / "mnc/library.xml"};
-    fs::create_directories(mncLibraryAbs.parent_path());
+    fs::create_directories(tmpShareAbs);
+
+    const fs::path shareMncAbs{tmpShareAbs / "mnc"};
+    fs::create_directories(shareMncAbs);
+
+    const fs::path mncLibraryAbs{shareMncAbs / "library.xml"};
     ::initLibrary(mncLibraryAbs);
 
     assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
@@ -792,19 +797,27 @@ void readEpubInLibrary() {
     assert(::addToLibrary(epubsAbs / "spice_and_wolf_vol_1.epub",
                           tmpShareAbs));
 
-    // Success cases: launch the TUI for each epub for manual verification.
+    assert(!::readEpubInLibrary("000000", tmpShareAbs, 55));
+    assert(!::readEpubInLibrary("", tmpShareAbs, 55));
+    std::cout << "`test::readEpubInLibrary()` failure cases passed\n";
+
     assert(::readEpubInLibrary("53760b", tmpShareAbs, 50));
     assert(::readEpubInLibrary("40c5f7", tmpShareAbs, 55));
     assert(::readEpubInLibrary("a6ce47", tmpShareAbs, 60));
     assert(::readEpubInLibrary("8d070e", tmpShareAbs, 65));
-    std::cout << "`test::readEpubInLibrary()` success cases partially passed. "
-                 "Verify that the working TUI interface for the test epubs "
-                 "were displayed.\n";
 
-    // Failure cases: no match and ambiguous prefix.
-    assert(!::readEpubInLibrary("000000", tmpShareAbs, 55));
-    assert(!::readEpubInLibrary("", tmpShareAbs, 55));
-    std::cout << "`test::readEpubInLibrary()` failure cases passed\n";
+    fs::create_directories(testOutputsAbs);
+    const fs::path outputMncLibraryAbs{testOutputsAbs
+                                       / "readEpubInLibrary_library.xml"};
+    fs::copy_file(mncLibraryAbs, outputMncLibraryAbs,
+                  fs::copy_options::overwrite_existing);
+
+    std::cout << "`test::readEpubInLibrary()` success cases need manual "
+                 "verification.\n"
+                 "Confirm a working TUI interface for all test epubs "
+                 "were displayed.\n"
+                 "Check `test_outputs/readEpubInLibrary_library.xml` "
+                 "for correct progresses and `<last-read>`.\n";
 
     fs::remove_all(tmpShareAbs);
 }

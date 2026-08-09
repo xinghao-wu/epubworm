@@ -26,6 +26,7 @@ int main() {
         test::getLastRead();
         std::cout << "all automatic tests passed\n";
 
+        test::readEpubInLibrary();
         return 0;
     } catch (const std::system_error& e) {
         std::cerr << "fatal system error occurred\n";
