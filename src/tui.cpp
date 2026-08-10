@@ -185,7 +185,7 @@ void disableRawMode() {
 }
 
 void enableRawMode() {
-    static bool hasRun {false};
+    static bool hasRun{false};
     if (hasRun) {
         return;
     }
