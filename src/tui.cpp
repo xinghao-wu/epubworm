@@ -15,6 +15,7 @@
 #include <cmath>
 #include <csignal>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <cwchar>
 #include <filesystem>
@@ -26,6 +27,7 @@
 #include <signal.h>
 #include <spawn.h>
 #include <stdexcept>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <string_view>
@@ -172,6 +174,10 @@ std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
             base64::to_base64(tempDataFileAbs.string())};
 
     return esc + "_G" + ctrlData + ';' + tempDataFileAbsEncoded + escEnd;
+}
+
+bool isTerm(FILE* fd) {
+    return isatty(fileno(fd)) == 1;
 }
 
 void disableRawMode() {

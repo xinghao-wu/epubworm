@@ -5,6 +5,7 @@
 #include <csignal>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -123,6 +124,9 @@ void displayImg(const std::filesystem::path& imgAbs, std::string& out,
 getGraphicsEscCode(const std::filesystem::path& tempDataFileAbs, int channels,
                    int xPixels, int yPixels, std::uint32_t id, int rows,
                    int cols);
+
+// Trivial function to check if `fd` points to an interactive terminal.
+[[nodiscard]] bool isTerm(FILE* fd);
 
 // Restore original terminal settings.
 // Depends on `enableRawMode()` to retrieve original terminal setting flags.
