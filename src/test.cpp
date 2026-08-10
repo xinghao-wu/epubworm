@@ -27,10 +27,6 @@ const fs::path parasiteRootAbs{epubsAbs / "parasite_in_love_unzipped"};
 const fs::path spiceWolfRootAbs{epubsAbs / "spice_and_wolf_vol_1_unzipped"};
 const fs::path zuttomoRootAbs{epubsAbs / "zuttomo_vol_1_unzipped"};
 
-const fs::path xdgDirsAbs{projectRootAbs / ".testing_xdg_dirs"};
-const fs::path dotCacheAbs{xdgDirsAbs / ".cache"};
-const fs::path dotConfigAbs{xdgDirsAbs / ".config"};
-const fs::path shareAbs{xdgDirsAbs / "share"};
 const fs::path testOutputsAbs{projectRootAbs / "test_outputs"};
 
 void unzip() {
@@ -41,7 +37,7 @@ void unzip() {
     const fs::path zuttomoZippedAbs{epubsAbs / "zuttomo_vol_1.epub"};
 
     try {
-        ::unzip("/bad archive path", shareAbs);
+        ::unzip("/bad archive path", testOutputsAbs);
         assert(false);
     } catch (const std::runtime_error& e) {
         assert(std::string_view{e.what()} == "bad zip");
@@ -55,12 +51,16 @@ void unzip() {
                   "Permission denied [/bad destination path/META-INF]");
     }
 
-    ::unzip(mysteriesZippedAbs, shareAbs / "lord_of_mysteries_vol_1_unzipped");
-    ::unzip(parasiteZippedAbs, shareAbs / "parasite_in_love_unzipped");
-    ::unzip(spiceWolfZippedAbs, shareAbs / "spice_and_wolf_vol_1_unzipped");
-    ::unzip(zuttomoZippedAbs, shareAbs / "zuttomo_vol_1_unzipped");
+    fs::create_directories(testOutputsAbs);
+    ::unzip(mysteriesZippedAbs,
+            testOutputsAbs / "unzip_lord_of_mysteries_vol_1_unzipped");
+    ::unzip(parasiteZippedAbs,
+            testOutputsAbs / "unzip_parasite_in_love_unzipped");
+    ::unzip(spiceWolfZippedAbs,
+            testOutputsAbs / "unzip_spice_and_wolf_vol_1_unzipped");
+    ::unzip(zuttomoZippedAbs, testOutputsAbs / "unzip_zuttomo_vol_1_unzipped");
     std::cout << "`test::unzip()` success cases need verification, "
-                 "check `.testing_xdg_dirs/share/` to verify correct result\n";
+                 "check `test_outputs/` to verify correct result\n";
 }
 
 void getOPFRel() {
@@ -442,31 +442,62 @@ void styleEachLineIndividually() {
 }
 
 void initConf() {
+    const fs::path tmpConfigAbs{fs::temp_directory_path()
+                                / "mnc_test_initConf"};
+    fs::remove_all(tmpConfigAbs);
+    fs::create_directories(tmpConfigAbs);
 
-    const fs::path mncConfAbs{dotConfigAbs / "mnc/conf.xml"};
+    const fs::path mncConfAbs{tmpConfigAbs / "mnc/conf.xml"};
     ::initConf(mncConfAbs);
 
-    std::cout << "`test::initConf()` success cases need verification, "
-                 "check `.testing_xdg_dirs/.config/` for correct conf file\n";
+    assert(fs::exists(mncConfAbs));
+
+    XMLDocument mncConf{};
+    assert(mncConf.LoadFile(mncConfAbs.c_str()) == XML_SUCCESS);
+    assert(mncConf.FirstChildElement("conf") != nullptr);
+    assert(mncConf.FirstChildElement("conf")->FirstChildElement() == nullptr);
+
+    fs::remove_all(tmpConfigAbs);
 }
 
 void initLibrary() {
+    const fs::path tmpShareAbs{fs::temp_directory_path()
+                               / "mnc_test_initLibrary"};
+    fs::remove_all(tmpShareAbs);
+    fs::create_directories(tmpShareAbs);
 
-    const fs::path mncLibraryAbs{shareAbs / "mnc/library.xml"};
+    const fs::path mncLibraryAbs{tmpShareAbs / "mnc/library.xml"};
     ::initLibrary(mncLibraryAbs);
 
-    std::cout << "`test::initLibrary()` success cases need verification, "
-                 "check `.testing_xdg_dirs/share/` for correct library file\n";
+    assert(fs::exists(mncLibraryAbs));
+
+    XMLDocument mncLibrary{};
+    assert(mncLibrary.LoadFile(mncLibraryAbs.c_str()) == XML_SUCCESS);
+    const XMLElement* const libraryRoot{
+            mncLibrary.FirstChildElement("library")};
+    assert(libraryRoot != nullptr);
+    const XMLElement* const lastRead{
+            libraryRoot->FirstChildElement("last-read")};
+    assert(lastRead != nullptr);
+    assert(lastRead->NextSiblingElement() == nullptr);
+    const char* const id{lastRead->Attribute("id")};
+    assert(id != nullptr);
+    assert(std::string_view{id}.empty());
+
+    fs::remove_all(tmpShareAbs);
 }
 
 void readMncConf() {
-    const fs::path mncConfAbs{dotConfigAbs / "mnc/conf.xml"};
-    const ConfOpts confOpts{::readMncConf(mncConfAbs)};
+    const fs::path tmpConfigAbs{fs::temp_directory_path()
+                                / "mnc_test_readMncConf"};
+    fs::remove_all(tmpConfigAbs);
+    fs::create_directories(tmpConfigAbs);
 
-    std::cout << "`test::readMncConf()` success cases and failure cases "
-                 "require verification, change the config file "
-                 "in testing config to verify correct behavior in cases\n";
-    std::cout << "`<line-length>` chars: " << confOpts.lineLength << '\n';
+    const fs::path mncConfAbs{tmpConfigAbs / "mnc/conf.xml"};
+    ::initConf(mncConfAbs);
+    assert(::readMncConf(mncConfAbs).lineLength == 55);
+
+    fs::remove_all(tmpConfigAbs);
 }
 
 void getTruncatedSHA256Sum() {
@@ -527,19 +558,50 @@ void findEpubById() {
 }
 
 void addToLibrary() {
+    const fs::path tmpShareAbs{fs::temp_directory_path()
+                               / "mnc_test_addToLibrary"};
+    fs::remove_all(tmpShareAbs);
+    fs::create_directories(tmpShareAbs);
 
-    const fs::path mncLibraryAbs{shareAbs / "mnc/library.xml"};
+    const fs::path mncLibraryAbs{tmpShareAbs / "mnc/library.xml"};
     ::initLibrary(mncLibraryAbs);
 
-    const fs::path zippedEpubAbs{epubsAbs / "lord_of_mysteries_vol_1.epub"};
-    assert(::addToLibrary(zippedEpubAbs, shareAbs));
+    assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
+                          tmpShareAbs));
 
-    std::cout << "`test::addToLibrary()` success cases need verification, "
-                 "check `.testing_xdg_dirs/share/mnc` for "
-                 "correct library file and extracted epub\n";
+    const std::string mysteriesId{"53760b7bdcdfa01a43ccf243f41dd912"};
+    XMLDocument mncLibrary{};
+    assert(mncLibrary.LoadFile(mncLibraryAbs.c_str()) == XML_SUCCESS);
+    const XMLElement* const libraryRoot{
+            mncLibrary.FirstChildElement("library")};
+    assert(libraryRoot != nullptr);
+
+    const XMLElement* const lastRead{
+            libraryRoot->FirstChildElement("last-read")};
+    assert(lastRead != nullptr);
+    const char* const lastReadId{lastRead->Attribute("id")};
+    assert(lastReadId != nullptr);
+    assert(std::string_view{lastReadId} == mysteriesId);
+
+    const XMLElement* const epub{libraryRoot->FirstChildElement("epub")};
+    assert(epub != nullptr);
+    assert(epub->NextSiblingElement("epub") == nullptr);
+    assert(std::string_view{epub->Attribute("id")} == mysteriesId);
+    assert(std::string_view{epub->Attribute("opened-chapter")}.empty());
+    assert(epub->DoubleAttribute("chapter-progress") == 0.0);
+
+    assert(fs::is_directory(tmpShareAbs / "mnc/extracted_epubs"
+                            / mysteriesId));
+
+    // Already present: returns false.
+    assert(!::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
+                           tmpShareAbs));
+
+    fs::remove_all(tmpShareAbs);
 }
 
 void queryEpubElem() {
+    const fs::path phonyShareAbs{"/phony_share"};
     const std::string_view idA{"53760b7bdcdfa01a43ccf243f41dd912"};
     const std::string_view idB{"40c5f7dce4a5576956a094eb7fb18cf8"};
 
@@ -562,17 +624,18 @@ void queryEpubElem() {
     const XMLElement* const epubA{::findEpubById(libraryRoot, idA)};
     assert(epubA != nullptr);
     const std::pair<std::string, EpubProg> outA{
-            ::queryEpubElem(epubA, shareAbs)};
+            ::queryEpubElem(epubA, phonyShareAbs)};
     assert(outA.first == idA);
     assert(outA.second.chapterAbs
-           == shareAbs / "mnc/extracted_epubs" / idA / "index_split_117.html");
+           == phonyShareAbs / "mnc/extracted_epubs" / idA
+                      / "index_split_117.html");
     assert(outA.second.chapterProg == 0.5);
 
     // Success case B: empty opened-chapter -> empty chapterAbs, zero progress.
     const XMLElement* const epubB{::findEpubById(libraryRoot, idB)};
     assert(epubB != nullptr);
     const std::pair<std::string, EpubProg> outB{
-            ::queryEpubElem(epubB, shareAbs)};
+            ::queryEpubElem(epubB, phonyShareAbs)};
     assert(outB.first == idB);
     assert(outB.second.chapterAbs.empty());
     assert(outB.second.chapterProg == 0.0);
@@ -591,7 +654,7 @@ void queryEpubElem() {
     assert(badEpub != nullptr);
 
     try {
-        (void)::queryEpubElem(badEpub, shareAbs);
+        (void)::queryEpubElem(badEpub, phonyShareAbs);
         assert(false);
     } catch (const std::runtime_error& e) {
         assert(std::string_view{e.what()}
@@ -611,7 +674,7 @@ void queryEpubElem() {
     assert(noProgEpub != nullptr);
 
     try {
-        (void)::queryEpubElem(noProgEpub, shareAbs);
+        (void)::queryEpubElem(noProgEpub, phonyShareAbs);
         assert(false);
     } catch (const std::runtime_error& e) {
         assert(std::string_view{e.what()}
@@ -632,7 +695,7 @@ void queryEpubElem() {
     assert(badProgEpub != nullptr);
 
     try {
-        (void)::queryEpubElem(badProgEpub, shareAbs);
+        (void)::queryEpubElem(badProgEpub, phonyShareAbs);
         assert(false);
     } catch (const std::runtime_error& e) {
         assert(std::string_view{e.what()}
@@ -641,6 +704,7 @@ void queryEpubElem() {
 }
 
 void writeProgress() {
+    const fs::path phonyShareAbs{"/phony_share"};
     const std::string_view id{"53760b7bdcdfa01a43ccf243f41dd912"};
 
     XMLDocument library{};
@@ -656,23 +720,23 @@ void writeProgress() {
     assert(epub != nullptr);
 
     // Success case A: non-empty chapterAbs, non-zero progress.
-    const EpubProg prog{shareAbs / "mnc/extracted_epubs" / id
+    const EpubProg prog{phonyShareAbs / "mnc/extracted_epubs" / id
                                 / "index_split_117.html",
                         0.5};
-    ::writeProgress(epub, prog, shareAbs);
+    ::writeProgress(epub, prog, phonyShareAbs);
     assert(std::string_view{epub->Attribute("opened-chapter")}
            == "index_split_117.html");
     assert(epub->DoubleAttribute("chapter-progress") == 0.5);
 
     // Round-trip: queryEpubElem should reconstruct the original prog.
     const std::pair<std::string, EpubProg> out{
-            ::queryEpubElem(epub, shareAbs)};
+            ::queryEpubElem(epub, phonyShareAbs)};
     assert(out.second.chapterAbs == prog.chapterAbs);
     assert(out.second.chapterProg == 0.5);
 
     // Success case B: empty chapterAbs -> empty opened-chapter, zero progress.
     const EpubProg emptyProg{};
-    ::writeProgress(epub, emptyProg, shareAbs);
+    ::writeProgress(epub, emptyProg, phonyShareAbs);
     assert(std::string_view{epub->Attribute("opened-chapter")}.empty());
     assert(epub->DoubleAttribute("chapter-progress") == 0.0);
 
@@ -690,7 +754,7 @@ void writeProgress() {
     assert(badEpub != nullptr);
 
     try {
-        ::writeProgress(const_cast<XMLElement*>(badEpub), prog, shareAbs);
+        ::writeProgress(const_cast<XMLElement*>(badEpub), prog, phonyShareAbs);
         assert(false);
     } catch (const std::runtime_error& e) {
         assert(std::string_view{e.what()}
@@ -699,20 +763,39 @@ void writeProgress() {
 }
 
 void deleteFromLibrary() {
+    const fs::path tmpShareAbs{fs::temp_directory_path()
+                               / "mnc_test_deleteFromLibrary"};
+    fs::remove_all(tmpShareAbs);
+    fs::create_directories(tmpShareAbs);
 
-    const fs::path mncLibraryAbs{shareAbs / "mnc/library.xml"};
+    const fs::path mncLibraryAbs{tmpShareAbs / "mnc/library.xml"};
     ::initLibrary(mncLibraryAbs);
 
-    const fs::path zippedEpubAbs{epubsAbs / "lord_of_mysteries_vol_1.epub"};
-    assert(::addToLibrary(zippedEpubAbs, shareAbs));
+    assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
+                          tmpShareAbs));
 
-    const std::string id{"53760b7bdcdfa01a43ccf243f41dd912"};
-    assert(::deleteFromLibrary(id, shareAbs));
-    assert(!::deleteFromLibrary(id, shareAbs));
+    const std::string mysteriesID{"53760b7bdcdfa01a43ccf243f41dd912"};
+    assert(::deleteFromLibrary(mysteriesID, tmpShareAbs));
 
-    std::cout << "`test::deleteFromLibrary()` success cases need verification"
-                 ", check `.testing_xdg_dirs/share/mnc` for "
-                 "correct library file and removed extracted epub\n";
+    XMLDocument mncLibrary{};
+    assert(mncLibrary.LoadFile(mncLibraryAbs.c_str()) == XML_SUCCESS);
+    const XMLElement* const libraryRoot{
+            mncLibrary.FirstChildElement("library")};
+    assert(libraryRoot != nullptr);
+    assert(libraryRoot->FirstChildElement("epub") == nullptr);
+    const XMLElement* const lastRead{
+            libraryRoot->FirstChildElement("last-read")};
+    assert(lastRead != nullptr);
+    const char* const id{lastRead->Attribute("id")};
+    assert(id != nullptr);
+    assert(std::string_view{id}.empty());
+
+    assert(!fs::exists(tmpShareAbs / "mnc/extracted_epubs" / mysteriesID));
+
+    // Already removed: returns false.
+    assert(!::deleteFromLibrary(mysteriesID, tmpShareAbs));
+
+    fs::remove_all(tmpShareAbs);
 }
 
 void readEpubInLibrary() {

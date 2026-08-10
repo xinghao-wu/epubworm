@@ -71,20 +71,16 @@ void displayEpub();
 
 void styleEachLineIndividually();
 
-// non-self-validating
 void initConf();
 
-// non-self-validating
 void initLibrary();
 
-// non-self-validating
 void readMncConf();
 
 void getTruncatedSHA256Sum();
 
 void findEpubById();
 
-// non-self-validating
 // Also exercises `setLastRead()`.
 void addToLibrary();
 
@@ -93,7 +89,6 @@ void queryEpubElem();
 // Also exercises `queryEpubElem()`.
 void writeProgress();
 
-// non-self-validating
 void deleteFromLibrary();
 
 // non-self-validating

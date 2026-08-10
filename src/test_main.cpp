@@ -19,12 +19,17 @@ int main() {
         test::findNth();
         test::execute();
         test::styleEachLineIndividually();
+        test::initConf();
+        test::initLibrary();
+        test::readMncConf();
         test::getTruncatedSHA256Sum();
         test::findEpubById();
+        test::addToLibrary();
         test::queryEpubElem();
         test::writeProgress();
+        test::deleteFromLibrary();
         test::getLastRead();
-        std::cout << "all automatic tests passed\n";
+        std::cout << "all self-verifying tests passed\n";
 
         return 0;
     } catch (const std::system_error& e) {
