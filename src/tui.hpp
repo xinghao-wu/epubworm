@@ -128,6 +128,15 @@ getGraphicsEscCode(const std::filesystem::path& tempDataFileAbs, int channels,
 // Trivial function to check if `fd` points to an interactive terminal.
 [[nodiscard]] bool isTerm(FILE* fd);
 
+// If `fd` refers to a terminal, emits bold + `fgColor` escape codes to
+// `std::cout` (when `fd` is `stdout`) or `std::cerr` (otherwise).
+// Pair with `resetBoldColorIfTerm(fd)`.
+void boldColorIfTerm(FILE* fd, std::string_view fgColor);
+
+// If `fd` refers to a terminal, emits reset-bold + reset-fg escape codes
+// to the same stream chosen by the matching `boldColorIfTerm` call.
+void resetBoldColorIfTerm(FILE* fd);
+
 // Restore original terminal settings.
 // Depends on `enableRawMode()` to retrieve original terminal setting flags.
 // Never call this function before calling `enableRawMode()`.

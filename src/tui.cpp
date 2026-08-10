@@ -180,6 +180,22 @@ bool isTerm(FILE* fd) {
     return isatty(fileno(fd)) == 1;
 }
 
+void boldColorIfTerm(FILE* fd, std::string_view fgColor) {
+    if (!isTerm(fd)) {
+        return;
+    }
+    std::ostream& os{fd == stdout ? std::cout : std::cerr};
+    os << esc << bold << esc << fgColor;
+}
+
+void resetBoldColorIfTerm(FILE* fd) {
+    if (!isTerm(fd)) {
+        return;
+    }
+    std::ostream& os{fd == stdout ? std::cout : std::cerr};
+    os << esc << resetBold << esc << resetFG;
+}
+
 void disableRawMode() {
     std::cout << esc << disableDecimalReportingFormat;
     std::cout << esc << disableMouseEventReporting;

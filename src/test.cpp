@@ -59,8 +59,10 @@ void unzip() {
     ::unzip(spiceWolfZippedAbs,
             testOutputsAbs / "unzip_spice_and_wolf_vol_1_unzipped");
     ::unzip(zuttomoZippedAbs, testOutputsAbs / "unzip_zuttomo_vol_1_unzipped");
+    boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::unzip()` success cases need verification, "
                  "check `test_outputs/` to verify correct result\n";
+    resetBoldColorIfTerm(stdout);
 }
 
 void getOPFRel() {
@@ -174,8 +176,10 @@ void displayImg() {
     ::displayImg(zuttomoRootAbs / "images/image3.png", output, 35, 80);
     std::cout << output;
 
+    boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::displayImg()` success cases need verification, "
                  "check `std::cout` for expected images\n";
+    resetBoldColorIfTerm(stdout);
 }
 
 void getSpine() {
@@ -226,8 +230,10 @@ void parseChapter() {
     ::parseChapter(spiceWolfRootAbs / "OEBPS/chapter005.xhtml", result);
     std::cout << result;
 
+    boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::parseChapter()` success cases need verification, "
                  "check `std::cout` for correct images and text\n";
+    resetBoldColorIfTerm(stdout);
 }
 
 void dumpEpub() {
@@ -241,19 +247,23 @@ void dumpEpub() {
     ::processContentText(result, 55);
     std::cout << result;
 
+    boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::dumpEpub()` success cases need verification, "
                  "check `std::cout` for content of three epubs. "
                  "Ellipses should be expanded, lines wrapped to 55 cols, "
                  "chapter titles and ends center justified, "
                  "and content centered on the screen.\n";
+    resetBoldColorIfTerm(stdout);
 }
 
 void readRawInput() {
 
+    boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::readRawInput()` success cases need verification, "
                  "the terminal should now be in raw mode. "
                  "Verify correct key, row, col values for inputs. "
                  "Press q to quit.\n";
+    resetBoldColorIfTerm(stdout);
 
     ::enableRawMode();
 
@@ -339,9 +349,11 @@ void displayChapter() {
             spiceWolfRootAbs / "OEBPS/chapter005.xhtml", 0.5, 55)};
     eraseScreen();
 
+    boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::displayChapter()` success cases need verification, "
                  "a tui interface for an image and text "
                  "chapter should have been displayed.\n";
+    resetBoldColorIfTerm(stdout);
 
     std::cout << "image chapter exit reason: ";
     std::cout << static_cast<int>(imgChapterOutput.first);
@@ -368,8 +380,10 @@ void tocDataToString() {
     ::processContentText(str, 55);
     std::cout << str;
 
+    boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::tocDataToString()` success cases need verification, "
                  "verify correct table of content strings are shown\n";
+    resetBoldColorIfTerm(stdout);
 }
 
 void displayTOC() {
@@ -383,9 +397,11 @@ void displayTOC() {
             ::displayTOC(::getTOC(parasiteRootAbs / "OEBPS/toc.ncx"), 55, 0)};
     eraseScreen();
 
+    boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::displayTOC()` success cases need verification, "
                  "a tui interface for mysteries' "
                  "and parasite's TOCs should have been displayed.\n";
+    resetBoldColorIfTerm(stdout);
 
     std::cout << "mysteries output: " << mysteriesTOCOutput << '\n';
     std::cout << "parasite output: " << parasiteTOCOutput << '\n';
@@ -412,9 +428,11 @@ void displayEpub() {
     const EpubProg zuttomoOut{
             ::displayEpub(zuttomoIniProg, zuttomoRootAbs, 65)};
 
+    boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::displayEpub()` success cases need verification, "
                  "a tui interface for all four "
                  "test epubs should have been displayed.\n";
+    resetBoldColorIfTerm(stdout);
 
     std::cout << "mysteries exit chapter path: ";
     std::cout << mysteriesOut.chapterAbs << '\n';
@@ -831,12 +849,14 @@ void readEpubInLibrary() {
     fs::copy_file(mncLibraryAbs, outputMncLibraryAbs,
                   fs::copy_options::overwrite_existing);
 
+    boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::readEpubInLibrary()` success cases need "
                  "verification.\n"
                  "Confirm a working TUI interface for all test epubs "
                  "were displayed.\n"
                  "Check `test_outputs/readEpubInLibrary_library.xml` "
                  "for correct progresses and `<last-read>`.\n";
+    resetBoldColorIfTerm(stdout);
 
     fs::remove_all(tmpShareAbs);
 }
