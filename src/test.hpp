@@ -1,5 +1,6 @@
 #pragma once
 
+// Test global constants depend on binary being ran with CWD being `build/`.
 namespace test {
 // non-self-validating
 void unzip();
@@ -21,26 +22,23 @@ void wrapForTmuxPassthrough();
 // `getGraphicsEscCode()`.
 void displayImg();
 
-// Also exercises `getHrefFromID()`, `decodePercentEncoding()`.
+// Also exercises `getHrefFromID()`.
 void getSpine();
 
 // Also exercises `collectNavPoints()`.
 void getTOC();
 
+// TODO: Make this self-validating.
 // non-self-validating
 // Also exercises `parseContentElem()`.
 void parseChapter();
 
 // non-self-validating
-// Also exercises `expandEllipsesAndTabs()`, `getVisualLen()`,
-// `centerOnScreen()`, `centerJustify()`, `processContentText()`,
-// `getOccurrences()`, `getInvisEscSeqLen()`, `useSystemLocale()`,
-// `wrapLines()`.
 void dumpEpub();
 
 // non-self-validating
 // Also exercises `disableRawMode()`, `enableRawMode()`,
-// `registerSigwinchHandler`.
+// `registerSigwinchHandler`, `handleSigwinch()`.
 void readRawInput();
 
 void utf8ToWide();
@@ -52,13 +50,13 @@ void findNth();
 void execute();
 
 // non-self-validating
-// Also exercises `handleSigwinch()`,
-// `registerSigwinchHandler()`, `setUpDisplayChapter()`,
+// Also exercises `setUpDisplayChapter()`,
 // `snapTopLineToBound()`, `snapBotLineToBound()`,
 // `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`,
 // `inTmuxSession()`.
 void displayChapter();
 
+// TODO: Make this self-validating.
 // non-self-validating
 void tocDataToString();
 
@@ -86,7 +84,6 @@ void addToLibrary();
 
 void queryEpubElem();
 
-// Also exercises `queryEpubElem()`.
 void writeProgress();
 
 void deleteFromLibrary();
