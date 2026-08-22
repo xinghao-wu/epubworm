@@ -49,6 +49,8 @@ namespace fs = std::filesystem;
 static termios g_ogTermFlags{};
 volatile std::sig_atomic_t g_winResize{0};
 
+constexpr int wheelScrollLines{3};
+
 void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     if (id == 0) {
         throw std::runtime_error{"image id not in valid range"};
@@ -722,7 +724,6 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
                 goto redraw_screen;
             case 'k':
             case specKey::arrowUp:
-            case specKey::wheelUp:
                 if (screenTopLine == 1) {
                     return {ChapterExit::prev, prog};
                 }
@@ -731,12 +732,29 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
                 goto redraw_screen;
             case 'j':
             case specKey::arrowDown:
-            case specKey::wheelDown:
                 if (screenBotLine == chapterLines) {
                     return {ChapterExit::next, prog};
                 }
                 ++screenTopLine;
                 ++screenBotLine;
+                goto redraw_screen;
+            case specKey::wheelUp:
+                if (screenTopLine == 1) {
+                    return {ChapterExit::prev, prog};
+                }
+                screenTopLine -= wheelScrollLines;
+                snapTopLineToBound(screenTopLine);
+                screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
+                snapBotLineToBound(screenBotLine, chapterLines);
+                goto redraw_screen;
+            case specKey::wheelDown:
+                if (screenBotLine == chapterLines) {
+                    return {ChapterExit::next, prog};
+                }
+                screenBotLine += wheelScrollLines;
+                snapBotLineToBound(screenBotLine, chapterLines);
+                screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
+                snapTopLineToBound(screenTopLine);
                 goto redraw_screen;
             case 'g':
             case specKey::home:
@@ -1088,6 +1106,22 @@ fs::path displayTOC(const TocData& tocData, int desiredMaxLen,
             case specKey::arrowDown:
                 if (selectedNavPointIndex != std::ssize(tocData) - 1) {
                     ++selectedNavPointIndex;
+                    goto redraw_screen;
+                }
+                break;
+            case specKey::wheelUp:
+                if (selectedNavPointIndex != 0) {
+                    selectedNavPointIndex -= wheelScrollLines / 2;
+                    selectedNavPointIndex = std::max(selectedNavPointIndex, 0);
+                    goto redraw_screen;
+                }
+                break;
+            case specKey::wheelDown:
+                if (selectedNavPointIndex != std::ssize(tocData) - 1) {
+                    selectedNavPointIndex += wheelScrollLines / 2;
+                    selectedNavPointIndex =
+                            std::min(selectedNavPointIndex,
+                                     static_cast<int>(tocData.size()) - 1);
                     goto redraw_screen;
                 }
                 break;
