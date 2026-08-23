@@ -4,8 +4,10 @@ root = true
 indent_size = 4
 tab_width = 8
 indent_style = space
-max_line_length = 79
 trim_trailing_whitespace = true
+
+[*.{cpp,hpp,h}]
+max_line_length = 79
 
 [COMMIT_EDITMSG]
 max_line_length = 72
