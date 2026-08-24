@@ -1,1 +1,2 @@
-Monocle (mnc) is a TUI epub reader written in C++.
+# term-epub-img
+An image-capable, minimalistic TUI epub reader written in C++.

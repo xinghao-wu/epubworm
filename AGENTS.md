@@ -1,14 +1,14 @@
 # Agent Guidelines
 
 ## Project Context
-Monocle (mnc) is a TUI epub reader written in C++23.
+term-epub-img is an image-capable TUI epub reader written in C++23.
 
 ## Command Reference
 ```bash
 make fmt        # 1. Format code with clang-format.
 make lint       # 2. Run clang-tidy (ignore "suppressed warnings" from this).
 make test       # 3. Build and run the test suite.
-make            # 4. Release build; produces `build/mnc`.
+make            # 4. Release build; produces `build/tei`.
 ```
 
 ## Repository Structure

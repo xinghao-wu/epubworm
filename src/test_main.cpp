@@ -22,7 +22,7 @@ int main() {
         test::styleEachLineIndividually();
         test::initConf();
         test::initLibrary();
-        test::readMncConf();
+        test::readTeiConf();
         test::getTruncatedSHA256Sum();
         test::findEpubById();
         test::addToLibrary();

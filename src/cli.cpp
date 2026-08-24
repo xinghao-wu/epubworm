@@ -20,8 +20,8 @@ void displayHelp() {
     boldColorIfTerm(stdout, greenFG);
     std::cout << "Usage:";
     resetBoldColorIfTerm(stdout);
-    std::cout << "  mnc [OPTIONS] [COMMAND] [ARGS...]\n";
-    printAligned("  mnc", "Read the last read epub");
+    std::cout << "  tei [OPTIONS] [COMMAND] [ARGS...]\n";
+    printAligned("  tei", "Read the last read epub");
     std::cout << '\n';
 
     boldColorIfTerm(stdout, blueFG);

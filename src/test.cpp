@@ -460,38 +460,38 @@ void styleEachLineIndividually() {
 
 void initConf() {
     const fs::path tmpConfigAbs{fs::temp_directory_path()
-                                / "mnc_test_initConf"};
+                                / "tei_test_initConf"};
     fs::remove_all(tmpConfigAbs);
     fs::create_directories(tmpConfigAbs);
 
-    const fs::path mncConfAbs{tmpConfigAbs / "mnc/conf.xml"};
-    ::initConf(mncConfAbs);
+    const fs::path teiConfAbs{tmpConfigAbs / "tei/conf.xml"};
+    ::initConf(teiConfAbs);
 
-    assert(fs::exists(mncConfAbs));
+    assert(fs::exists(teiConfAbs));
 
-    XMLDocument mncConf{};
-    assert(mncConf.LoadFile(mncConfAbs.c_str()) == XML_SUCCESS);
-    assert(mncConf.FirstChildElement("conf") != nullptr);
-    assert(mncConf.FirstChildElement("conf")->FirstChildElement() == nullptr);
+    XMLDocument teiConf{};
+    assert(teiConf.LoadFile(teiConfAbs.c_str()) == XML_SUCCESS);
+    assert(teiConf.FirstChildElement("conf") != nullptr);
+    assert(teiConf.FirstChildElement("conf")->FirstChildElement() == nullptr);
 
     fs::remove_all(tmpConfigAbs);
 }
 
 void initLibrary() {
     const fs::path tmpShareAbs{fs::temp_directory_path()
-                               / "mnc_test_initLibrary"};
+                               / "tei_test_initLibrary"};
     fs::remove_all(tmpShareAbs);
     fs::create_directories(tmpShareAbs);
 
-    const fs::path mncLibraryAbs{tmpShareAbs / "mnc/library.xml"};
-    ::initLibrary(mncLibraryAbs);
+    const fs::path teiLibraryAbs{tmpShareAbs / "tei/library.xml"};
+    ::initLibrary(teiLibraryAbs);
 
-    assert(fs::exists(mncLibraryAbs));
+    assert(fs::exists(teiLibraryAbs));
 
-    XMLDocument mncLibrary{};
-    assert(mncLibrary.LoadFile(mncLibraryAbs.c_str()) == XML_SUCCESS);
+    XMLDocument teiLibrary{};
+    assert(teiLibrary.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
     const XMLElement* const libraryRoot{
-            mncLibrary.FirstChildElement("library")};
+            teiLibrary.FirstChildElement("library")};
     assert(libraryRoot != nullptr);
     const XMLElement* const lastRead{
             libraryRoot->FirstChildElement("last-read")};
@@ -504,15 +504,15 @@ void initLibrary() {
     fs::remove_all(tmpShareAbs);
 }
 
-void readMncConf() {
+void readTeiConf() {
     const fs::path tmpConfigAbs{fs::temp_directory_path()
-                                / "mnc_test_readMncConf"};
+                                / "tei_test_readTeiConf"};
     fs::remove_all(tmpConfigAbs);
     fs::create_directories(tmpConfigAbs);
 
-    const fs::path mncConfAbs{tmpConfigAbs / "mnc/conf.xml"};
-    ::initConf(mncConfAbs);
-    assert(::readMncConf(mncConfAbs).lineLength == 55);
+    const fs::path teiConfAbs{tmpConfigAbs / "tei/conf.xml"};
+    ::initConf(teiConfAbs);
+    assert(::readTeiConf(teiConfAbs).lineLength == 55);
 
     fs::remove_all(tmpConfigAbs);
 }
@@ -576,21 +576,21 @@ void findEpubById() {
 
 void addToLibrary() {
     const fs::path tmpShareAbs{fs::temp_directory_path()
-                               / "mnc_test_addToLibrary"};
+                               / "tei_test_addToLibrary"};
     fs::remove_all(tmpShareAbs);
     fs::create_directories(tmpShareAbs);
 
-    const fs::path mncLibraryAbs{tmpShareAbs / "mnc/library.xml"};
-    ::initLibrary(mncLibraryAbs);
+    const fs::path teiLibraryAbs{tmpShareAbs / "tei/library.xml"};
+    ::initLibrary(teiLibraryAbs);
 
     assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
                           tmpShareAbs));
 
     const std::string mysteriesId{"53760b7bdcdfa01a43ccf243f41dd912"};
-    XMLDocument mncLibrary{};
-    assert(mncLibrary.LoadFile(mncLibraryAbs.c_str()) == XML_SUCCESS);
+    XMLDocument teiLibrary{};
+    assert(teiLibrary.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
     const XMLElement* const libraryRoot{
-            mncLibrary.FirstChildElement("library")};
+            teiLibrary.FirstChildElement("library")};
     assert(libraryRoot != nullptr);
 
     const XMLElement* const lastRead{
@@ -607,7 +607,7 @@ void addToLibrary() {
     assert(std::string_view{epub->Attribute("opened-chapter")}.empty());
     assert(epub->DoubleAttribute("chapter-progress") == 0.0);
 
-    assert(fs::is_directory(tmpShareAbs / "mnc/extracted_epubs"
+    assert(fs::is_directory(tmpShareAbs / "tei/extracted_epubs"
                             / mysteriesId));
 
     // Already present: returns false.
@@ -644,7 +644,7 @@ void queryEpubElem() {
             ::queryEpubElem(epubA, phonyShareAbs)};
     assert(outA.first == idA);
     assert(outA.second.chapterAbs
-           == phonyShareAbs / "mnc/extracted_epubs" / idA
+           == phonyShareAbs / "tei/extracted_epubs" / idA
                       / "index_split_117.html");
     assert(outA.second.chapterProg == 0.5);
 
@@ -737,7 +737,7 @@ void writeProgress() {
     assert(epub != nullptr);
 
     // Success case A: non-empty chapterAbs, non-zero progress.
-    const EpubProg prog{phonyShareAbs / "mnc/extracted_epubs" / id
+    const EpubProg prog{phonyShareAbs / "tei/extracted_epubs" / id
                                 / "index_split_117.html",
                         0.5};
     ::writeProgress(epub, prog, phonyShareAbs);
@@ -781,12 +781,12 @@ void writeProgress() {
 
 void deleteFromLibrary() {
     const fs::path tmpShareAbs{fs::temp_directory_path()
-                               / "mnc_test_deleteFromLibrary"};
+                               / "tei_test_deleteFromLibrary"};
     fs::remove_all(tmpShareAbs);
     fs::create_directories(tmpShareAbs);
 
-    const fs::path mncLibraryAbs{tmpShareAbs / "mnc/library.xml"};
-    ::initLibrary(mncLibraryAbs);
+    const fs::path teiLibraryAbs{tmpShareAbs / "tei/library.xml"};
+    ::initLibrary(teiLibraryAbs);
 
     assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
                           tmpShareAbs));
@@ -794,10 +794,10 @@ void deleteFromLibrary() {
     const std::string mysteriesID{"53760b7bdcdfa01a43ccf243f41dd912"};
     assert(::deleteFromLibrary(mysteriesID, tmpShareAbs));
 
-    XMLDocument mncLibrary{};
-    assert(mncLibrary.LoadFile(mncLibraryAbs.c_str()) == XML_SUCCESS);
+    XMLDocument teiLibrary{};
+    assert(teiLibrary.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
     const XMLElement* const libraryRoot{
-            mncLibrary.FirstChildElement("library")};
+            teiLibrary.FirstChildElement("library")};
     assert(libraryRoot != nullptr);
     assert(libraryRoot->FirstChildElement("epub") == nullptr);
     const XMLElement* const lastRead{
@@ -807,7 +807,7 @@ void deleteFromLibrary() {
     assert(id != nullptr);
     assert(std::string_view{id}.empty());
 
-    assert(!fs::exists(tmpShareAbs / "mnc/extracted_epubs" / mysteriesID));
+    assert(!fs::exists(tmpShareAbs / "tei/extracted_epubs" / mysteriesID));
 
     // Already removed: returns false.
     assert(!::deleteFromLibrary(mysteriesID, tmpShareAbs));
@@ -817,15 +817,15 @@ void deleteFromLibrary() {
 
 void readEpubInLibrary() {
     const fs::path tmpShareAbs{fs::temp_directory_path()
-                               / "mnc_test_readEpubInLibrary"};
+                               / "tei_test_readEpubInLibrary"};
     fs::remove_all(tmpShareAbs);
     fs::create_directories(tmpShareAbs);
 
-    const fs::path shareMncAbs{tmpShareAbs / "mnc"};
-    fs::create_directories(shareMncAbs);
+    const fs::path shareTeiAbs{tmpShareAbs / "tei"};
+    fs::create_directories(shareTeiAbs);
 
-    const fs::path mncLibraryAbs{shareMncAbs / "library.xml"};
-    ::initLibrary(mncLibraryAbs);
+    const fs::path teiLibraryAbs{shareTeiAbs / "library.xml"};
+    ::initLibrary(teiLibraryAbs);
 
     assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
                           tmpShareAbs));
@@ -843,9 +843,9 @@ void readEpubInLibrary() {
     assert(::readEpubInLibrary("8d070e", tmpShareAbs, 65));
 
     fs::create_directories(testOutputsAbs);
-    const fs::path outputMncLibraryAbs{testOutputsAbs
+    const fs::path outputTeiLibraryAbs{testOutputsAbs
                                        / "readEpubInLibrary_library.xml"};
-    fs::copy_file(mncLibraryAbs, outputMncLibraryAbs,
+    fs::copy_file(teiLibraryAbs, outputTeiLibraryAbs,
                   fs::copy_options::overwrite_existing);
 
     boldColorIfTerm(stdout, yellowFG);

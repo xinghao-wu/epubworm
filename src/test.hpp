@@ -73,7 +73,7 @@ void initConf();
 
 void initLibrary();
 
-void readMncConf();
+void readTeiConf();
 
 void getTruncatedSHA256Sum();
 
