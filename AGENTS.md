@@ -5,10 +5,11 @@ term-epub-img is an image-capable TUI epub reader written in C++23.
 
 ## Command Reference
 ```bash
-make fmt        # 1. Format code with clang-format.
-make lint       # 2. Run clang-tidy (ignore "suppressed warnings" from this).
-make test       # 3. Build and run the test suite.
-make            # 4. Release build; produces `build/tei`.
+make fmt-check-diff # Shows clang-format's proposed changes.
+make fmt            # Applies proposed formatting changes.
+make lint           # Runs clang-tidy (ignore "suppressed warnings" from this).
+make test           # Builds and run the test suite.
+make                # Builds release binary.
 ```
 
 ## Repository Structure
