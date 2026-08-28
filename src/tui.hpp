@@ -79,6 +79,8 @@ inline constexpr std::string yellowFG{"[33m"};
 inline constexpr std::string redFG{"[31m"};
 inline constexpr std::string greenFG{"[32m"};
 inline constexpr std::string blueFG{"[34m"};
+inline constexpr std::string magentaFG{"[35m"};
+inline constexpr std::string cyanFG{"[36m"};
 inline constexpr std::string resetFG{"[39m"};
 
 // Load an image to the terminal (create a virtual placement)

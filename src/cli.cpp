@@ -14,7 +14,7 @@
 using namespace tinyxml2;
 namespace fs = std::filesystem;
 
-static constexpr int descCol{29};
+static constexpr int descCol{33};
 
 void printAligned(std::string_view left, std::string_view right) {
     std::cout << left;
@@ -29,9 +29,7 @@ void displayHelp() {
     boldColorIfTerm(stdout, greenFG);
     std::cout << "Usage:\n";
     resetBoldColorIfTerm(stdout);
-    std::cout << "  tei [OPTIONS] [COMMAND] [ARGS...]\n";
-    std::cout << "  tei\n";
-    std::cout << '\n';
+    std::cout << "  tei [OPTIONS] [COMMAND] [ARGS...]\n\n";
 
     std::cout << "When ran without any arguments, tei reads the last-read "
                  "epub.\n\n";
@@ -45,14 +43,34 @@ void displayHelp() {
     boldColorIfTerm(stdout, yellowFG);
     std::cout << "Commands:\n";
     resetBoldColorIfTerm(stdout);
-    printAligned("  add <file>...", "Add epub files to library");
+    printAligned("  add <file>...", "Add .epub files to library");
     printAligned("  remove, rm, delete <id>", "Remove epub from library");
-    printAligned("  list, ls", "List library's epubs' id, title, author");
-    printAligned("  read <id>", "Read epub from library");
+    printAligned("  list, ls", "List info of epubs in library");
+    printAligned("  read <id>", "Read epub already in library");
     std::cout << '\n';
 
-    std::cout
-            << "All full ids can be substituted with unambiguous prefixes.\n";
+    std::cout << "All full ids can be substituted with unambiguous "
+                 "prefixes.\n\n";
+
+    boldColorIfTerm(stdout, magentaFG);
+    std::cout << "Keybinds:\n";
+    resetBoldColorIfTerm(stdout);
+    printAligned("  q", "Quit");
+    printAligned("  t, <Tab>", "Toggle table of contents");
+    printAligned("  <Enter>", "Open selected table of contents entry");
+    printAligned("  h, b, <PgUp>, <Left Arrow>", "Page up");
+    printAligned("  l, f, <PgDn>, <Right Arrow>", "Page down");
+    printAligned("  <Space>", "Page down");
+    printAligned("  u", "Half-page up");
+    printAligned("  d", "Half-page down");
+    printAligned("  k, <Up Arrow>", "One line up");
+    printAligned("  j, <Down Arrow>", "One line down");
+    printAligned("  g, <Home>", "Jump to chapter beginning");
+    printAligned("  G, <End>", "Jump to chapter end");
+    printAligned("  <Mouse Click Left>",
+                 "Page up/down based on cursor position");
+    printAligned("  <Mouse Wheel Up>", "Scroll up");
+    printAligned("  <Mouse Wheel Down>", "Scroll down");
 }
 
 void listLibrary(const fs::path& shareAbs) {
