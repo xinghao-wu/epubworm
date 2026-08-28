@@ -27,23 +27,24 @@ void printAligned(std::string_view left, std::string_view right) {
 
 void displayHelp() {
     boldColorIfTerm(stdout, greenFG);
-    std::cout << "Usage:";
+    std::cout << "Usage:\n";
     resetBoldColorIfTerm(stdout);
     std::cout << "  tei [OPTIONS] [COMMAND] [ARGS...]\n";
-    printAligned("  tei", "Read the last read epub");
+    std::cout << "  tei\n";
     std::cout << '\n';
 
+    std::cout << "When ran without any arguments, tei reads the last-read "
+                 "epub.\n\n";
+
     boldColorIfTerm(stdout, blueFG);
-    std::cout << "Options:";
+    std::cout << "Options:\n";
     resetBoldColorIfTerm(stdout);
-    std::cout << '\n';
     printAligned("  -h, --help", "Display this help message");
     std::cout << '\n';
 
     boldColorIfTerm(stdout, yellowFG);
-    std::cout << "Commands:";
+    std::cout << "Commands:\n";
     resetBoldColorIfTerm(stdout);
-    std::cout << '\n';
     printAligned("  add <file>...", "Add epub files to library");
     printAligned("  remove, rm, delete <id>", "Remove epub from library");
     printAligned("  list, ls", "List library's epubs' id, title, author");
