@@ -742,7 +742,7 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
                 goto redraw_screen;
             case specKey::wheelUp:
                 if (screenTopLine == 1) {
-                    return {ChapterExit::prev, prog};
+                    break;
                 }
                 screenTopLine -= wheelScrollLines;
                 snapTopLineToBound(screenTopLine);
@@ -751,7 +751,7 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
                 goto redraw_screen;
             case specKey::wheelDown:
                 if (screenBotLine == chapterLines) {
-                    return {ChapterExit::next, prog};
+                    break;
                 }
                 screenBotLine += wheelScrollLines;
                 snapBotLineToBound(screenBotLine, chapterLines);
@@ -1108,22 +1108,6 @@ fs::path displayTOC(const TocData& tocData, int desiredMaxLen,
             case specKey::arrowDown:
                 if (selectedNavPointIndex != std::ssize(tocData) - 1) {
                     ++selectedNavPointIndex;
-                    goto redraw_screen;
-                }
-                break;
-            case specKey::wheelUp:
-                if (selectedNavPointIndex != 0) {
-                    selectedNavPointIndex -= wheelScrollLines / 2;
-                    selectedNavPointIndex = std::max(selectedNavPointIndex, 0);
-                    goto redraw_screen;
-                }
-                break;
-            case specKey::wheelDown:
-                if (selectedNavPointIndex != std::ssize(tocData) - 1) {
-                    selectedNavPointIndex += wheelScrollLines / 2;
-                    selectedNavPointIndex =
-                            std::min(selectedNavPointIndex,
-                                     static_cast<int>(tocData.size()) - 1);
                     goto redraw_screen;
                 }
                 break;
