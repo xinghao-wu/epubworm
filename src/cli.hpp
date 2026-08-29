@@ -3,6 +3,11 @@
 #include <filesystem>
 #include <string_view>
 
+// Validates and dispatches command-line arguments.
+// Returns zero on success and nonzero for invalid arguments or an operation
+// that could not be completed.
+int dispatchCli(int argc, char** argv);
+
 // Helper for `displayHelp()`
 void printAligned(std::string_view left, std::string_view right);
 

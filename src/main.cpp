@@ -1,12 +1,13 @@
+#include "cli.hpp"
 #include "tui.hpp"
 #include <exception>
 #include <iostream>
 #include <stdexcept>
 #include <system_error>
 
-int main() {
+int main(int argc, char* argv[]) {
     try {
-        return 0;
+        return dispatchCli(argc, argv);
     } catch (const std::system_error& e) {
         boldColorIfTerm(stderr, redFG);
         std::cerr << "fatal system error occurred\n";

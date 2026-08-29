@@ -1,9 +1,12 @@
 #include "cli.hpp"
+#include "data_management.hpp"
 #include "epub_parser.hpp"
 #include "tinyxml2.hpp"
 #include "tui.hpp"
 #include <algorithm>
 #include <cstddef>
+#include <cstdlib>
+#include <exception>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -15,6 +18,153 @@ using namespace tinyxml2;
 namespace fs = std::filesystem;
 
 static constexpr int descCol{33};
+
+enum class CliCommand {
+    invalid,
+    help,
+    none,
+    add,
+    remove,
+    list,
+    read,
+};
+
+static void displayError(std::string_view message) {
+    boldColorIfTerm(stderr, redFG);
+    std::cerr << "error: " << message << '\n';
+    resetBoldColorIfTerm(stderr);
+}
+
+static CliCommand parseCommand(int argc, char** argv) {
+    if (argc <= 1) {
+        return CliCommand::none;
+    }
+
+    const std::string_view command{argv[1]};
+    if (command == "-h" || command == "--help") {
+        if (argc == 2) {
+            return CliCommand::help;
+        }
+        displayError("help cannot be ran with other arguments");
+        return CliCommand::invalid;
+    }
+
+    if (command == "add") {
+        if (argc >= 3) {
+            return CliCommand::add;
+        }
+    } else if (command == "remove" || command == "rm" || command == "delete") {
+        if (argc == 3) {
+            return CliCommand::remove;
+        }
+    } else if (command == "list" || command == "ls") {
+        if (argc == 2) {
+            return CliCommand::list;
+        }
+    } else if (command == "read") {
+        if (argc == 3) {
+            return CliCommand::read;
+        }
+    } else {
+        displayError("unknown command, run tei -h for usage");
+        return CliCommand::invalid;
+    }
+
+    displayError("invalid command argument count, run tei -h for usage");
+    return CliCommand::invalid;
+}
+
+static fs::path getXdgDir(const char* name) {
+    const char* const value{std::getenv(name)};
+    if (value == nullptr || !fs::path{value}.is_absolute()) {
+        throw std::runtime_error{
+                "XDG_CONFIG_HOME and XDG_DATA_HOME must be absolute paths"};
+    }
+    return value;
+}
+
+int dispatchCli(int argc, char** argv) {
+    const CliCommand command{parseCommand(argc, argv)};
+
+    switch (command) {
+    case CliCommand::invalid:
+        return 1;
+    case CliCommand::help:
+        displayHelp();
+        return 0;
+    default:
+        break;
+    }
+
+    const fs::path configAbs{getXdgDir("XDG_CONFIG_HOME")};
+    const fs::path shareAbs{getXdgDir("XDG_DATA_HOME")};
+    const fs::path teiConfAbs{configAbs / "tei/conf.xml"};
+    const fs::path teiLibraryAbs{shareAbs / "tei/library.xml"};
+
+    if (!fs::exists(teiConfAbs)) {
+        initConf(teiConfAbs);
+    }
+    if (!fs::exists(teiLibraryAbs)) {
+        initLibrary(teiLibraryAbs);
+    }
+    const ConfOpts conf{readTeiConf(teiConfAbs)};
+
+    switch (command) {
+    case CliCommand::none: {
+        XMLDocument library{};
+        if (library.LoadFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
+            throw std::runtime_error{
+                    std::string{"error loading library file: "}
+                    + XMLDocument::ErrorIDToName(library.ErrorID())};
+        }
+        const std::string id{getLastRead(library)};
+        if (id.empty()) {
+            displayError("library does not contain a last read epub");
+            return 1;
+        }
+        if (!readEpubInLibrary(id, shareAbs, conf.lineLength)) {
+            displayError("last read epub is not in library anymore");
+            return 1;
+        }
+        return 0;
+    }
+    case CliCommand::add: {
+        bool allAdded{true};
+        for (int i{2}; i < argc; ++i) {
+            try {
+                if (!addToLibrary(argv[i], shareAbs)) {
+                    displayError(
+                            std::string{"epub is already in the library: "}
+                            + argv[i]);
+                    allAdded = false;
+                }
+            } catch (const std::exception& e) {
+                displayError(std::string{"failed to add "} + argv[i] + ": "
+                             + e.what());
+                allAdded = false;
+            }
+        }
+        return allAdded ? 0 : 1;
+    }
+    case CliCommand::remove:
+        if (!deleteFromLibrary(argv[2], shareAbs)) {
+            displayError("epub id was not found or is ambiguous");
+            return 1;
+        }
+        return 0;
+    case CliCommand::list:
+        listLibrary(shareAbs);
+        return 0;
+    case CliCommand::read:
+        if (!readEpubInLibrary(argv[2], shareAbs, conf.lineLength)) {
+            displayError("epub id was not found or is ambiguous");
+            return 1;
+        }
+        return 0;
+    default:
+        throw std::logic_error{"unrecognized CLI command"};
+    }
+}
 
 void printAligned(std::string_view left, std::string_view right) {
     std::cout << left;
