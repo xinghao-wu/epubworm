@@ -10,6 +10,10 @@ OBJ_DIR_DEBUG := $(BUILD_DIR)/obj_debug
 BIN := $(BUILD_DIR)/tei
 DEBUG_BIN := $(BUILD_DIR)/tei_debug
 TEST_BIN := $(BUILD_DIR)/tei_test
+PREFIX ?= /usr/local
+USER_PREFIX ?= $(HOME)/.local
+BINDIR ?= $(PREFIX)/bin
+USER_BINDIR ?= $(USER_PREFIX)/bin
 SRCS := $(wildcard $(SRC_DIR)/*.cpp)
 MAIN_SRC := $(SRC_DIR)/main.cpp
 TEST_SRCS := $(SRC_DIR)/test_main.cpp $(SRC_DIR)/test.cpp
@@ -26,11 +30,26 @@ PROJECT_FILES := $(filter-out $(addprefix $(SRC_DIR)/,$(VENDORED_FILES)), \
 		 $(wildcard $(SRC_DIR)/*.cpp $(SRC_DIR)/*.hpp))
 
 .DELETE_ON_ERROR:
-.PHONY: clean fmt fmt-check fmt-check-diff lint lint-fix test release debug
+.PHONY: clean fmt fmt-check fmt-check-diff lint lint-fix test release debug \
+	install install-user uninstall uninstall-user
 
 release: $(BIN)
 
 debug: $(DEBUG_BIN)
+
+install: $(BIN)
+	install -d "$(DESTDIR)$(BINDIR)"
+	install -m 755 "$(BIN)" "$(DESTDIR)$(BINDIR)/$(notdir $(BIN))"
+
+install-user: $(BIN)
+	install -d "$(DESTDIR)$(USER_BINDIR)"
+	install -m 755 "$(BIN)" "$(DESTDIR)$(USER_BINDIR)/$(notdir $(BIN))"
+
+uninstall:
+	rm -f "$(DESTDIR)$(BINDIR)/$(notdir $(BIN))"
+
+uninstall-user:
+	rm -f "$(DESTDIR)$(USER_BINDIR)/$(notdir $(BIN))"
 
 $(BIN): $(BUILD_DIR) $(OBJ_DIR) $(MAIN_OBJS)
 	$(CXX) $(CXXFLAGS) $(MAIN_OBJS) -o $@
