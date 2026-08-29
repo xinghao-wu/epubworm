@@ -74,13 +74,19 @@ static CliCommand parseCommand(int argc, char** argv) {
     return CliCommand::invalid;
 }
 
-static fs::path getXdgDir(const char* name) {
+static fs::path getXdgDir(const char* name, const fs::path& fallback) {
     const char* const value{std::getenv(name)};
-    if (value == nullptr || !fs::path{value}.is_absolute()) {
-        throw std::runtime_error{
-                "XDG_CONFIG_HOME and XDG_DATA_HOME must be absolute paths"};
+    if (value != nullptr && fs::path{value}.is_absolute()) {
+        return value;
     }
-    return value;
+
+    const char* const home{std::getenv("HOME")};
+    if (home == nullptr || !fs::path{home}.is_absolute()) {
+        throw std::runtime_error{
+                "HOME must be an absolute path when an XDG directory is not "
+                "set to an absolute path"};
+    }
+    return fs::path{home} / fallback;
 }
 
 int dispatchCli(int argc, char** argv) {
@@ -96,8 +102,8 @@ int dispatchCli(int argc, char** argv) {
         break;
     }
 
-    const fs::path configAbs{getXdgDir("XDG_CONFIG_HOME")};
-    const fs::path shareAbs{getXdgDir("XDG_DATA_HOME")};
+    const fs::path configAbs{getXdgDir("XDG_CONFIG_HOME", ".config")};
+    const fs::path shareAbs{getXdgDir("XDG_DATA_HOME", ".local/share")};
     const fs::path teiConfAbs{configAbs / "tei/conf.xml"};
     const fs::path teiLibraryAbs{shareAbs / "tei/library.xml"};
 
