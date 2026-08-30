@@ -200,8 +200,8 @@ void displayHelp() {
     std::cout << "Commands:\n";
     resetBoldColorIfTerm(stdout);
     printAligned("  add <file>...", "Add .epub files to library");
-    printAligned("  remove, rm, delete <id>", "Remove epub from library");
-    printAligned("  list, ls", "List info of epubs in library");
+    printAligned("  rm, remove, delete <id>", "Remove epub from library");
+    printAligned("  ls, list", "List info of epubs in library");
     printAligned("  read <id>", "Read epub already in library");
     std::cout << '\n';
 
@@ -212,8 +212,9 @@ void displayHelp() {
     std::cout << "Keybinds:\n";
     resetBoldColorIfTerm(stdout);
     printAligned("  q", "Quit");
-    printAligned("  t, <Tab>", "Toggle table of contents");
-    printAligned("  <Enter>", "Open selected table of contents entry");
+    printAligned("  t, <Tab>, <Esc>", "Toggle table of contents");
+    printAligned("  <Enter>, <Left Click>",
+                 "Open selected table of contents entry");
     printAligned("  h, b, <PgUp>, <Left Arrow>", "Page up");
     printAligned("  l, f, <PgDn>, <Right Arrow>", "Page down");
     printAligned("  <Space>", "Page down");
@@ -223,10 +224,9 @@ void displayHelp() {
     printAligned("  j, <Down Arrow>", "One line down");
     printAligned("  g, <Home>", "Jump to chapter beginning");
     printAligned("  G, <End>", "Jump to chapter end");
-    printAligned("  <Mouse Click Left>",
-                 "Page up/down based on cursor position");
-    printAligned("  <Mouse Wheel Up>", "Scroll up");
-    printAligned("  <Mouse Wheel Down>", "Scroll down");
+    printAligned("  <Left Click>", "Page up/down based on cursor position");
+    printAligned("  <Wheel Up>", "Scroll up");
+    printAligned("  <Wheel Down>", "Scroll down");
 }
 
 void listLibrary(const fs::path& shareAbs) {

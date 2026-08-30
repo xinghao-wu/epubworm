@@ -678,6 +678,7 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
             switch (translatedInputKey) {
             case 't':
             case '\t':
+            case '\033':
                 return {ChapterExit::toc, prog};
             case 'q':
                 return {ChapterExit::quit, prog};
@@ -746,7 +747,7 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
                 goto redraw_screen;
             case specKey::wheelUp:
                 if (screenTopLine == 1) {
-                    break;
+                    return {ChapterExit::prev, prog};
                 }
                 screenTopLine -= wheelScrollLines;
                 snapTopLineToBound(screenTopLine);
@@ -755,7 +756,7 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
                 goto redraw_screen;
             case specKey::wheelDown:
                 if (screenBotLine == chapterLines) {
-                    break;
+                    return {ChapterExit::next, prog};
                 }
                 screenBotLine += wheelScrollLines;
                 snapBotLineToBound(screenBotLine, chapterLines);
@@ -1058,6 +1059,7 @@ fs::path displayTOC(const TocData& tocData, int desiredMaxLen,
             case '\033':
                 return {};
             case '\n':
+            case specKey::leftClickRelease:
                 return tocData.data()[selectedNavPointIndex].second;
             case 'h':
             case 'b':
@@ -1104,6 +1106,7 @@ fs::path displayTOC(const TocData& tocData, int desiredMaxLen,
                 break;
             case 'k':
             case specKey::arrowUp:
+            case specKey::wheelUp:
                 if (selectedNavPointIndex != 0) {
                     --selectedNavPointIndex;
                     goto redraw_screen;
@@ -1111,6 +1114,7 @@ fs::path displayTOC(const TocData& tocData, int desiredMaxLen,
                 break;
             case 'j':
             case specKey::arrowDown:
+            case specKey::wheelDown:
                 if (selectedNavPointIndex != std::ssize(tocData) - 1) {
                     ++selectedNavPointIndex;
                     goto redraw_screen;
