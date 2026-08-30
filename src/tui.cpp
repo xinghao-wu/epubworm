@@ -136,20 +136,23 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
 
         const int rowsDesired{(imgYPix / cellYPix) + 1};
         const int colsDesired{(imgXPix / cellXPix) + 1};
+        const int maxRows{winInfo.ws_row - 1};
+        const int maxCols{winInfo.ws_col - horizontalMarginChars * 2};
+        const double rowShrinkMultiplier{maxRows
+                                         / static_cast<double>(rowsDesired)};
+        const double colShrinkMultiplier{maxCols
+                                         / static_cast<double>(colsDesired)};
         rows = rowsDesired;
         cols = colsDesired;
 
-        if (rowsDesired > winInfo.ws_row - 1) {
-            rows = winInfo.ws_row - 1;
-            cols = static_cast<int>(static_cast<double>(rows) / rowsDesired
-                                    * cols)
-                   + 1;
-        }
-        if (colsDesired > winInfo.ws_col - horizontalMarginChars * 2) {
-            cols = winInfo.ws_col - horizontalMarginChars * 2;
-            rows = static_cast<int>(static_cast<double>(cols) / colsDesired
-                                    * rows)
-                   + 1;
+        if (rowShrinkMultiplier < 1 || colShrinkMultiplier < 1) {
+            if (rowShrinkMultiplier < colShrinkMultiplier) {
+                rows = maxRows;
+                cols = static_cast<int>(rowShrinkMultiplier * colsDesired) + 1;
+            } else {
+                cols = maxCols;
+                rows = static_cast<int>(colShrinkMultiplier * rowsDesired) + 1;
+            }
         }
     }
     loadImg(imgAbs, id, rows, cols);
