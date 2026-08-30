@@ -4,6 +4,7 @@
 #include "tinyxml2.hpp"
 #include "tui.hpp"
 #include <algorithm>
+#include <charconv>
 #include <cstddef>
 #include <cstdlib>
 #include <exception>
@@ -12,6 +13,7 @@
 #include <stdexcept>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <vector>
 
 using namespace tinyxml2;
@@ -27,6 +29,7 @@ enum class CliCommand {
     remove,
     list,
     read,
+    setLineLength,
 };
 
 static void displayError(std::string_view message) {
@@ -64,6 +67,10 @@ static CliCommand parseCommand(int argc, char** argv) {
     } else if (command == "read") {
         if (argc == 3) {
             return CliCommand::read;
+        }
+    } else if (command == "set-line-length") {
+        if (argc == 3) {
+            return CliCommand::setLineLength;
         }
     } else {
         displayError("unknown command, run tei -h for usage");
@@ -167,6 +174,19 @@ int dispatchCli(int argc, char** argv) {
             return 1;
         }
         return 0;
+    case CliCommand::setLineLength: {
+        int chars{0};
+        const std::string_view value{argv[2]};
+        const auto [end, error]{std::from_chars(
+                value.data(), value.data() + value.size(), chars)};
+        if (error != std::errc{} || end != value.data() + value.size()
+            || chars <= 0) {
+            displayError("line length must be a positive integer");
+            return 1;
+        }
+        setTeiConfLineLength(teiConfAbs, chars);
+        return 0;
+    }
     default:
         throw std::logic_error{"unrecognized CLI command"};
     }
@@ -203,6 +223,8 @@ void displayHelp() {
     printAligned("  rm, remove, delete <id>", "Remove epub from library");
     printAligned("  ls, list", "List info of epubs in library");
     printAligned("  read <id>", "Read epub already in library");
+    printAligned("  set-line-length <chars>",
+                 "Set the persistent maximum line length");
     std::cout << '\n';
 
     std::cout << "All full ids can be substituted with unambiguous "

@@ -32,6 +32,12 @@ void initLibrary(const std::filesystem::path& teiLibraryAbs);
 // find root element `<conf>`, and on encountering invalid config options.
 [[nodiscard]] ConfOpts readTeiConf(const std::filesystem::path& teiConfAbs);
 
+// Set `<line-length>`'s `chars` attribute in the config file at `teiConfAbs`.
+// Creates the element if it is missing and preserves other config options.
+// Throws `std::invalid_argument` if `chars` is not positive and
+// `std::runtime_error` on load/save failure or a missing `<conf>` root.
+void setTeiConfLineLength(const std::filesystem::path& teiConfAbs, int chars);
+
 // Generates a SHA-256 hash of `fileAbs` via `shasum` and returns it truncated
 // to 128 bits (32 hex characters).
 // Throws `std::invalid_argument`, `std::system_error`, or `std::runtime_error`

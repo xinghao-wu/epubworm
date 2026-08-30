@@ -88,6 +88,37 @@ ConfOpts readTeiConf(const fs::path& teiConfAbs) {
     return {chars};
 }
 
+void setTeiConfLineLength(const fs::path& teiConfAbs, int chars) {
+    if (chars <= 0) {
+        throw std::invalid_argument{"line length must be positive"};
+    }
+
+    XMLDocument teiConf{};
+    teiConf.LoadFile(teiConfAbs.c_str());
+    if (teiConf.Error()) {
+        throw std::runtime_error{teiConf.ErrorStr()};
+    }
+
+    XMLElement* const rootElem{teiConf.FirstChildElement("conf")};
+    if (rootElem == nullptr) {
+        throw std::runtime_error{
+                "root element `<conf>` missing in config file"};
+    }
+
+    XMLElement* lineLength{rootElem->FirstChildElement("line-length")};
+    if (lineLength == nullptr) {
+        lineLength = teiConf.NewElement("line-length");
+        rootElem->InsertEndChild(lineLength);
+    }
+    lineLength->SetAttribute("chars", chars);
+
+    if (teiConf.SaveFile(teiConfAbs.c_str()) != XML_SUCCESS) {
+        throw std::runtime_error{
+                std::string{"error saving conf file: "}
+                + XMLDocument::ErrorIDToName(teiConf.ErrorID())};
+    }
+}
+
 std::string getTruncatedSHA256Sum(const fs::path& fileAbs) {
     const std::string sha256{execute(std::vector<std::string>{
             "shasum", "-a", "256", fileAbs.string()})};
