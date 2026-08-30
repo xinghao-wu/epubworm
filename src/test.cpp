@@ -1,6 +1,7 @@
 #include "test.hpp"
 #include "data_management.hpp"
 #include "epub_parser.hpp"
+#include "single_instance.hpp"
 #include "tinyxml2.hpp"
 #include "tui.hpp"
 #include <cassert>
@@ -27,6 +28,27 @@ const fs::path spiceWolfRootAbs{epubsAbs / "spice_and_wolf_vol_1_unzipped"};
 const fs::path zuttomoRootAbs{epubsAbs / "zuttomo_vol_1_unzipped"};
 
 const fs::path testOutputsAbs{projectRootAbs / "test_outputs"};
+
+void singleInstanceLock() {
+    const fs::path tmpLockAbs{fs::temp_directory_path()
+                              / "tei_test_singleInstanceLock"};
+    fs::remove(tmpLockAbs);
+
+    {
+        const SingleInstanceLock firstLock{tmpLockAbs};
+        assert(firstLock.isFirstInstance());
+
+        const SingleInstanceLock secondLock{tmpLockAbs};
+        assert(!secondLock.isFirstInstance());
+    }
+
+    {
+        const SingleInstanceLock reacquiredLock{tmpLockAbs};
+        assert(reacquiredLock.isFirstInstance());
+    }
+
+    fs::remove(tmpLockAbs);
+}
 
 void unzip() {
     const fs::path mysteriesZippedAbs{epubsAbs

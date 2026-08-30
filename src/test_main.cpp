@@ -30,6 +30,7 @@ int main() {
         test::writeProgress();
         test::deleteFromLibrary();
         test::getLastRead();
+        test::singleInstanceLock();
         boldColorIfTerm(stdout, greenFG);
         std::cout << "all self-verifying tests passed\n";
         resetBoldColorIfTerm(stdout);

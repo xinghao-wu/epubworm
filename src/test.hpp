@@ -92,4 +92,6 @@ void deleteFromLibrary();
 void readEpubInLibrary();
 
 void getLastRead();
+
+void singleInstanceLock();
 } // namespace test

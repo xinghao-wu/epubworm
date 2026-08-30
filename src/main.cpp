@@ -1,4 +1,5 @@
 #include "cli.hpp"
+#include "single_instance.hpp"
 #include "tui.hpp"
 #include <exception>
 #include <iostream>
@@ -7,6 +8,15 @@
 
 int main(int argc, char* argv[]) {
     try {
+        const SingleInstanceLock instanceLock{getInstanceLockPath()};
+        if (!instanceLock.isFirstInstance()) {
+            boldColorIfTerm(stderr, redFG);
+            std::cerr << "error: another tei instance is already running, "
+                         "close it first to prevent data corruption\n";
+            resetBoldColorIfTerm(stderr);
+            return 1;
+        }
+
         return dispatchCli(argc, argv);
     } catch (const std::system_error& e) {
         boldColorIfTerm(stderr, redFG);
