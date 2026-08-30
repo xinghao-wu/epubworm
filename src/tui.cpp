@@ -50,6 +50,7 @@ static termios g_ogTermFlags{};
 volatile std::sig_atomic_t g_winResize{0};
 
 constexpr int wheelScrollLines{3};
+constexpr int horizontalMarginChars{1};
 
 void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     if (id == 0) {
@@ -144,8 +145,8 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
                                     * cols)
                    + 1;
         }
-        if (colsDesired > winInfo.ws_col) {
-            cols = winInfo.ws_col;
+        if (colsDesired > winInfo.ws_col - horizontalMarginChars * 2) {
+            cols = winInfo.ws_col - horizontalMarginChars * 2;
             rows = static_cast<int>(static_cast<double>(cols) / colsDesired
                                     * rows)
                    + 1;
@@ -798,8 +799,9 @@ void setUpDisplayChapter(const fs::path& chapterAbs, double prog,
 
     chapter.clear();
     parseChapter(chapterAbs, chapter);
-    const int maxLen{
-            std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col))};
+    const int maxLen{std::min(
+            desiredMaxLen,
+            static_cast<int>(winInfo.ws_col - horizontalMarginChars * 2))};
     processContentText(chapter, maxLen);
 
     chapterLines = getOccurrences<std::string_view>(chapter, "\n");
@@ -1143,7 +1145,8 @@ void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
     tocStr.clear();
     tocDataToString(tocData, tocStr);
     const int maxLen{
-            std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col))};
+            std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col)
+                                            - horizontalMarginChars * 2)};
     processContentText(tocStr, maxLen);
 
     tocLines = getOccurrences<std::string_view>(tocStr, "\n");
