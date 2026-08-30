@@ -19,7 +19,7 @@
 using namespace tinyxml2;
 namespace fs = std::filesystem;
 
-static constexpr int descCol{33};
+static constexpr int descCol{34};
 
 enum class CliCommand {
     invalid,
@@ -220,15 +220,17 @@ void displayHelp() {
     std::cout << "Commands:\n";
     resetBoldColorIfTerm(stdout);
     printAligned("  add <file>...", "Add .epub files to library");
-    printAligned("  rm, remove, delete <id>", "Remove epub from library");
+    printAligned("  rm, remove, delete <id-prefix>",
+                 "Remove epub from library");
     printAligned("  ls, list", "List info of epubs in library");
-    printAligned("  read <id>", "Read epub already in library");
+    printAligned("  read <id-prefix>", "Read epub already in library");
     printAligned("  set-line-length <chars>",
                  "Set the persistent maximum line length");
     std::cout << '\n';
 
     std::cout << "All full ids can be substituted with unambiguous "
-                 "prefixes.\n\n";
+                 "prefixes. (e.g. a6ce475b738e1cd7def7ed1e958426b3 can be "
+                 "shortened to a6c.)\n\n";
 
     boldColorIfTerm(stdout, magentaFG);
     std::cout << "Keybinds:\n";
