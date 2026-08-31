@@ -191,7 +191,15 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
             chapter.FirstChildElement("html")->FirstChildElement("body")};
 
     parseContentElem(body, out, chapterAbs);
-    out.pop_back(); // remove extraneous newline
+
+    while (out.starts_with('\n')) {
+        out.erase(out.begin());
+    }
+    while (out.ends_with('\n')) {
+        out.pop_back();
+    }
+
+    out += '\n';
     out += esc + bold;
     out += esc + redFG;
     out += "---";

@@ -69,6 +69,7 @@ void parseContentElem(const tinyxml2::XMLElement* parent, std::string& out,
 
 // Parse chapter content xhtml file using `parseContentElem()`,
 // appending result to `out`.
+// Extraneous leading and trailing newlines are deleted.
 // A red foreground colored `"---\n"` is appended to chapter text.
 void parseChapter(const std::filesystem::path& chapterAbs, std::string& out);
 
