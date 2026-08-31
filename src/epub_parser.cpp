@@ -2,6 +2,7 @@
 #include "percent_encoding_decode.hpp"
 #include "tinyxml2.hpp"
 #include "tui.hpp"
+#include <cstddef>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -190,13 +191,35 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
     const XMLElement* const body{
             chapter.FirstChildElement("html")->FirstChildElement("body")};
 
+    const std::size_t chapterBegin{out.size()};
     parseContentElem(body, out, chapterAbs);
 
-    while (out.starts_with('\n')) {
-        out.erase(out.begin());
+    constexpr std::string_view nonBreakingSpace{"\xC2\xA0"};
+    std::size_t firstContent{chapterBegin};
+    const std::string_view untrimmed{out};
+    while (firstContent < untrimmed.size()) {
+        if (untrimmed[firstContent] == '\n'
+            || untrimmed[firstContent] == ' ') {
+            ++firstContent;
+        } else if (untrimmed.substr(firstContent, nonBreakingSpace.size())
+                   == nonBreakingSpace) {
+            firstContent += nonBreakingSpace.size();
+        } else {
+            break;
+        }
     }
-    while (out.ends_with('\n')) {
-        out.pop_back();
+
+    out.erase(chapterBegin, firstContent - chapterBegin);
+
+    while (out.size() > chapterBegin) {
+        if (out.back() == '\n' || out.back() == ' ') {
+            out.pop_back();
+        } else if (out.size() - chapterBegin >= nonBreakingSpace.size()
+                   && out.ends_with(nonBreakingSpace)) {
+            out.resize(out.size() - nonBreakingSpace.size());
+        } else {
+            break;
+        }
     }
 
     out += '\n';
