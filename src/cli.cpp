@@ -299,24 +299,20 @@ void listLibrary(const fs::path& shareAbs) {
         return;
     }
 
-    constexpr std::string_view idLabel{"ID"};
-    constexpr std::string_view titleLabel{"TITLE"};
-    constexpr std::string_view authorLabel{"AUTHOR"};
-
-    std::size_t idW{idLabel.size()};
-    std::size_t titleW{titleLabel.size()};
-    for (const auto& r : rows) {
-        idW = std::max(idW, r.id.size());
-        titleW = std::max(titleW, r.title.size());
-    }
-
-    std::cout << idLabel << std::string(idW - idLabel.size() + 2, ' ')
-              << titleLabel << std::string(titleW - titleLabel.size() + 2, ' ')
-              << authorLabel << '\n';
+    std::ranges::sort(rows, {}, &Row::title);
 
     for (const auto& r : rows) {
-        std::cout << r.id << std::string(idW - r.id.size() + 2, ' ') << r.title
-                  << std::string(titleW - r.title.size() + 2, ' ') << r.author
-                  << '\n';
+        boldColorIfTerm(stdout, yellowFG);
+        std::cout << r.title;
+        resetBoldColorIfTerm(stdout);
+        std::cout << " - ";
+        boldColorIfTerm(stdout, blueFG);
+        std::cout << r.author;
+        resetBoldColorIfTerm(stdout);
+        std::cout << " - ";
+        boldColorIfTerm(stdout, magentaFG);
+        std::cout << r.id;
+        resetBoldColorIfTerm(stdout);
+        std::cout << '\n';
     }
 }
