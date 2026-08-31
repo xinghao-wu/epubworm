@@ -176,7 +176,8 @@ void enableRawMode();
 // Should be called before functions which depend on correct locale.
 void useSystemLocale();
 
-// Reduce each run of consecutive newlines in `str` to at most two.
+// Reduce each run of newlines separated by spaces, tabs, or non-breaking
+// spaces to at most two, removing whitespace between the newlines.
 void collapseConsecutiveNewlines(std::string& str);
 
 // Split lines with visual length longer than `maxLen` in `str` at spaces.

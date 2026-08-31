@@ -319,6 +319,20 @@ void collapseConsecutiveNewlines() {
     std::string collapsed{"\n\n\nstart\n\n\n\nmiddle\n\n\n\n\n"};
     ::collapseConsecutiveNewlines(collapsed);
     assert(collapsed == "\n\nstart\n\nmiddle\n\n");
+
+    std::string whitespaceSeparated{"before \n \n\t\ncontent\n"
+                                    "\xC2\xA0"
+                                    "\n \t"
+                                    "\xC2\xA0"
+                                    "\n  after"};
+    ::collapseConsecutiveNewlines(whitespaceSeparated);
+    assert(whitespaceSeparated == "before \n\ncontent\n\n  after");
+
+    std::string unboundedWhitespace{"\n \tcontent\n \t"
+                                    "\xC2\xA0"};
+    const std::string expectedUnboundedWhitespace{unboundedWhitespace};
+    ::collapseConsecutiveNewlines(unboundedWhitespace);
+    assert(unboundedWhitespace == expectedUnboundedWhitespace);
 }
 
 void findNth() {

@@ -198,8 +198,8 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
     std::size_t firstContent{chapterBegin};
     const std::string_view untrimmed{out};
     while (firstContent < untrimmed.size()) {
-        if (untrimmed[firstContent] == '\n'
-            || untrimmed[firstContent] == ' ') {
+        if (untrimmed[firstContent] == '\n' || untrimmed[firstContent] == ' '
+            || untrimmed[firstContent] == '\t') {
             ++firstContent;
         } else if (untrimmed.substr(firstContent, nonBreakingSpace.size())
                    == nonBreakingSpace) {
@@ -212,7 +212,7 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
     out.erase(chapterBegin, firstContent - chapterBegin);
 
     while (out.size() > chapterBegin) {
-        if (out.back() == '\n' || out.back() == ' ') {
+        if (out.back() == '\n' || out.back() == ' ' || out.back() == '\t') {
             out.pop_back();
         } else if (out.size() - chapterBegin >= nonBreakingSpace.size()
                    && out.ends_with(nonBreakingSpace)) {

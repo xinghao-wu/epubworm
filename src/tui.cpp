@@ -368,26 +368,53 @@ void useSystemLocale() {
 }
 
 void collapseConsecutiveNewlines(std::string& str) {
-    const std::size_t firstExcessNewline{str.find("\n\n\n")};
-    if (firstExcessNewline == std::string::npos) {
-        return;
-    }
-
-    std::size_t outputIndex{firstExcessNewline + 2};
-    int consecutiveNewlines{2};
-    for (std::size_t inputIndex{firstExcessNewline + 3};
-         inputIndex < str.size(); ++inputIndex) {
+    constexpr std::string_view nonBreakingSpace{"\xC2\xA0"};
+    std::size_t inputIndex{};
+    std::size_t outputIndex{};
+    int consecutiveNewlines{};
+    while (inputIndex < str.size()) {
         const char ch{str[inputIndex]};
         if (ch == '\n') {
-            if (consecutiveNewlines == 2) {
+            if (consecutiveNewlines < 2) {
+                str[outputIndex] = ch;
+                ++outputIndex;
+                ++consecutiveNewlines;
+            }
+            ++inputIndex;
+            continue;
+        }
+
+        std::size_t whitespaceEnd{inputIndex};
+        while (whitespaceEnd < str.size()) {
+            if (str[whitespaceEnd] == ' ' || str[whitespaceEnd] == '\t') {
+                ++whitespaceEnd;
+            } else if (std::string_view{str}.substr(whitespaceEnd,
+                                                    nonBreakingSpace.size())
+                       == nonBreakingSpace) {
+                whitespaceEnd += nonBreakingSpace.size();
+            } else {
+                break;
+            }
+        }
+        if (whitespaceEnd != inputIndex) {
+            if (consecutiveNewlines != 0 && whitespaceEnd < str.size()
+                && str[whitespaceEnd] == '\n') {
+                inputIndex = whitespaceEnd;
                 continue;
             }
-            ++consecutiveNewlines;
-        } else {
+            while (inputIndex < whitespaceEnd) {
+                str[outputIndex] = str[inputIndex];
+                ++outputIndex;
+                ++inputIndex;
+            }
             consecutiveNewlines = 0;
+            continue;
         }
+
         str[outputIndex] = ch;
         ++outputIndex;
+        ++inputIndex;
+        consecutiveNewlines = 0;
     }
     str.resize(outputIndex);
 }
