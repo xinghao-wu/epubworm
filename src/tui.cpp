@@ -800,7 +800,7 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
                 goto redraw_screen;
             case specKey::wheelUp:
                 if (screenTopLine == 1) {
-                    return {ChapterExit::prev, prog};
+                    break;
                 }
                 screenTopLine -= wheelScrollLines;
                 snapTopLineToBound(screenTopLine);
@@ -809,7 +809,7 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
                 goto redraw_screen;
             case specKey::wheelDown:
                 if (screenBotLine == chapterLines) {
-                    return {ChapterExit::next, prog};
+                    break;
                 }
                 screenBotLine += wheelScrollLines;
                 snapBotLineToBound(screenBotLine, chapterLines);
