@@ -367,6 +367,31 @@ void useSystemLocale() {
     std::cin.imbue(std::locale{});
 }
 
+void collapseConsecutiveNewlines(std::string& str) {
+    const std::size_t firstExcessNewline{str.find("\n\n\n")};
+    if (firstExcessNewline == std::string::npos) {
+        return;
+    }
+
+    std::size_t outputIndex{firstExcessNewline + 2};
+    int consecutiveNewlines{2};
+    for (std::size_t inputIndex{firstExcessNewline + 3};
+         inputIndex < str.size(); ++inputIndex) {
+        const char ch{str[inputIndex]};
+        if (ch == '\n') {
+            if (consecutiveNewlines == 2) {
+                continue;
+            }
+            ++consecutiveNewlines;
+        } else {
+            consecutiveNewlines = 0;
+        }
+        str[outputIndex] = ch;
+        ++outputIndex;
+    }
+    str.resize(outputIndex);
+}
+
 void wrapLines(std::string& str, int maxLen) {
     for (std::size_t lineBeginIndex{0}, lineEndIndex{str.find('\n')};
          lineBeginIndex < str.size();
@@ -620,6 +645,7 @@ void styleEachLineIndividually(std::string& str, std::string_view style,
 
 void processContentText(std::string& str, int maxLen) {
     expandEllipsesAndTabs(str);
+    collapseConsecutiveNewlines(str);
     wrapLines(str, maxLen);
     centerJustify(esc + yellowFG, esc + resetFG, str, maxLen);
     centerJustify(esc + blueFG, esc + resetFG, str, maxLen);

@@ -45,6 +45,8 @@ void utf8ToWide();
 
 void wideToUTF8();
 
+void collapseConsecutiveNewlines();
+
 void findNth();
 
 void execute();

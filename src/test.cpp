@@ -311,6 +311,16 @@ void wideToUTF8() {
     assert(::wideToUTF8(L"Hello, World! 🚀") == "Hello, World! 🚀");
 }
 
+void collapseConsecutiveNewlines() {
+    std::string unchanged{"zero\none\n\ntwo"};
+    ::collapseConsecutiveNewlines(unchanged);
+    assert(unchanged == "zero\none\n\ntwo");
+
+    std::string collapsed{"\n\n\nstart\n\n\n\nmiddle\n\n\n\n\n"};
+    ::collapseConsecutiveNewlines(collapsed);
+    assert(collapsed == "\n\nstart\n\nmiddle\n\n");
+}
+
 void findNth() {
 
     static_assert(::findNth("banana", "an", 2) == 3);

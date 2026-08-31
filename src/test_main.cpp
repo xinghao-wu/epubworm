@@ -17,6 +17,7 @@ int main() {
         test::getTOC();
         test::utf8ToWide();
         test::wideToUTF8();
+        test::collapseConsecutiveNewlines();
         test::findNth();
         test::execute();
         test::styleEachLineIndividually();
