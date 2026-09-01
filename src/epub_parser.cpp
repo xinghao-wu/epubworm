@@ -163,16 +163,9 @@ void parseContentElem(const XMLElement* parent, std::string& out,
                     displayImg(imgPathAbs, out);
                     out += '\n';
                 } catch (const std::runtime_error& e) {
-                    if (std::string_view{e.what()} == "Unable to open file") {
-                        out += esc + bold;
-                        out += esc + redFG;
-                        out += "An image is referenced here, but the file the "
-                               "reference points to doesn't exist. "
-                               "This epub is malformed.";
-                        out += esc + resetBold;
-                        out += esc + resetFG;
-                        out += "\n\n";
-                    } else {
+                    // If the image reference points to a nonexistent file, its
+                    // best to just silently ignore it.
+                    if (std::string_view{e.what()} != "Unable to open file") {
                         throw;
                     }
                 }
