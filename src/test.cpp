@@ -32,7 +32,7 @@ const fs::path testOutputsAbs{projectRootAbs / "test_outputs"};
 
 void singleInstanceLock() {
     const fs::path tmpLockAbs{fs::temp_directory_path()
-                              / "tei_test_singleInstanceLock"};
+                              / "epubworm_test_singleInstanceLock"};
     fs::remove(tmpLockAbs);
 
     {
@@ -506,38 +506,39 @@ void styleEachLineIndividually() {
 
 void initConf() {
     const fs::path tmpConfigAbs{fs::temp_directory_path()
-                                / "tei_test_initConf"};
+                                / "epubworm_test_initConf"};
     fs::remove_all(tmpConfigAbs);
     fs::create_directories(tmpConfigAbs);
 
-    const fs::path teiConfAbs{tmpConfigAbs / "tei/conf.xml"};
-    ::initConf(teiConfAbs);
+    const fs::path configFileAbs{tmpConfigAbs / "epubworm/conf.xml"};
+    ::initConf(configFileAbs);
 
-    assert(fs::exists(teiConfAbs));
+    assert(fs::exists(configFileAbs));
 
-    XMLDocument teiConf{};
-    assert(teiConf.LoadFile(teiConfAbs.c_str()) == XML_SUCCESS);
-    assert(teiConf.FirstChildElement("conf") != nullptr);
-    assert(teiConf.FirstChildElement("conf")->FirstChildElement() == nullptr);
+    XMLDocument configDoc{};
+    assert(configDoc.LoadFile(configFileAbs.c_str()) == XML_SUCCESS);
+    assert(configDoc.FirstChildElement("conf") != nullptr);
+    assert(configDoc.FirstChildElement("conf")->FirstChildElement()
+           == nullptr);
 
     fs::remove_all(tmpConfigAbs);
 }
 
 void initLibrary() {
     const fs::path tmpShareAbs{fs::temp_directory_path()
-                               / "tei_test_initLibrary"};
+                               / "epubworm_test_initLibrary"};
     fs::remove_all(tmpShareAbs);
     fs::create_directories(tmpShareAbs);
 
-    const fs::path teiLibraryAbs{tmpShareAbs / "tei/library.xml"};
-    ::initLibrary(teiLibraryAbs);
+    const fs::path libraryFileAbs{tmpShareAbs / "epubworm/library.xml"};
+    ::initLibrary(libraryFileAbs);
 
-    assert(fs::exists(teiLibraryAbs));
+    assert(fs::exists(libraryFileAbs));
 
-    XMLDocument teiLibrary{};
-    assert(teiLibrary.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
+    XMLDocument libraryDoc{};
+    assert(libraryDoc.LoadFile(libraryFileAbs.c_str()) == XML_SUCCESS);
     const XMLElement* const libraryRoot{
-            teiLibrary.FirstChildElement("library")};
+            libraryDoc.FirstChildElement("library")};
     assert(libraryRoot != nullptr);
     const XMLElement* const lastRead{
             libraryRoot->FirstChildElement("last-read")};
@@ -550,15 +551,15 @@ void initLibrary() {
     fs::remove_all(tmpShareAbs);
 }
 
-void readTeiConf() {
+void readConfig() {
     const fs::path tmpConfigAbs{fs::temp_directory_path()
-                                / "tei_test_readTeiConf"};
+                                / "epubworm_test_readConfig"};
     fs::remove_all(tmpConfigAbs);
     fs::create_directories(tmpConfigAbs);
 
-    const fs::path teiConfAbs{tmpConfigAbs / "tei/conf.xml"};
-    ::initConf(teiConfAbs);
-    assert(::readTeiConf(teiConfAbs).lineLength == 55);
+    const fs::path configFileAbs{tmpConfigAbs / "epubworm/conf.xml"};
+    ::initConf(configFileAbs);
+    assert(::readConfig(configFileAbs).lineLength == 55);
 
     fs::remove_all(tmpConfigAbs);
 }
@@ -622,18 +623,18 @@ void findEpubById() {
 
 void addToLibrary() {
     const fs::path tmpShareAbs{fs::temp_directory_path()
-                               / "tei_test_addToLibrary"};
+                               / "epubworm_test_addToLibrary"};
     fs::remove_all(tmpShareAbs);
     fs::create_directories(tmpShareAbs);
 
-    const fs::path teiLibraryAbs{tmpShareAbs / "tei/library.xml"};
-    ::initLibrary(teiLibraryAbs);
+    const fs::path libraryFileAbs{tmpShareAbs / "epubworm/library.xml"};
+    ::initLibrary(libraryFileAbs);
 
     constexpr std::string_view previousLastRead{"existing-id"};
     XMLDocument initialLibrary{};
-    assert(initialLibrary.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
+    assert(initialLibrary.LoadFile(libraryFileAbs.c_str()) == XML_SUCCESS);
     ::setLastRead(initialLibrary, previousLastRead);
-    assert(initialLibrary.SaveFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
+    assert(initialLibrary.SaveFile(libraryFileAbs.c_str()) == XML_SUCCESS);
 
     const std::string mysteriesId{"53760b7bdcdfa01a43ccf243f41dd912"};
     const std::expected<EpubInfo, LibraryUpdateError> added{::addToLibrary(
@@ -644,10 +645,10 @@ void addToLibrary() {
     assert(added.value().author
            == "Cuttlefish That Loves Diving (爱潜水的乌贼)");
 
-    XMLDocument teiLibrary{};
-    assert(teiLibrary.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
+    XMLDocument libraryDoc{};
+    assert(libraryDoc.LoadFile(libraryFileAbs.c_str()) == XML_SUCCESS);
     const XMLElement* const libraryRoot{
-            teiLibrary.FirstChildElement("library")};
+            libraryDoc.FirstChildElement("library")};
     assert(libraryRoot != nullptr);
 
     const XMLElement* const lastRead{
@@ -664,7 +665,7 @@ void addToLibrary() {
     assert(std::string_view{epub->Attribute("opened-chapter")}.empty());
     assert(epub->DoubleAttribute("chapter-progress") == 0.0);
 
-    assert(fs::is_directory(tmpShareAbs / "tei/extracted_epubs"
+    assert(fs::is_directory(tmpShareAbs / "epubworm/extracted_epubs"
                             / mysteriesId));
 
     const std::expected<EpubInfo, LibraryUpdateError> duplicate{::addToLibrary(
@@ -702,7 +703,7 @@ void queryEpubElem() {
             ::queryEpubElem(epubA, phonyShareAbs)};
     assert(outA.first == idA);
     assert(outA.second.chapterAbs
-           == phonyShareAbs / "tei/extracted_epubs" / idA
+           == phonyShareAbs / "epubworm/extracted_epubs" / idA
                       / "index_split_117.html");
     assert(outA.second.chapterProg == 0.5);
 
@@ -795,7 +796,7 @@ void writeProgress() {
     assert(epub != nullptr);
 
     // Success case A: non-empty chapterAbs, non-zero progress.
-    const EpubProg prog{phonyShareAbs / "tei/extracted_epubs" / id
+    const EpubProg prog{phonyShareAbs / "epubworm/extracted_epubs" / id
                                 / "index_split_117.html",
                         0.5};
     ::writeProgress(epub, prog, phonyShareAbs);
@@ -839,12 +840,12 @@ void writeProgress() {
 
 void deleteFromLibrary() {
     const fs::path tmpShareAbs{fs::temp_directory_path()
-                               / "tei_test_deleteFromLibrary"};
+                               / "epubworm_test_deleteFromLibrary"};
     fs::remove_all(tmpShareAbs);
     fs::create_directories(tmpShareAbs);
 
-    const fs::path teiLibraryAbs{tmpShareAbs / "tei/library.xml"};
-    ::initLibrary(teiLibraryAbs);
+    const fs::path libraryFileAbs{tmpShareAbs / "epubworm/library.xml"};
+    ::initLibrary(libraryFileAbs);
 
     assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
                           tmpShareAbs)
@@ -852,9 +853,11 @@ void deleteFromLibrary() {
 
     const std::string mysteriesID{"53760b7bdcdfa01a43ccf243f41dd912"};
     XMLDocument libraryBeforeDelete{};
-    assert(libraryBeforeDelete.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
+    assert(libraryBeforeDelete.LoadFile(libraryFileAbs.c_str())
+           == XML_SUCCESS);
     ::setLastRead(libraryBeforeDelete, mysteriesID);
-    assert(libraryBeforeDelete.SaveFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
+    assert(libraryBeforeDelete.SaveFile(libraryFileAbs.c_str())
+           == XML_SUCCESS);
 
     const std::expected<EpubInfo, LibraryUpdateError> removed{
             ::deleteFromLibrary(mysteriesID, tmpShareAbs)};
@@ -864,10 +867,10 @@ void deleteFromLibrary() {
     assert(removed.value().author
            == "Cuttlefish That Loves Diving (爱潜水的乌贼)");
 
-    XMLDocument teiLibrary{};
-    assert(teiLibrary.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
+    XMLDocument libraryDoc{};
+    assert(libraryDoc.LoadFile(libraryFileAbs.c_str()) == XML_SUCCESS);
     const XMLElement* const libraryRoot{
-            teiLibrary.FirstChildElement("library")};
+            libraryDoc.FirstChildElement("library")};
     assert(libraryRoot != nullptr);
     assert(libraryRoot->FirstChildElement("epub") == nullptr);
     const XMLElement* const lastRead{
@@ -877,7 +880,8 @@ void deleteFromLibrary() {
     assert(id != nullptr);
     assert(std::string_view{id}.empty());
 
-    assert(!fs::exists(tmpShareAbs / "tei/extracted_epubs" / mysteriesID));
+    assert(!fs::exists(tmpShareAbs / "epubworm/extracted_epubs"
+                       / mysteriesID));
 
     const std::expected<EpubInfo, LibraryUpdateError> alreadyRemoved{
             ::deleteFromLibrary(mysteriesID, tmpShareAbs)};
@@ -889,15 +893,15 @@ void deleteFromLibrary() {
 
 void readEpubInLibrary() {
     const fs::path tmpShareAbs{fs::temp_directory_path()
-                               / "tei_test_readEpubInLibrary"};
+                               / "epubworm_test_readEpubInLibrary"};
     fs::remove_all(tmpShareAbs);
     fs::create_directories(tmpShareAbs);
 
-    const fs::path shareTeiAbs{tmpShareAbs / "tei"};
-    fs::create_directories(shareTeiAbs);
+    const fs::path dataDirAbs{tmpShareAbs / "epubworm"};
+    fs::create_directories(dataDirAbs);
 
-    const fs::path teiLibraryAbs{shareTeiAbs / "library.xml"};
-    ::initLibrary(teiLibraryAbs);
+    const fs::path libraryFileAbs{dataDirAbs / "library.xml"};
+    ::initLibrary(libraryFileAbs);
 
     assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
                           tmpShareAbs)
@@ -918,9 +922,9 @@ void readEpubInLibrary() {
     assert(::readEpubInLibrary("8d070e", tmpShareAbs, 65));
 
     fs::create_directories(testOutputsAbs);
-    const fs::path outputTeiLibraryAbs{testOutputsAbs
-                                       / "readEpubInLibrary_library.xml"};
-    fs::copy_file(teiLibraryAbs, outputTeiLibraryAbs,
+    const fs::path outputLibraryFileAbs{testOutputsAbs
+                                        / "readEpubInLibrary_library.xml"};
+    fs::copy_file(libraryFileAbs, outputLibraryFileAbs,
                   fs::copy_options::overwrite_existing);
 
     boldColorIfTerm(stdout, yellowFG);

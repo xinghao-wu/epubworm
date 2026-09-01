@@ -11,8 +11,9 @@ int main(int argc, char* argv[]) {
         const SingleInstanceLock instanceLock{getInstanceLockPath()};
         if (!instanceLock.isFirstInstance()) {
             boldColorIfTerm(stderr, redFG);
-            std::cerr << "Error: another tei instance is already running, "
-                         "close it first to prevent data corruption\n";
+            std::cerr
+                    << "Error: another epubworm instance is already running, "
+                       "close it first to prevent data corruption\n";
             resetBoldColorIfTerm(stderr);
             return 1;
         }

@@ -65,10 +65,10 @@ fs::path getInstanceLockPath() {
     if (xdgRuntimeDir != nullptr) {
         const fs::path runtimeAbs{xdgRuntimeDir};
         if (runtimeAbs.is_absolute()) {
-            return runtimeAbs / "tei.lock";
+            return runtimeAbs / "epubworm.lock";
         }
     }
 
     return fs::temp_directory_path()
-           / ("tei-" + std::to_string(geteuid()) + ".lock");
+           / ("epubworm-" + std::to_string(geteuid()) + ".lock");
 }

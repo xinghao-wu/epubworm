@@ -29,26 +29,28 @@ enum class LibraryUpdateError {
 void unzip(const std::filesystem::path& archiveAbs,
            const std::filesystem::path& destinationAbs);
 
-// Initialize a config xml file at `teiConfAbs`,
+// Initialize a config xml file at `configFileAbs`,
 // writing the declaration and root elem `<conf>`.
-void initConf(const std::filesystem::path& teiConfAbs);
+void initConf(const std::filesystem::path& configFileAbs);
 
-// Initialize a library xml file `teiLibraryAbs`,
+// Initialize a library xml file `libraryFileAbs`,
 // writing the declaration and root elem `<library>`.
-void initLibrary(const std::filesystem::path& teiLibraryAbs);
+void initLibrary(const std::filesystem::path& libraryFileAbs);
 
 // Parse a config xml file and return the found options.
 // If an option is not found within the file, a default value version of the
 // option is written to the file.
-// Throws `std::runtime_error` on failure to load `teiConfAbs`, failure to
+// Throws `std::runtime_error` on failure to load `configFileAbs`, failure to
 // find root element `<conf>`, and on encountering invalid config options.
-[[nodiscard]] ConfOpts readTeiConf(const std::filesystem::path& teiConfAbs);
+[[nodiscard]] ConfOpts readConfig(const std::filesystem::path& configFileAbs);
 
-// Set `<line-length>`'s `chars` attribute in the config file at `teiConfAbs`.
+// Set `<line-length>`'s `chars` attribute in the config file at
+// `configFileAbs`.
 // Creates the element if it is missing and preserves other config options.
 // Throws `std::invalid_argument` if `chars` is not positive and
 // `std::runtime_error` on load/save failure or a missing `<conf>` root.
-void setTeiConfLineLength(const std::filesystem::path& teiConfAbs, int chars);
+void setConfigLineLength(const std::filesystem::path& configFileAbs,
+                         int chars);
 
 // Generates a SHA-256 hash of `fileAbs` via `shasum` and returns it truncated
 // to 128 bits (32 hex characters).
@@ -70,7 +72,7 @@ findEpubById(tinyxml2::XMLElement* libraryRoot, std::string_view idPrefix);
 
 // Queries an `<epub>` element for its id and `EpubProg`.
 // `chapterAbs` is built as an absolute path:
-// `shareAbs/tei/extracted_epubs/<id>/<opened-chapter>`.
+// `shareAbs/epubworm/extracted_epubs/<id>/<opened-chapter>`.
 // If `opened-chapter` is absent or empty, `chapterAbs` is left empty
 // (so `displayEpub()` takes it as the first chapter).
 // Throws `std::runtime_error` if the `<epub>` element is missing its `id`
@@ -81,8 +83,9 @@ queryEpubElem(const tinyxml2::XMLElement* epub,
 
 // Writes `prog` into an `<epub>` element's `opened-chapter` and
 // `chapter-progress` attributes.
-// `opened-chapter` is stored relative to `shareAbs/tei/extracted_epubs/<id>/`
-// (the `<id>` is read from the element); an empty `chapterAbs` writes `""`.
+// `opened-chapter` is stored relative to
+// `shareAbs/epubworm/extracted_epubs/<id>/` (the `<id>` is read from the
+// element); an empty `chapterAbs` writes `""`.
 // Throws `std::runtime_error` if the element is missing its `id` attribute.
 void writeProgress(tinyxml2::XMLElement* epub, const EpubProg& prog,
                    const std::filesystem::path& shareAbs);
@@ -96,10 +99,10 @@ void setLastRead(tinyxml2::XMLDocument& libraryDoc, std::string_view id);
 // or if `<last-read>` is missing its `id` attribute.
 [[nodiscard]] std::string getLastRead(const tinyxml2::XMLDocument& libraryDoc);
 
-// Adds `zippedEpubAbs` to the library at `shareAbs/tei`.
+// Adds `zippedEpubAbs` to the library at `shareAbs/epubworm`.
 // Computes the id hash, checks if already present, and if not, extracts the
-// epub to `shareAbs/tei/extracted_epubs/<id>/`, adds an `<epub>` entry to
-// `shareAbs/tei/library.xml`.
+// epub to `shareAbs/epubworm/extracted_epubs/<id>/`, adds an `<epub>` entry to
+// `shareAbs/epubworm/library.xml`.
 // Returns the added epub's info on success, or `alreadyInLibrary` if its ID is
 // already present.
 // Throws `std::runtime_error` on library load/save failure or a missing
@@ -109,10 +112,10 @@ addToLibrary(const std::filesystem::path& zippedEpubAbs,
              const std::filesystem::path& shareAbs);
 
 // Removes the epub whose `id` starts with `idPrefix` from the library at
-// `shareAbs/tei`. Deletes the extracted epub at
-// `shareAbs/tei/extracted_epubs/<full-id>/`, removes the `<epub>` entry from
-// `shareAbs/tei/library.xml`, and resets `<last-read>` to a blank id if it
-// referenced the removed epub.
+// `shareAbs/epubworm`. Deletes the extracted epub at
+// `shareAbs/epubworm/extracted_epubs/<full-id>/`, removes the `<epub>` entry
+// from `shareAbs/epubworm/library.xml`, and resets `<last-read>` to a blank id
+// if it referenced the removed epub.
 // Returns the removed epub's info on success, or `notFoundOrAmbiguous` if no
 // epub matches `idPrefix` or the prefix is ambiguous.
 // Throws `std::runtime_error` on library load/save failure and on missing
@@ -122,8 +125,8 @@ deleteFromLibrary(std::string_view idPrefix,
                   const std::filesystem::path& shareAbs);
 
 // Displays the epub whose `id` starts with `idPrefix` from the library at
-// `shareAbs/tei`, using `desiredMaxLen` as the visual line length, and
-// persists the exit progress back into `shareAbs/tei/library.xml`.
+// `shareAbs/epubworm`, using `desiredMaxLen` as the visual line length, and
+// persists the exit progress back into `shareAbs/epubworm/library.xml`.
 // Returns false if no epub matches `idPrefix` or the prefix is ambiguous;
 // returns true on success.
 // Throws `std::runtime_error` on library load/save failure, missing

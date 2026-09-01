@@ -74,7 +74,7 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
             static_cast<std::size_t>(pixelDataSize)};
 
     const fs::path tempDataFileAbs{
-            "/dev/shm/tei-img-data-tty-graphics-protocol"};
+            "/dev/shm/epubworm-img-data-tty-graphics-protocol"};
     std::ofstream tempDataFile{tempDataFileAbs};
     if (!tempDataFile.is_open()) {
         throw std::runtime_error{"image temp data file failed to open"};

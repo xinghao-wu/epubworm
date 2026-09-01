@@ -1,2 +1,2 @@
-# term-epub-img
+# epubworm
 An image-capable, minimalistic TUI epub reader written in C++.

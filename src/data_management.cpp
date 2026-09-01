@@ -19,45 +19,45 @@ void unzip(const fs::path& archiveAbs, const fs::path& destinationAbs) {
     archive.extractall(destinationAbs.string());
 }
 
-void initConf(const fs::path& teiConfAbs) {
-    XMLDocument teiConf{};
-    teiConf.InsertFirstChild(teiConf.NewDeclaration());
-    teiConf.InsertEndChild(teiConf.NewElement("conf"));
+void initConf(const fs::path& configFileAbs) {
+    XMLDocument configDoc{};
+    configDoc.InsertFirstChild(configDoc.NewDeclaration());
+    configDoc.InsertEndChild(configDoc.NewElement("conf"));
 
-    fs::create_directories(teiConfAbs.parent_path());
-    if (teiConf.SaveFile(teiConfAbs.c_str()) != XML_SUCCESS) {
+    fs::create_directories(configFileAbs.parent_path());
+    if (configDoc.SaveFile(configFileAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error saving conf file: "}
-                + XMLDocument::ErrorIDToName(teiConf.ErrorID())};
+                + XMLDocument::ErrorIDToName(configDoc.ErrorID())};
     }
 }
 
-void initLibrary(const fs::path& teiLibraryAbs) {
-    XMLDocument teiLibrary{};
-    teiLibrary.InsertFirstChild(teiLibrary.NewDeclaration());
-    XMLElement* const libraryRoot{teiLibrary.NewElement("library")};
-    teiLibrary.InsertEndChild(libraryRoot);
-    XMLElement* const lastRead{teiLibrary.NewElement("last-read")};
+void initLibrary(const fs::path& libraryFileAbs) {
+    XMLDocument libraryDoc{};
+    libraryDoc.InsertFirstChild(libraryDoc.NewDeclaration());
+    XMLElement* const libraryRoot{libraryDoc.NewElement("library")};
+    libraryDoc.InsertEndChild(libraryRoot);
+    XMLElement* const lastRead{libraryDoc.NewElement("last-read")};
     lastRead->SetAttribute("id", "");
     libraryRoot->InsertEndChild(lastRead);
 
-    fs::create_directories(teiLibraryAbs.parent_path());
-    if (teiLibrary.SaveFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
+    fs::create_directories(libraryFileAbs.parent_path());
+    if (libraryDoc.SaveFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error saving library file: "}
-                + XMLDocument::ErrorIDToName(teiLibrary.ErrorID())};
+                + XMLDocument::ErrorIDToName(libraryDoc.ErrorID())};
     }
 }
 
-ConfOpts readTeiConf(const fs::path& teiConfAbs) {
-    XMLDocument teiConf{};
-    teiConf.LoadFile(teiConfAbs.c_str());
+ConfOpts readConfig(const fs::path& configFileAbs) {
+    XMLDocument configDoc{};
+    configDoc.LoadFile(configFileAbs.c_str());
 
-    if (teiConf.Error()) {
-        throw std::runtime_error{teiConf.ErrorStr()};
+    if (configDoc.Error()) {
+        throw std::runtime_error{configDoc.ErrorStr()};
     }
 
-    XMLElement* const rootElem{teiConf.FirstChildElement("conf")};
+    XMLElement* const rootElem{configDoc.FirstChildElement("conf")};
     if (rootElem == nullptr) {
         throw std::runtime_error{
                 "root element `<conf>` missing in config file"};
@@ -66,7 +66,7 @@ ConfOpts readTeiConf(const fs::path& teiConfAbs) {
     // Write a default value for unfound options to support adding future
     // conf options without making users edit config file every time.
     if (rootElem->FirstChildElement("line-length") == nullptr) {
-        rootElem->InsertEndChild(teiConf.NewElement("line-length"));
+        rootElem->InsertEndChild(configDoc.NewElement("line-length"));
     }
 
     XMLElement* const lineLength{rootElem->FirstChildElement("line-length")};
@@ -81,27 +81,27 @@ ConfOpts readTeiConf(const fs::path& teiConfAbs) {
                 "conf option `<line-length>` has invalid value"};
     }
 
-    if (teiConf.SaveFile(teiConfAbs.c_str()) != XML_SUCCESS) {
+    if (configDoc.SaveFile(configFileAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error saving conf file: "}
-                + XMLDocument::ErrorIDToName(teiConf.ErrorID())};
+                + XMLDocument::ErrorIDToName(configDoc.ErrorID())};
     }
 
     return {chars};
 }
 
-void setTeiConfLineLength(const fs::path& teiConfAbs, int chars) {
+void setConfigLineLength(const fs::path& configFileAbs, int chars) {
     if (chars <= 0) {
         throw std::invalid_argument{"line length must be positive"};
     }
 
-    XMLDocument teiConf{};
-    teiConf.LoadFile(teiConfAbs.c_str());
-    if (teiConf.Error()) {
-        throw std::runtime_error{teiConf.ErrorStr()};
+    XMLDocument configDoc{};
+    configDoc.LoadFile(configFileAbs.c_str());
+    if (configDoc.Error()) {
+        throw std::runtime_error{configDoc.ErrorStr()};
     }
 
-    XMLElement* const rootElem{teiConf.FirstChildElement("conf")};
+    XMLElement* const rootElem{configDoc.FirstChildElement("conf")};
     if (rootElem == nullptr) {
         throw std::runtime_error{
                 "root element `<conf>` missing in config file"};
@@ -109,15 +109,15 @@ void setTeiConfLineLength(const fs::path& teiConfAbs, int chars) {
 
     XMLElement* lineLength{rootElem->FirstChildElement("line-length")};
     if (lineLength == nullptr) {
-        lineLength = teiConf.NewElement("line-length");
+        lineLength = configDoc.NewElement("line-length");
         rootElem->InsertEndChild(lineLength);
     }
     lineLength->SetAttribute("chars", chars);
 
-    if (teiConf.SaveFile(teiConfAbs.c_str()) != XML_SUCCESS) {
+    if (configDoc.SaveFile(configFileAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error saving conf file: "}
-                + XMLDocument::ErrorIDToName(teiConf.ErrorID())};
+                + XMLDocument::ErrorIDToName(configDoc.ErrorID())};
     }
 }
 
@@ -128,7 +128,7 @@ std::string getTruncatedSHA256Sum(const fs::path& fileAbs) {
 }
 
 EpubInfo getEpubInfo(std::string_view id, const fs::path& shareAbs) {
-    const fs::path epubRootAbs{shareAbs / "tei/extracted_epubs" / id};
+    const fs::path epubRootAbs{shareAbs / "epubworm/extracted_epubs" / id};
     const fs::path opfAbs{epubRootAbs / getOPFRel(epubRootAbs)};
     XMLDocument opf{};
     opf.LoadFile(opfAbs.c_str());
@@ -180,7 +180,7 @@ std::pair<std::string, EpubProg> queryEpubElem(const XMLElement* epub,
     if (const char* const openedChapter{epub->Attribute("opened-chapter")};
         openedChapter != nullptr && openedChapter[0] != '\0') {
         prog.chapterAbs =
-                shareAbs / "tei/extracted_epubs" / id / openedChapter;
+                shareAbs / "epubworm/extracted_epubs" / id / openedChapter;
     }
 
     return {id, prog};
@@ -200,7 +200,7 @@ void writeProgress(XMLElement* epub, const EpubProg& prog,
         return;
     }
 
-    const fs::path epubRootAbs{shareAbs / "tei/extracted_epubs" / id};
+    const fs::path epubRootAbs{shareAbs / "epubworm/extracted_epubs" / id};
     const fs::path openedChapter{
             prog.chapterAbs.lexically_relative(epubRootAbs)};
     epub->SetAttribute("opened-chapter", openedChapter.string().c_str());
@@ -245,15 +245,15 @@ std::expected<EpubInfo, LibraryUpdateError>
 addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     const std::string id{getTruncatedSHA256Sum(zippedEpubAbs)};
 
-    const fs::path teiLibraryAbs{shareAbs / "tei/library.xml"};
-    XMLDocument teiLibrary{};
-    if (teiLibrary.LoadFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
+    const fs::path libraryFileAbs{shareAbs / "epubworm/library.xml"};
+    XMLDocument libraryDoc{};
+    if (libraryDoc.LoadFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error loading library file: "}
-                + XMLDocument::ErrorIDToName(teiLibrary.ErrorID())};
+                + XMLDocument::ErrorIDToName(libraryDoc.ErrorID())};
     }
 
-    XMLElement* const libraryRoot{teiLibrary.FirstChildElement("library")};
+    XMLElement* const libraryRoot{libraryDoc.FirstChildElement("library")};
     if (libraryRoot == nullptr) {
         throw std::runtime_error{
                 "root element `<library>` missing in library file"};
@@ -265,22 +265,22 @@ addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     }
 
     // Extract epub to its directory.
-    const fs::path extractDest{shareAbs / "tei/extracted_epubs" / id};
+    const fs::path extractDest{shareAbs / "epubworm/extracted_epubs" / id};
     fs::create_directories(extractDest);
     unzip(zippedEpubAbs, extractDest);
     EpubInfo info{getEpubInfo(id, shareAbs)};
 
     // Add new `<epub>` entry.
-    XMLElement* const epubElem{teiLibrary.NewElement("epub")};
+    XMLElement* const epubElem{libraryDoc.NewElement("epub")};
     epubElem->SetAttribute("id", id.c_str());
     epubElem->SetAttribute("opened-chapter", "");
     epubElem->SetAttribute("chapter-progress", 0.0);
     libraryRoot->InsertEndChild(epubElem);
 
-    if (teiLibrary.SaveFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
+    if (libraryDoc.SaveFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error saving library file: "}
-                + XMLDocument::ErrorIDToName(teiLibrary.ErrorID())};
+                + XMLDocument::ErrorIDToName(libraryDoc.ErrorID())};
     }
 
     return info;
@@ -288,15 +288,15 @@ addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
 
 std::expected<EpubInfo, LibraryUpdateError>
 deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs) {
-    const fs::path teiLibraryAbs{shareAbs / "tei/library.xml"};
-    XMLDocument teiLibrary{};
-    if (teiLibrary.LoadFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
+    const fs::path libraryFileAbs{shareAbs / "epubworm/library.xml"};
+    XMLDocument libraryDoc{};
+    if (libraryDoc.LoadFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error loading library file: "}
-                + XMLDocument::ErrorIDToName(teiLibrary.ErrorID())};
+                + XMLDocument::ErrorIDToName(libraryDoc.ErrorID())};
     }
 
-    XMLElement* const libraryRoot{teiLibrary.FirstChildElement("library")};
+    XMLElement* const libraryRoot{libraryDoc.FirstChildElement("library")};
     if (libraryRoot == nullptr) {
         throw std::runtime_error{
                 "root element `<library>` missing in library file"};
@@ -317,7 +317,7 @@ deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs) {
     EpubInfo info{getEpubInfo(id, shareAbs)};
 
     // Delete the extracted epub directory.
-    fs::remove_all(shareAbs / "tei/extracted_epubs" / id);
+    fs::remove_all(shareAbs / "epubworm/extracted_epubs" / id);
 
     // Reset `<last-read>` if it referenced the removed epub.
     if (const char* const lastReadId{lastRead->Attribute("id")};
@@ -328,10 +328,10 @@ deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs) {
     // Remove the `<epub>` entry.
     libraryRoot->DeleteChild(epubElem);
 
-    if (teiLibrary.SaveFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
+    if (libraryDoc.SaveFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error saving library file: "}
-                + XMLDocument::ErrorIDToName(teiLibrary.ErrorID())};
+                + XMLDocument::ErrorIDToName(libraryDoc.ErrorID())};
     }
 
     return info;
@@ -339,15 +339,15 @@ deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs) {
 
 bool readEpubInLibrary(std::string_view idPrefix, const fs::path& shareAbs,
                        int desiredMaxLen) {
-    const fs::path teiLibraryAbs{shareAbs / "tei/library.xml"};
-    XMLDocument teiLibrary{};
-    if (teiLibrary.LoadFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
+    const fs::path libraryFileAbs{shareAbs / "epubworm/library.xml"};
+    XMLDocument libraryDoc{};
+    if (libraryDoc.LoadFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error loading library file: "}
-                + XMLDocument::ErrorIDToName(teiLibrary.ErrorID())};
+                + XMLDocument::ErrorIDToName(libraryDoc.ErrorID())};
     }
 
-    XMLElement* const libraryRoot{teiLibrary.FirstChildElement("library")};
+    XMLElement* const libraryRoot{libraryDoc.FirstChildElement("library")};
     if (libraryRoot == nullptr) {
         throw std::runtime_error{
                 "root element `<library>` missing in library file"};
@@ -359,19 +359,19 @@ bool readEpubInLibrary(std::string_view idPrefix, const fs::path& shareAbs,
     }
 
     const auto [id, iniProg]{queryEpubElem(epubElem, shareAbs)};
-    const fs::path epubRootAbs{shareAbs / "tei/extracted_epubs" / id};
+    const fs::path epubRootAbs{shareAbs / "epubworm/extracted_epubs" / id};
 
     useSystemLocale();
     enableRawMode();
     const EpubProg exitProg{displayEpub(iniProg, epubRootAbs, desiredMaxLen)};
 
     writeProgress(epubElem, exitProg, shareAbs);
-    setLastRead(teiLibrary, id);
+    setLastRead(libraryDoc, id);
 
-    if (teiLibrary.SaveFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
+    if (libraryDoc.SaveFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error saving library file: "}
-                + XMLDocument::ErrorIDToName(teiLibrary.ErrorID())};
+                + XMLDocument::ErrorIDToName(libraryDoc.ErrorID())};
     }
 
     return true;

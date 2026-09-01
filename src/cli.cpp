@@ -103,11 +103,11 @@ static CliCommand parseCommand(int argc, char** argv) {
             return CliCommand::setLineLength;
         }
     } else {
-        displayError("unknown command, run tei -h for usage");
+        displayError("unknown command, run epubworm -h for usage");
         return CliCommand::invalid;
     }
 
-    displayError("invalid command argument count, run tei -h for usage");
+    displayError("invalid command argument count, run epubworm -h for usage");
     return CliCommand::invalid;
 }
 
@@ -141,21 +141,21 @@ int dispatchCli(int argc, char** argv) {
 
     const fs::path configAbs{getXdgDir("XDG_CONFIG_HOME", ".config")};
     const fs::path shareAbs{getXdgDir("XDG_DATA_HOME", ".local/share")};
-    const fs::path teiConfAbs{configAbs / "tei/conf.xml"};
-    const fs::path teiLibraryAbs{shareAbs / "tei/library.xml"};
+    const fs::path configFileAbs{configAbs / "epubworm/conf.xml"};
+    const fs::path libraryFileAbs{shareAbs / "epubworm/library.xml"};
 
-    if (!fs::exists(teiConfAbs)) {
-        initConf(teiConfAbs);
+    if (!fs::exists(configFileAbs)) {
+        initConf(configFileAbs);
     }
-    if (!fs::exists(teiLibraryAbs)) {
-        initLibrary(teiLibraryAbs);
+    if (!fs::exists(libraryFileAbs)) {
+        initLibrary(libraryFileAbs);
     }
-    const ConfOpts conf{readTeiConf(teiConfAbs)};
+    const ConfOpts conf{readConfig(configFileAbs)};
 
     switch (command) {
     case CliCommand::none: {
         XMLDocument library{};
-        if (library.LoadFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
+        if (library.LoadFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
             throw std::runtime_error{
                     std::string{"error loading library file: "}
                     + XMLDocument::ErrorIDToName(library.ErrorID())};
@@ -212,7 +212,7 @@ int dispatchCli(int argc, char** argv) {
             displayError("line length must be a positive integer");
             return 1;
         }
-        setTeiConfLineLength(teiConfAbs, chars);
+        setConfigLineLength(configFileAbs, chars);
         boldColorIfTerm(stdout, greenFG);
         std::cout << "Line length set to " << chars;
         resetBoldColorIfTerm(stdout);
@@ -237,10 +237,11 @@ void displayHelp() {
     boldColorIfTerm(stdout, greenFG);
     std::cout << "Usage:\n";
     resetBoldColorIfTerm(stdout);
-    std::cout << "  tei [OPTIONS] [COMMAND] [ARGS...]\n\n";
+    std::cout << "  epubworm [OPTIONS] [COMMAND] [ARGS...]\n\n";
 
-    std::cout << "When ran without any arguments, tei reads the last-read "
-                 "epub.\n\n";
+    std::cout
+            << "When ran without any arguments, epubworm reads the last-read "
+               "epub.\n\n";
 
     boldColorIfTerm(stdout, blueFG);
     std::cout << "Options:\n";
@@ -286,15 +287,15 @@ void displayHelp() {
 }
 
 void listLibrary(const fs::path& shareAbs) {
-    const fs::path teiLibraryAbs{shareAbs / "tei/library.xml"};
-    XMLDocument teiLibrary{};
-    if (teiLibrary.LoadFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
+    const fs::path libraryFileAbs{shareAbs / "epubworm/library.xml"};
+    XMLDocument libraryDoc{};
+    if (libraryDoc.LoadFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error loading library file: "}
-                + XMLDocument::ErrorIDToName(teiLibrary.ErrorID())};
+                + XMLDocument::ErrorIDToName(libraryDoc.ErrorID())};
     }
 
-    XMLElement* const libraryRoot{teiLibrary.FirstChildElement("library")};
+    XMLElement* const libraryRoot{libraryDoc.FirstChildElement("library")};
     if (libraryRoot == nullptr) {
         throw std::runtime_error{
                 "root element `<library>` missing in library file"};
@@ -321,7 +322,7 @@ void listLibrary(const fs::path& shareAbs) {
         return;
     }
 
-    const std::string lastReadId{getLastRead(teiLibrary)};
+    const std::string lastReadId{getLastRead(libraryDoc)};
     std::ranges::sort(rows, {}, &EpubInfo::title);
 
     for (const auto& r : rows) {

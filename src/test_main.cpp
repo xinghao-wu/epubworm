@@ -24,7 +24,7 @@ int main() {
         test::styleEachLineIndividually();
         test::initConf();
         test::initLibrary();
-        test::readTeiConf();
+        test::readConfig();
         test::getTruncatedSHA256Sum();
         test::findEpubById();
         test::addToLibrary();
