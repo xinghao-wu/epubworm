@@ -165,9 +165,12 @@ void parseContentElem(const XMLElement* parent, std::string& out,
                 } catch (const std::runtime_error& e) {
                     if (std::string_view{e.what()} == "Unable to open file") {
                         out += esc + bold;
-                        out += "[image reference in epub "
-                               "points to nonexistent file]";
+                        out += esc + redFG;
+                        out += "An image is referenced here, but the file the "
+                               "reference points to doesn't exist. "
+                               "This epub is malformed.";
                         out += esc + resetBold;
+                        out += esc + resetFG;
                         out += "\n\n";
                     } else {
                         throw;
