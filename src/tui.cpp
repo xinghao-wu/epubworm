@@ -205,6 +205,7 @@ void resetBoldColorIfTerm(FILE* fd) {
 void disableRawMode() {
     std::cout << esc << disableDecimalReportingFormat;
     std::cout << esc << disableMouseEventReporting;
+    std::cout << esc << showCursor;
     std::cout << std::flush;
 
     if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &g_ogTermFlags) == -1) {
@@ -1294,8 +1295,9 @@ EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
             int iniNavPointIndex{0};
             for (int i{static_cast<int>(spineIndex)}; i >= 1; --i) {
                 for (int j{0}; j < std::ssize(tocDataWithAbs); ++j) {
-                    if (fs::equivalent(spineWithAbs.data()[i],
-                                       tocDataWithAbs.data()[j].second)) {
+                    if (spineWithAbs.data()[i].lexically_normal()
+                        == tocDataWithAbs.data()[j]
+                                   .second.lexically_normal()) {
                         iniNavPointIndex = j;
                         goto exit_nested_loops;
                     }
@@ -1306,7 +1308,8 @@ exit_nested_loops:
                                              desiredMaxLen, iniNavPointIndex)};
             bool found{false};
             for (int i{1}; i < std::ssize(spineWithAbs); ++i) {
-                if (fs::equivalent(spineWithAbs.data()[i], tocOut)) {
+                if (spineWithAbs.data()[i].lexically_normal()
+                    == tocOut.lexically_normal()) {
                     found = true;
                     spineIndex = static_cast<std::size_t>(i);
                     chapterProg = 0;
