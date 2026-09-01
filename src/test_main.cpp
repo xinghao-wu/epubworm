@@ -20,6 +20,7 @@ int main() {
         test::collapseConsecutiveNewlines();
         test::findNth();
         test::execute();
+        test::tocDataToString();
         test::styleEachLineIndividually();
         test::initConf();
         test::initLibrary();

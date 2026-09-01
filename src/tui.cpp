@@ -677,6 +677,7 @@ void processContentText(std::string& str, int maxLen) {
     centerJustify(esc + yellowFG, esc + resetFG, str, maxLen);
     centerJustify(esc + blueFG, esc + resetFG, str, maxLen);
     centerJustify(esc + redFG, esc + resetFG, str, maxLen);
+    centerJustify(esc + magentaFG, esc + resetFG, str, maxLen);
     centerOnScreen(str, maxLen);
     styleEachLineIndividually(str, esc + bold, esc + resetBold);
     styleEachLineIndividually(str, esc + italic, esc + resetItalic);
@@ -684,6 +685,7 @@ void processContentText(std::string& str, int maxLen) {
     styleEachLineIndividually(str, esc + redFG, esc + resetFG);
     styleEachLineIndividually(str, esc + greenFG, esc + resetFG);
     styleEachLineIndividually(str, esc + blueFG, esc + resetFG);
+    styleEachLineIndividually(str, esc + magentaFG, esc + resetFG);
 }
 
 std::pair<ChapterExit, double>
@@ -1005,10 +1007,18 @@ void registerSigwinchHandler() {
     }
 }
 
-void tocDataToString(const TocData& data, std::string& str) {
+void tocDataToString(const TocData& data, std::string_view title,
+                     std::string_view author, std::string& str) {
+    str += esc + magentaFG;
+    str += esc + bold;
+    str += title;
+    str += esc + resetFG;
+    str += esc + resetBold;
+    str += '\n';
+
     str += esc + blueFG;
     str += esc + bold;
-    str += "Table of Contents";
+    str += author;
     str += esc + resetFG;
     str += esc + resetBold;
     str += "\n\n";
@@ -1031,12 +1041,14 @@ bool inTmuxSession() {
     return termProgram != nullptr && std::string_view{termProgram} == "tmux";
 }
 
-fs::path displayTOC(const TocData& tocData, int desiredMaxLen,
+fs::path displayTOC(const TocData& tocData, std::string_view title,
+                    std::string_view author, int desiredMaxLen,
                     int selectedNavPointIndex) {
     winsize winInfo{};
     std::string tocStr{};
     int tocLines{};
-    setUpDisplayTOC(tocData, desiredMaxLen, winInfo, tocStr, tocLines);
+    setUpDisplayTOC(tocData, title, author, desiredMaxLen, winInfo, tocStr,
+                    tocLines);
 
     while (true) {
         if (!(selectedNavPointIndex < std::ssize(tocData))) {
@@ -1189,8 +1201,8 @@ fs::path displayTOC(const TocData& tocData, int desiredMaxLen,
                 }
                 break;
             case specKey::winResize:
-                setUpDisplayTOC(tocData, desiredMaxLen, winInfo, tocStr,
-                                tocLines);
+                setUpDisplayTOC(tocData, title, author, desiredMaxLen, winInfo,
+                                tocStr, tocLines);
                 goto redraw_screen;
             }
         }
@@ -1198,12 +1210,13 @@ redraw_screen:
     }
 }
 
-void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
+void setUpDisplayTOC(const TocData& tocData, std::string_view title,
+                     std::string_view author, int desiredMaxLen,
                      winsize& winInfo, std::string& tocStr, int& tocLines) {
     ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
     tocStr.clear();
-    tocDataToString(tocData, tocStr);
+    tocDataToString(tocData, title, author, tocStr);
     const int maxLen{
             std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col)
                                             - horizontalMarginChars * 2)};
@@ -1220,6 +1233,9 @@ EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
     if (opf.Error()) {
         throw std::runtime_error{opf.ErrorStr()};
     }
+    const XMLElement* const metadata{getMetadata(opf)};
+    const std::string title{getTitle(metadata)};
+    const std::string author{getAuthor(metadata)};
 
     std::vector spineWithAbs{getSpine(opf)};
     for (auto& rel : spineWithAbs) {
@@ -1286,8 +1302,8 @@ EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
                 }
             }
 exit_nested_loops:
-            const fs::path tocOut{displayTOC(tocDataWithAbs, desiredMaxLen,
-                                             iniNavPointIndex)};
+            const fs::path tocOut{displayTOC(tocDataWithAbs, title, author,
+                                             desiredMaxLen, iniNavPointIndex)};
             bool found{false};
             for (int i{1}; i < std::ssize(spineWithAbs); ++i) {
                 if (spineWithAbs.data()[i] == tocOut) {

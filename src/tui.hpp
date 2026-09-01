@@ -317,26 +317,32 @@ extern "C" void handleSigwinch([[maybe_unused]] int signal);
 // `sigaction()`.
 void registerSigwinchHandler();
 
-// Translate `data` into a chapter-like string suitable for display.
+// Translate `data`, `title`, and `author` into a chapter-like string suitable
+// for display.
 // Output is appended to `str`.
-void tocDataToString(const TocData& data, std::string& str);
+void tocDataToString(const TocData& data, std::string_view title,
+                     std::string_view author, std::string& str);
 
 // Checks `TERM_PROGRAM` environment variable for whether or not running in
 // tmux session.
 [[nodiscard]] bool inTmuxSession();
 
-// In raw mode, create a tui interface to view `tocData`.
+// In raw mode, create a tui interface to view `tocData` with the epub's title
+// and author in the header.
 // Lines wrapped at `desiredMaxLen`.
 // Provide initial selected chapter through `selectedNavPointIndex`.
 // Returns relative path found in `tocData` of selected chapter,
 // or an empty path if user exited without selecting one.
 // Throws `std::logic_error` if provided nav point index is out of bounds.
 [[nodiscard]] std::filesystem::path displayTOC(const TocData& tocData,
+                                               std::string_view title,
+                                               std::string_view author,
                                                int desiredMaxLen,
                                                int selectedNavPointIndex);
 
 // Helper for `displayTOC()`.
-void setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
+void setUpDisplayTOC(const TocData& tocData, std::string_view title,
+                     std::string_view author, int desiredMaxLen,
                      winsize& winInfo, std::string& tocStr, int& tocLines);
 
 // Highest level function for creating the core TUI interface.

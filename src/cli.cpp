@@ -302,7 +302,7 @@ void listLibrary(const fs::path& shareAbs) {
     std::ranges::sort(rows, {}, &Row::title);
 
     for (const auto& r : rows) {
-        boldColorIfTerm(stdout, yellowFG);
+        boldColorIfTerm(stdout, magentaFG);
         std::cout << r.title;
         resetBoldColorIfTerm(stdout);
         std::cout << " - ";
@@ -310,7 +310,7 @@ void listLibrary(const fs::path& shareAbs) {
         std::cout << r.author;
         resetBoldColorIfTerm(stdout);
         std::cout << " - ";
-        boldColorIfTerm(stdout, magentaFG);
+        boldColorIfTerm(stdout, greenFG);
         std::cout << r.id;
         resetBoldColorIfTerm(stdout);
         std::cout << '\n';

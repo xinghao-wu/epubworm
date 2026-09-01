@@ -58,8 +58,6 @@ void execute();
 // `inTmuxSession()`.
 void displayChapter();
 
-// TODO: Make this self-validating.
-// non-self-validating
 void tocDataToString();
 
 // non-self-validating

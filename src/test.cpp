@@ -413,22 +413,18 @@ void displayChapter() {
 }
 
 void tocDataToString() {
-
-    ::useSystemLocale();
-
-    const TocData mysteriesTOC{::getTOC(mysteriesRootAbs / "toc.ncx")};
-    const TocData parasiteTOC{::getTOC(parasiteRootAbs / "OEBPS/toc.ncx")};
-
+    const TocData toc{{"Chapter 1", "chapter-1.xhtml"},
+                      {"    Section 1", "section-1.xhtml"}};
     std::string str{};
-    ::tocDataToString(mysteriesTOC, str);
-    ::tocDataToString(parasiteTOC, str);
-    ::processContentText(str, 55);
-    std::cout << str;
+    ::tocDataToString(toc, "Test Title", "Test Author", str);
 
-    boldColorIfTerm(stdout, yellowFG);
-    std::cout << "`test::tocDataToString()` success cases need verification, "
-                 "verify correct table of content strings are shown\n";
-    resetBoldColorIfTerm(stdout);
+    const std::string expected{
+            esc + magentaFG + esc + bold + "Test Title" + esc + resetFG + esc
+            + resetBold + '\n' + esc + blueFG + esc + bold + "Test Author"
+            + esc + resetFG + esc + resetBold
+            + "\n\nChapter 1\n\n    Section 1\n" + esc + redFG + esc + bold
+            + "---" + esc + resetFG + esc + resetBold + '\n'};
+    assert(str == expected);
 }
 
 void displayTOC() {
@@ -436,10 +432,13 @@ void displayTOC() {
     ::enableRawMode();
 
     std::cout << esc << clearScreen;
-    const fs::path mysteriesTOCOutput{
-            ::displayTOC(::getTOC(mysteriesRootAbs / "toc.ncx"), 55, 100)};
+    const fs::path mysteriesTOCOutput{::displayTOC(
+            ::getTOC(mysteriesRootAbs / "toc.ncx"),
+            "Lord of Mysteries Volume 1: Clown",
+            "Cuttlefish That Loves Diving (爱潜水的乌贼)", 55, 100)};
     const fs::path parasiteTOCOutput{
-            ::displayTOC(::getTOC(parasiteRootAbs / "OEBPS/toc.ncx"), 55, 0)};
+            ::displayTOC(::getTOC(parasiteRootAbs / "OEBPS/toc.ncx"),
+                         "Parasite in Love", "Sugaru Miaki", 55, 0)};
     eraseScreen();
 
     boldColorIfTerm(stdout, yellowFG);
