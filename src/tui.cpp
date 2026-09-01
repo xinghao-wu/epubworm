@@ -1294,8 +1294,8 @@ EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
             int iniNavPointIndex{0};
             for (int i{static_cast<int>(spineIndex)}; i >= 1; --i) {
                 for (int j{0}; j < std::ssize(tocDataWithAbs); ++j) {
-                    if (spineWithAbs.data()[i]
-                        == tocDataWithAbs.data()[j].second) {
+                    if (fs::equivalent(spineWithAbs.data()[i],
+                                       tocDataWithAbs.data()[j].second)) {
                         iniNavPointIndex = j;
                         goto exit_nested_loops;
                     }
@@ -1306,7 +1306,7 @@ exit_nested_loops:
                                              desiredMaxLen, iniNavPointIndex)};
             bool found{false};
             for (int i{1}; i < std::ssize(spineWithAbs); ++i) {
-                if (spineWithAbs.data()[i] == tocOut) {
+                if (fs::equivalent(spineWithAbs.data()[i], tocOut)) {
                     found = true;
                     spineIndex = static_cast<std::size_t>(i);
                     chapterProg = 0;
