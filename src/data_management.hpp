@@ -2,6 +2,7 @@
 
 #include "tinyxml2.hpp"
 #include "tui.hpp"
+#include <expected>
 #include <filesystem>
 #include <string>
 #include <string_view>
@@ -9,6 +10,17 @@
 
 struct ConfOpts {
     int lineLength{55};
+};
+
+struct EpubInfo {
+    std::string id;
+    std::string title;
+    std::string author;
+};
+
+enum class LibraryUpdateError {
+    alreadyInLibrary,
+    notFoundOrAmbiguous,
 };
 
 // Extracts zipped archive to `destinationAbs`, creating directories as needed.
@@ -44,6 +56,11 @@ void setTeiConfLineLength(const std::filesystem::path& teiConfAbs, int chars);
 // from `execute()` on failure to run `shasum`.
 [[nodiscard]] std::string
 getTruncatedSHA256Sum(const std::filesystem::path& fileAbs);
+
+// Reads an extracted epub's title and author and returns them with `id`.
+// Throws `std::runtime_error` if its container or OPF cannot be loaded.
+[[nodiscard]] EpubInfo getEpubInfo(std::string_view id,
+                                   const std::filesystem::path& shareAbs);
 
 // Returns pointer to the `<epub>` child of `libraryRoot` whose `id` attribute
 // starts with `idPrefix`, or nullptr if there is no match or the prefix is
@@ -83,24 +100,26 @@ void setLastRead(tinyxml2::XMLDocument& libraryDoc, std::string_view id);
 // Computes the id hash, checks if already present, and if not, extracts the
 // epub to `shareAbs/tei/extracted_epubs/<id>/`, adds an `<epub>` entry to
 // `shareAbs/tei/library.xml`, and sets `<last-read>` to the new id.
-// Returns false if the epub is already in the library; returns true on
-// success.
+// Returns the added epub's info on success, or `alreadyInLibrary` if its ID is
+// already present.
 // Throws `std::runtime_error` on library load/save failure and on missing
 // `<library>` or `<last-read>` elements.
-bool addToLibrary(const std::filesystem::path& zippedEpubAbs,
-                  const std::filesystem::path& shareAbs);
+[[nodiscard]] std::expected<EpubInfo, LibraryUpdateError>
+addToLibrary(const std::filesystem::path& zippedEpubAbs,
+             const std::filesystem::path& shareAbs);
 
 // Removes the epub whose `id` starts with `idPrefix` from the library at
 // `shareAbs/tei`. Deletes the extracted epub at
 // `shareAbs/tei/extracted_epubs/<full-id>/`, removes the `<epub>` entry from
 // `shareAbs/tei/library.xml`, and resets `<last-read>` to a blank id if it
 // referenced the removed epub.
-// Returns false if no epub matches `idPrefix` or the prefix is ambiguous;
-// returns true on success.
+// Returns the removed epub's info on success, or `notFoundOrAmbiguous` if no
+// epub matches `idPrefix` or the prefix is ambiguous.
 // Throws `std::runtime_error` on library load/save failure and on missing
 // `<library>` or `<last-read>` elements.
-bool deleteFromLibrary(std::string_view idPrefix,
-                       const std::filesystem::path& shareAbs);
+[[nodiscard]] std::expected<EpubInfo, LibraryUpdateError>
+deleteFromLibrary(std::string_view idPrefix,
+                  const std::filesystem::path& shareAbs);
 
 // Displays the epub whose `id` starts with `idPrefix` from the library at
 // `shareAbs/tei`, using `desiredMaxLen` as the visual line length, and

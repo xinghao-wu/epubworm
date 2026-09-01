@@ -1,13 +1,12 @@
 #include "cli.hpp"
 #include "data_management.hpp"
-#include "epub_parser.hpp"
 #include "tinyxml2.hpp"
 #include "tui.hpp"
 #include <algorithm>
 #include <charconv>
 #include <cstddef>
 #include <cstdlib>
-#include <exception>
+#include <expected>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -34,8 +33,39 @@ enum class CliCommand {
 
 static void displayError(std::string_view message) {
     boldColorIfTerm(stderr, redFG);
-    std::cerr << "error: " << message << '\n';
+    std::cerr << "Error: " << message << '\n';
     resetBoldColorIfTerm(stderr);
+}
+
+static void printEpubInfo(const EpubInfo& info) {
+    boldColorIfTerm(stdout, magentaFG);
+    std::cout << info.title;
+    resetBoldColorIfTerm(stdout);
+    std::cout << " - ";
+    boldColorIfTerm(stdout, blueFG);
+    std::cout << info.author;
+    resetBoldColorIfTerm(stdout);
+    std::cout << " - ";
+    boldColorIfTerm(stdout, yellowFG);
+    std::cout << info.id;
+    resetBoldColorIfTerm(stdout);
+}
+
+static void printLibraryUpdate(std::string_view label, std::string_view color,
+                               const EpubInfo& info) {
+    boldColorIfTerm(stdout, color);
+    std::cout << label;
+    resetBoldColorIfTerm(stdout);
+    std::cout << ' ';
+    printEpubInfo(info);
+    std::cout << '\n';
+}
+
+static void displayDuplicateEpub(std::string_view filePath) {
+    boldColorIfTerm(stdout, redFG);
+    std::cout << "Epub is already in library: " << filePath;
+    resetBoldColorIfTerm(stdout);
+    std::cout << '\n';
 }
 
 static CliCommand parseCommand(int argc, char** argv) {
@@ -142,29 +172,27 @@ int dispatchCli(int argc, char** argv) {
         return 0;
     }
     case CliCommand::add: {
-        bool allAdded{true};
         for (int i{2}; i < argc; ++i) {
-            try {
-                if (!addToLibrary(argv[i], shareAbs)) {
-                    displayError(
-                            std::string{"epub is already in the library: "}
-                            + argv[i]);
-                    allAdded = false;
-                }
-            } catch (const std::exception& e) {
-                displayError(std::string{"failed to add "} + argv[i] + ": "
-                             + e.what());
-                allAdded = false;
+            const std::expected<EpubInfo, LibraryUpdateError> added{
+                    addToLibrary(argv[i], shareAbs)};
+            if (!added.has_value()) {
+                displayDuplicateEpub(argv[i]);
+                continue;
             }
+            printLibraryUpdate("Added:", greenFG, added.value());
         }
-        return allAdded ? 0 : 1;
+        return 0;
     }
-    case CliCommand::remove:
-        if (!deleteFromLibrary(argv[2], shareAbs)) {
+    case CliCommand::remove: {
+        const std::expected<EpubInfo, LibraryUpdateError> removed{
+                deleteFromLibrary(argv[2], shareAbs)};
+        if (!removed.has_value()) {
             displayError("epub id was not found or is ambiguous");
             return 1;
         }
+        printLibraryUpdate("Removed:", greenFG, removed.value());
         return 0;
+    }
     case CliCommand::list:
         listLibrary(shareAbs);
         return 0;
@@ -185,6 +213,10 @@ int dispatchCli(int argc, char** argv) {
             return 1;
         }
         setTeiConfLineLength(teiConfAbs, chars);
+        boldColorIfTerm(stdout, greenFG);
+        std::cout << "Line length set to " << chars;
+        resetBoldColorIfTerm(stdout);
+        std::cout << '\n';
         return 0;
     }
     default:
@@ -268,12 +300,7 @@ void listLibrary(const fs::path& shareAbs) {
                 "root element `<library>` missing in library file"};
     }
 
-    struct Row {
-        std::string id;
-        std::string title;
-        std::string author;
-    };
-    std::vector<Row> rows;
+    std::vector<EpubInfo> rows;
 
     for (XMLElement* epub{libraryRoot->FirstChildElement("epub")};
          epub != nullptr; epub = epub->NextSiblingElement("epub")) {
@@ -283,15 +310,7 @@ void listLibrary(const fs::path& shareAbs) {
                     "`<epub>` element missing `id` attribute"};
         }
 
-        const fs::path epubRootAbs{shareAbs / "tei/extracted_epubs" / id};
-        const fs::path opfAbs{epubRootAbs / getOPFRel(epubRootAbs)};
-        XMLDocument opf{};
-        opf.LoadFile(opfAbs.c_str());
-        if (opf.Error()) {
-            throw std::runtime_error{opf.ErrorStr()};
-        }
-        const XMLElement* const metadata{getMetadata(opf)};
-        rows.emplace_back(id, getTitle(metadata), getAuthor(metadata));
+        rows.emplace_back(getEpubInfo(id, shareAbs));
     }
 
     if (rows.empty()) {
@@ -303,24 +322,14 @@ void listLibrary(const fs::path& shareAbs) {
     }
 
     const std::string lastReadId{getLastRead(teiLibrary)};
-    std::ranges::sort(rows, {}, &Row::title);
+    std::ranges::sort(rows, {}, &EpubInfo::title);
 
     for (const auto& r : rows) {
-        boldColorIfTerm(stdout, magentaFG);
-        std::cout << r.title;
-        resetBoldColorIfTerm(stdout);
-        std::cout << " - ";
-        boldColorIfTerm(stdout, blueFG);
-        std::cout << r.author;
-        resetBoldColorIfTerm(stdout);
-        std::cout << " - ";
-        boldColorIfTerm(stdout, greenFG);
-        std::cout << r.id;
-        resetBoldColorIfTerm(stdout);
+        printEpubInfo(r);
         std::cout << '\n';
     }
 
-    const auto lastRead{std::ranges::find(rows, lastReadId, &Row::id)};
+    const auto lastRead{std::ranges::find(rows, lastReadId, &EpubInfo::id)};
     if (lastRead == rows.end()) {
         boldColorIfTerm(stdout, redFG);
         std::cout << "Last read epub no longer in library";
@@ -329,7 +338,7 @@ void listLibrary(const fs::path& shareAbs) {
         return;
     }
 
-    boldColorIfTerm(stdout, yellowFG);
+    boldColorIfTerm(stdout, greenFG);
     std::cout << "Last read:";
     resetBoldColorIfTerm(stdout);
     std::cout << ' ';

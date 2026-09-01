@@ -5,6 +5,7 @@
 #include "tinyxml2.hpp"
 #include "tui.hpp"
 #include <cassert>
+#include <expected>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -628,10 +629,15 @@ void addToLibrary() {
     const fs::path teiLibraryAbs{tmpShareAbs / "tei/library.xml"};
     ::initLibrary(teiLibraryAbs);
 
-    assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
-                          tmpShareAbs));
-
     const std::string mysteriesId{"53760b7bdcdfa01a43ccf243f41dd912"};
+    const std::expected<EpubInfo, LibraryUpdateError> added{::addToLibrary(
+            epubsAbs / "lord_of_mysteries_vol_1.epub", tmpShareAbs)};
+    assert(added.has_value());
+    assert(added.value().id == mysteriesId);
+    assert(added.value().title == "Lord of Mysteries Volume 1: Clown");
+    assert(added.value().author
+           == "Cuttlefish That Loves Diving (爱潜水的乌贼)");
+
     XMLDocument teiLibrary{};
     assert(teiLibrary.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
     const XMLElement* const libraryRoot{
@@ -655,9 +661,10 @@ void addToLibrary() {
     assert(fs::is_directory(tmpShareAbs / "tei/extracted_epubs"
                             / mysteriesId));
 
-    // Already present: returns false.
-    assert(!::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
-                           tmpShareAbs));
+    const std::expected<EpubInfo, LibraryUpdateError> duplicate{::addToLibrary(
+            epubsAbs / "lord_of_mysteries_vol_1.epub", tmpShareAbs)};
+    assert(!duplicate.has_value());
+    assert(duplicate.error() == LibraryUpdateError::alreadyInLibrary);
 
     fs::remove_all(tmpShareAbs);
 }
@@ -834,10 +841,17 @@ void deleteFromLibrary() {
     ::initLibrary(teiLibraryAbs);
 
     assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
-                          tmpShareAbs));
+                          tmpShareAbs)
+                   .has_value());
 
     const std::string mysteriesID{"53760b7bdcdfa01a43ccf243f41dd912"};
-    assert(::deleteFromLibrary(mysteriesID, tmpShareAbs));
+    const std::expected<EpubInfo, LibraryUpdateError> removed{
+            ::deleteFromLibrary(mysteriesID, tmpShareAbs)};
+    assert(removed.has_value());
+    assert(removed.value().id == mysteriesID);
+    assert(removed.value().title == "Lord of Mysteries Volume 1: Clown");
+    assert(removed.value().author
+           == "Cuttlefish That Loves Diving (爱潜水的乌贼)");
 
     XMLDocument teiLibrary{};
     assert(teiLibrary.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
@@ -854,8 +868,10 @@ void deleteFromLibrary() {
 
     assert(!fs::exists(tmpShareAbs / "tei/extracted_epubs" / mysteriesID));
 
-    // Already removed: returns false.
-    assert(!::deleteFromLibrary(mysteriesID, tmpShareAbs));
+    const std::expected<EpubInfo, LibraryUpdateError> alreadyRemoved{
+            ::deleteFromLibrary(mysteriesID, tmpShareAbs)};
+    assert(!alreadyRemoved.has_value());
+    assert(alreadyRemoved.error() == LibraryUpdateError::notFoundOrAmbiguous);
 
     fs::remove_all(tmpShareAbs);
 }
@@ -873,11 +889,14 @@ void readEpubInLibrary() {
     ::initLibrary(teiLibraryAbs);
 
     assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
-                          tmpShareAbs));
-    assert(::addToLibrary(epubsAbs / "parasite_in_love.epub", tmpShareAbs));
-    assert(::addToLibrary(epubsAbs / "zuttomo_vol_1.epub", tmpShareAbs));
-    assert(::addToLibrary(epubsAbs / "spice_and_wolf_vol_1.epub",
-                          tmpShareAbs));
+                          tmpShareAbs)
+                   .has_value());
+    assert(::addToLibrary(epubsAbs / "parasite_in_love.epub", tmpShareAbs)
+                   .has_value());
+    assert(::addToLibrary(epubsAbs / "zuttomo_vol_1.epub", tmpShareAbs)
+                   .has_value());
+    assert(::addToLibrary(epubsAbs / "spice_and_wolf_vol_1.epub", tmpShareAbs)
+                   .has_value());
 
     assert(!::readEpubInLibrary("000000", tmpShareAbs, 55));
     assert(!::readEpubInLibrary("", tmpShareAbs, 55));

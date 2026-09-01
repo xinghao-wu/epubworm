@@ -1,7 +1,9 @@
 #include "data_management.hpp"
+#include "epub_parser.hpp"
 #include "miniz_cpp.hpp"
 #include "tinyxml2.hpp"
 #include "tui.hpp"
+#include <expected>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -125,6 +127,19 @@ std::string getTruncatedSHA256Sum(const fs::path& fileAbs) {
     return sha256.substr(0, 32); // 128 bits = 32 hex chars
 }
 
+EpubInfo getEpubInfo(std::string_view id, const fs::path& shareAbs) {
+    const fs::path epubRootAbs{shareAbs / "tei/extracted_epubs" / id};
+    const fs::path opfAbs{epubRootAbs / getOPFRel(epubRootAbs)};
+    XMLDocument opf{};
+    opf.LoadFile(opfAbs.c_str());
+    if (opf.Error()) {
+        throw std::runtime_error{opf.ErrorStr()};
+    }
+
+    const XMLElement* const metadata{getMetadata(opf)};
+    return {std::string{id}, getTitle(metadata), getAuthor(metadata)};
+}
+
 XMLElement* findEpubById(XMLElement* libraryRoot, std::string_view idPrefix) {
     XMLElement* match{nullptr};
     for (XMLElement* epub{libraryRoot->FirstChildElement("epub")};
@@ -226,7 +241,8 @@ std::string getLastRead(const XMLDocument& libraryDoc) {
     return id;
 }
 
-bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
+std::expected<EpubInfo, LibraryUpdateError>
+addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     const std::string id{getTruncatedSHA256Sum(zippedEpubAbs)};
 
     const fs::path teiLibraryAbs{shareAbs / "tei/library.xml"};
@@ -245,13 +261,14 @@ bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
 
     // Check if epub already in library.
     if (findEpubById(libraryRoot, id) != nullptr) {
-        return false;
+        return std::unexpected{LibraryUpdateError::alreadyInLibrary};
     }
 
     // Extract epub to its directory.
     const fs::path extractDest{shareAbs / "tei/extracted_epubs" / id};
     fs::create_directories(extractDest);
     unzip(zippedEpubAbs, extractDest);
+    EpubInfo info{getEpubInfo(id, shareAbs)};
 
     // Add new `<epub>` entry.
     XMLElement* const epubElem{teiLibrary.NewElement("epub")};
@@ -269,10 +286,11 @@ bool addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
                 + XMLDocument::ErrorIDToName(teiLibrary.ErrorID())};
     }
 
-    return true;
+    return info;
 }
 
-bool deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs) {
+std::expected<EpubInfo, LibraryUpdateError>
+deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs) {
     const fs::path teiLibraryAbs{shareAbs / "tei/library.xml"};
     XMLDocument teiLibrary{};
     if (teiLibrary.LoadFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
@@ -295,10 +313,11 @@ bool deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs) {
 
     XMLElement* const epubElem{findEpubById(libraryRoot, idPrefix)};
     if (epubElem == nullptr) {
-        return false;
+        return std::unexpected{LibraryUpdateError::notFoundOrAmbiguous};
     }
 
     const char* const id{epubElem->Attribute("id")};
+    EpubInfo info{getEpubInfo(id, shareAbs)};
 
     // Delete the extracted epub directory.
     fs::remove_all(shareAbs / "tei/extracted_epubs" / id);
@@ -318,7 +337,7 @@ bool deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs) {
                 + XMLDocument::ErrorIDToName(teiLibrary.ErrorID())};
     }
 
-    return true;
+    return info;
 }
 
 bool readEpubInLibrary(std::string_view idPrefix, const fs::path& shareAbs,

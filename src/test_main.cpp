@@ -40,30 +40,30 @@ int main() {
         return 0;
     } catch (const std::system_error& e) {
         boldColorIfTerm(stderr, redFG);
-        std::cerr << "fatal system error occurred\n";
-        std::cerr << "error message: " << e.what() << '\n';
-        std::cerr << "error code: " << e.code().value() << "\n";
-        std::cerr << "error category: " << e.code().category().name() << "\n";
+        std::cerr << "Fatal system error occurred\n";
+        std::cerr << "Error message: " << e.what() << '\n';
+        std::cerr << "Error code: " << e.code().value() << "\n";
+        std::cerr << "Error category: " << e.code().category().name() << "\n";
         resetBoldColorIfTerm(stderr);
         return 1;
     } catch (const std::runtime_error& e) {
         boldColorIfTerm(stderr, redFG);
-        std::cerr << "fatal runtime error occurred: " << e.what() << '\n';
+        std::cerr << "Fatal runtime error occurred: " << e.what() << '\n';
         resetBoldColorIfTerm(stderr);
         return 1;
     } catch (const std::logic_error& e) {
         boldColorIfTerm(stderr, redFG);
-        std::cerr << "fatal logic error occurred: " << e.what() << '\n';
+        std::cerr << "Fatal logic error occurred: " << e.what() << '\n';
         resetBoldColorIfTerm(stderr);
         return 1;
     } catch (const std::exception& e) {
         boldColorIfTerm(stderr, redFG);
-        std::cerr << "fatal standard exception occurred: " << e.what() << '\n';
+        std::cerr << "Fatal standard exception occurred: " << e.what() << '\n';
         resetBoldColorIfTerm(stderr);
         return 1;
     } catch (...) {
         boldColorIfTerm(stderr, redFG);
-        std::cerr << "fatal non-standard exception occurred\n";
+        std::cerr << "Fatal non-standard exception occurred\n";
         resetBoldColorIfTerm(stderr);
         return 1;
     }
