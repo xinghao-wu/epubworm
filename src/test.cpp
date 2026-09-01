@@ -629,6 +629,12 @@ void addToLibrary() {
     const fs::path teiLibraryAbs{tmpShareAbs / "tei/library.xml"};
     ::initLibrary(teiLibraryAbs);
 
+    constexpr std::string_view previousLastRead{"existing-id"};
+    XMLDocument initialLibrary{};
+    assert(initialLibrary.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
+    ::setLastRead(initialLibrary, previousLastRead);
+    assert(initialLibrary.SaveFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
+
     const std::string mysteriesId{"53760b7bdcdfa01a43ccf243f41dd912"};
     const std::expected<EpubInfo, LibraryUpdateError> added{::addToLibrary(
             epubsAbs / "lord_of_mysteries_vol_1.epub", tmpShareAbs)};
@@ -649,7 +655,7 @@ void addToLibrary() {
     assert(lastRead != nullptr);
     const char* const lastReadId{lastRead->Attribute("id")};
     assert(lastReadId != nullptr);
-    assert(std::string_view{lastReadId} == mysteriesId);
+    assert(std::string_view{lastReadId} == previousLastRead);
 
     const XMLElement* const epub{libraryRoot->FirstChildElement("epub")};
     assert(epub != nullptr);
@@ -845,6 +851,11 @@ void deleteFromLibrary() {
                    .has_value());
 
     const std::string mysteriesID{"53760b7bdcdfa01a43ccf243f41dd912"};
+    XMLDocument libraryBeforeDelete{};
+    assert(libraryBeforeDelete.LoadFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
+    ::setLastRead(libraryBeforeDelete, mysteriesID);
+    assert(libraryBeforeDelete.SaveFile(teiLibraryAbs.c_str()) == XML_SUCCESS);
+
     const std::expected<EpubInfo, LibraryUpdateError> removed{
             ::deleteFromLibrary(mysteriesID, tmpShareAbs)};
     assert(removed.has_value());

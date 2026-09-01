@@ -277,9 +277,6 @@ addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
     epubElem->SetAttribute("chapter-progress", 0.0);
     libraryRoot->InsertEndChild(epubElem);
 
-    // Update `<last-read>` to the new id.
-    setLastRead(teiLibrary, id);
-
     if (teiLibrary.SaveFile(teiLibraryAbs.c_str()) != XML_SUCCESS) {
         throw std::runtime_error{
                 std::string{"error saving library file: "}

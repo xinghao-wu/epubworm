@@ -99,11 +99,11 @@ void setLastRead(tinyxml2::XMLDocument& libraryDoc, std::string_view id);
 // Adds `zippedEpubAbs` to the library at `shareAbs/tei`.
 // Computes the id hash, checks if already present, and if not, extracts the
 // epub to `shareAbs/tei/extracted_epubs/<id>/`, adds an `<epub>` entry to
-// `shareAbs/tei/library.xml`, and sets `<last-read>` to the new id.
+// `shareAbs/tei/library.xml`.
 // Returns the added epub's info on success, or `alreadyInLibrary` if its ID is
 // already present.
-// Throws `std::runtime_error` on library load/save failure and on missing
-// `<library>` or `<last-read>` elements.
+// Throws `std::runtime_error` on library load/save failure or a missing
+// `<library>` element.
 [[nodiscard]] std::expected<EpubInfo, LibraryUpdateError>
 addToLibrary(const std::filesystem::path& zippedEpubAbs,
              const std::filesystem::path& shareAbs);
