@@ -295,10 +295,14 @@ void listLibrary(const fs::path& shareAbs) {
     }
 
     if (rows.empty()) {
-        std::cout << "library is empty\n";
+        boldColorIfTerm(stdout, redFG);
+        std::cout << "Library is empty";
+        resetBoldColorIfTerm(stdout);
+        std::cout << '\n';
         return;
     }
 
+    const std::string lastReadId{getLastRead(teiLibrary)};
     std::ranges::sort(rows, {}, &Row::title);
 
     for (const auto& r : rows) {
@@ -315,4 +319,22 @@ void listLibrary(const fs::path& shareAbs) {
         resetBoldColorIfTerm(stdout);
         std::cout << '\n';
     }
+
+    const auto lastRead{std::ranges::find(rows, lastReadId, &Row::id)};
+    if (lastRead == rows.end()) {
+        boldColorIfTerm(stdout, redFG);
+        std::cout << "Last read epub no longer in library";
+        resetBoldColorIfTerm(stdout);
+        std::cout << '\n';
+        return;
+    }
+
+    boldColorIfTerm(stdout, yellowFG);
+    std::cout << "Last read:";
+    resetBoldColorIfTerm(stdout);
+    std::cout << ' ';
+    boldColorIfTerm(stdout, magentaFG);
+    std::cout << lastRead->title;
+    resetBoldColorIfTerm(stdout);
+    std::cout << '\n';
 }
