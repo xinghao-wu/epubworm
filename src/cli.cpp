@@ -27,7 +27,7 @@ enum class CliCommand {
     add,
     remove,
     list,
-    read,
+    open,
     setLineLength,
 };
 
@@ -94,9 +94,9 @@ static CliCommand parseCommand(int argc, char** argv) {
         if (argc == 2) {
             return CliCommand::list;
         }
-    } else if (command == "read") {
+    } else if (command == "open") {
         if (argc == 3) {
-            return CliCommand::read;
+            return CliCommand::open;
         }
     } else if (command == "set-line-length") {
         if (argc == 3) {
@@ -196,7 +196,7 @@ int dispatchCli(int argc, char** argv) {
     case CliCommand::list:
         listLibrary(shareAbs);
         return 0;
-    case CliCommand::read:
+    case CliCommand::open:
         if (!readEpubInLibrary(argv[2], shareAbs, conf.lineLength)) {
             displayError("epub id was not found or is ambiguous");
             return 1;
@@ -240,7 +240,7 @@ void displayHelp() {
     std::cout << "  epubworm [OPTIONS] [COMMAND] [ARGS...]\n\n";
 
     std::cout
-            << "When ran without any arguments, epubworm reads the last-read "
+            << "When run without any arguments, epubworm opens the last-read "
                "epub.\n\n";
 
     boldColorIfTerm(stdout, blueFG);
@@ -256,7 +256,7 @@ void displayHelp() {
     printAligned("  rm, remove, delete <id-prefix>",
                  "Remove epub from library");
     printAligned("  ls, list", "List info of epubs in library");
-    printAligned("  read <id-prefix>", "Read epub already in library");
+    printAligned("  open <id-prefix>", "Open epub already in library");
     printAligned("  set-line-length <chars>",
                  "Set the persistent maximum line length");
     std::cout << '\n';
