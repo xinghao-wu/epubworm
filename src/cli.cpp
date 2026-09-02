@@ -18,7 +18,7 @@
 using namespace tinyxml2;
 namespace fs = std::filesystem;
 
-static constexpr int descCol{34};
+static constexpr int descCol{31};
 
 enum class CliCommand {
     invalid,
@@ -237,36 +237,27 @@ void displayHelp() {
     boldColorIfTerm(stdout, greenFG);
     std::cout << "Usage:\n";
     resetBoldColorIfTerm(stdout);
-    std::cout << "  epubworm [OPTIONS] [COMMAND] [ARGS...]\n\n";
-
-    std::cout
-            << "When run without any arguments, epubworm opens the last-read "
-               "epub.\n\n";
-
-    boldColorIfTerm(stdout, blueFG);
-    std::cout << "Options:\n";
-    resetBoldColorIfTerm(stdout);
-    printAligned("  -h, --help", "Display this help message");
-    std::cout << '\n';
+    std::cout << "  epubworm [command] [args]\n\n";
 
     boldColorIfTerm(stdout, yellowFG);
     std::cout << "Commands:\n";
     resetBoldColorIfTerm(stdout);
+    printAligned("  -h, --help", "Display this help message");
     printAligned("  add <file>...", "Add .epub files to library");
-    printAligned("  rm, remove, delete <id-prefix>",
-                 "Remove epub from library");
+    printAligned("  rm, remove <id prefix>", "Remove epub from library");
+    printAligned("  open <id prefix>", "Open TUI to read epub in library");
     printAligned("  ls, list", "List info of epubs in library");
-    printAligned("  open <id-prefix>", "Open epub already in library");
     printAligned("  set-line-length <chars>",
-                 "Set the persistent maximum line length");
+                 "Set the TUI's max characters per line");
     std::cout << '\n';
 
-    std::cout << "All full ids can be substituted with unambiguous "
-                 "prefixes. (e.g. a6ce475b738e1cd7def7ed1e958426b3 can be "
-                 "shortened to a6c.)\n\n";
+    std::cout << "When run without a command (as just epubworm), "
+                 "the last-read epub is opened.\n";
+    std::cout << "id prefixes can be used in place of full ids. "
+                 "(read a6ce475b738e1cd7 = read a6c)\n\n";
 
     boldColorIfTerm(stdout, magentaFG);
-    std::cout << "Keybinds:\n";
+    std::cout << "TUI Keyboard & Mouse Controls:\n";
     resetBoldColorIfTerm(stdout);
     printAligned("  q", "Quit");
     printAligned("  t, <Tab>, <Esc>", "Toggle table of contents");
