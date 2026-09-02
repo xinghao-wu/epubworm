@@ -163,9 +163,12 @@ void parseContentElem(const XMLElement* parent, std::string& out,
                     displayImg(imgPathAbs, out);
                     out += '\n';
                 } catch (const std::runtime_error& e) {
-                    // If the image reference points to a nonexistent file, its
+                    // If the image reference points to a nonexistent file or
+                    // image is of an unsupported format, its
                     // best to just silently ignore it.
-                    if (std::string_view{e.what()} != "Unable to open file") {
+                    if (!std::string_view{e.what()}.contains("Unable to open")
+                        && !std::string_view{e.what()}.contains(
+                                "Image not of any known type")) {
                         throw;
                     }
                 }
