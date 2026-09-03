@@ -19,6 +19,18 @@ using namespace tinyxml2;
 namespace fs = std::filesystem;
 
 static constexpr int descCol{31};
+static constexpr std::string_view mascot{R"(        ||
+/\      ||
+||   .--||-.
+ \\ /  _//_ `\
+  `|  |-`  \  \
+   /  /    |  |
+  /  /    /  /
+ |  |    /  /
+ \  |   |  (   _
+  `"     \  `-'O`\
+          '-._.--'
+)"};
 
 enum class CliCommand {
     invalid,
@@ -234,6 +246,8 @@ void printAligned(std::string_view left, std::string_view right) {
 }
 
 void displayHelp() {
+    std::cout << mascot;
+
     boldColorIfTerm(stdout, greenFG);
     std::cout << "Usage:\n";
     resetBoldColorIfTerm(stdout);

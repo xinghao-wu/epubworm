@@ -11,10 +11,8 @@ int dispatchCli(int argc, char** argv);
 // Helper for `displayHelp()`
 void printAligned(std::string_view left, std::string_view right);
 
-// Prints the program's help text (usage, options, commands, TUI keybinds) to
-// stdout.
-// Section headers are styled bold + colored when stdout is a terminal;
-// command names and descriptions remain plain text.
+// Prints the program's help text to stdout.
+// Section headers are styled bold + colored when stdout is a terminal.
 void displayHelp();
 
 // Lists every epub in the library at `shareAbs/epubworm`, sorted by title and
