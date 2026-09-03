@@ -21,6 +21,8 @@ must not be misrepresented as being the original software.
 distribution.
 */
 
+// This source file has been modified for epubworm.
+
 #pragma GCC system_header
 
 #ifndef TINYXML2_INCLUDED

@@ -21,6 +21,8 @@ must not be misrepresented as being the original software.
 distribution.
 */
 
+// This source file has been modified for epubworm.
+
 #include "tinyxml2.hpp"
 
 #include <new>		// yes, this one new style header, is in the Android SDK.

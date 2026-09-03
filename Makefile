@@ -14,6 +14,8 @@ PREFIX ?= /usr/local
 USER_PREFIX ?= $(HOME)/.local
 BINDIR ?= $(PREFIX)/bin
 USER_BINDIR ?= $(USER_PREFIX)/bin
+DOCDIR ?= $(PREFIX)/share/doc/epubworm
+USER_DOCDIR ?= $(USER_PREFIX)/share/doc/epubworm
 SRCS := $(wildcard $(SRC_DIR)/*.cpp)
 MAIN_SRC := $(SRC_DIR)/main.cpp
 TEST_SRCS := $(SRC_DIR)/test_main.cpp $(SRC_DIR)/test.cpp
@@ -40,16 +42,26 @@ debug: $(DEBUG_BIN)
 install: $(BIN)
 	install -d "$(DESTDIR)$(BINDIR)"
 	install -m 755 "$(BIN)" "$(DESTDIR)$(BINDIR)/$(notdir $(BIN))"
+	install -d "$(DESTDIR)$(DOCDIR)"
+	install -m 644 LICENSE THIRD_PARTY_LICENSES "$(DESTDIR)$(DOCDIR)"
 
 install-user: $(BIN)
 	install -d "$(DESTDIR)$(USER_BINDIR)"
 	install -m 755 "$(BIN)" "$(DESTDIR)$(USER_BINDIR)/$(notdir $(BIN))"
+	install -d "$(DESTDIR)$(USER_DOCDIR)"
+	install -m 644 LICENSE THIRD_PARTY_LICENSES "$(DESTDIR)$(USER_DOCDIR)"
 
 uninstall:
 	rm -f "$(DESTDIR)$(BINDIR)/$(notdir $(BIN))"
+	rm -f "$(DESTDIR)$(DOCDIR)/LICENSE" \
+	      "$(DESTDIR)$(DOCDIR)/THIRD_PARTY_LICENSES"
+	rmdir "$(DESTDIR)$(DOCDIR)" 2>/dev/null || true
 
 uninstall-user:
 	rm -f "$(DESTDIR)$(USER_BINDIR)/$(notdir $(BIN))"
+	rm -f "$(DESTDIR)$(USER_DOCDIR)/LICENSE" \
+	      "$(DESTDIR)$(USER_DOCDIR)/THIRD_PARTY_LICENSES"
+	rmdir "$(DESTDIR)$(USER_DOCDIR)" 2>/dev/null || true
 
 $(BIN): $(BUILD_DIR) $(OBJ_DIR) $(MAIN_OBJS)
 	$(CXX) $(CXXFLAGS) $(MAIN_OBJS) -o $@
