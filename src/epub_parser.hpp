@@ -61,8 +61,7 @@ void collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
 
 // Parse all text and elements contained within `parent` recursively,
 // appending result to `out`.
-// The elements `<em>`, `<i>`, `<strong>`, `<b>`, `<code>`, `<br/>`, `<h1>` to
-// `<h6>`,
+// The elements `<em>`, `<i>`, `<strong>`, `<b>`, `<br/>`, `<h1>` to `<h6>`,
 // `<p>`, `<li>`, `<image/>`, and `<img/>` will be handled,
 // all other elements will be ignored and traversed through.
 void parseContentElem(const tinyxml2::XMLElement* parent, std::string& out,

@@ -130,7 +130,7 @@ void parseContentElem(const XMLElement* parent, std::string& out,
         }
         if (const XMLElement* childElem = childNode->ToElement()) {
             const std::string_view name{childElem->Name()};
-            if (name == "b" || name == "strong" || name == "code") {
+            if (name == "b" || name == "strong") {
                 out += esc + bold;
                 parseContentElem(childElem, out, chapterAbs);
                 out += esc + resetBold;
