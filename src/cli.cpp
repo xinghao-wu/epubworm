@@ -46,8 +46,9 @@ enum class CliCommand {
 
 static void displayError(std::string_view message) {
     boldColorIfTerm(stderr, redFG);
-    std::cerr << "Error: " << message << '\n';
+    std::cerr << "Error: ";
     resetBoldColorIfTerm(stderr);
+    std::cerr << message << '\n';
 }
 
 static void printEpubInfo(const EpubInfo& info,
