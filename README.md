@@ -63,7 +63,7 @@ Make sure your `~/.tmux.conf` contains the following:
 # Enables 256 colors and italics
 set -g default-terminal "tmux-256color"
 
-# Allows escape sequences to pass through tmux to the underlying terminal emulator
+# Allows escape sequences to pass through tmux to the terminal emulator
 set -g allow-passthrough on
 ```
 
@@ -75,7 +75,7 @@ Make sure your `~/.byobu/.tmux.conf` contains the following:
 # Enables 256 colors and italics
 set -g default-terminal "tmux-256color"
 
-# Allows escape sequences to pass through Byobu to the underlying terminal emulator
+# Allows escape sequences to pass through Byobu to the terminal emulator
 set -g allow-passthrough on
 ```
 

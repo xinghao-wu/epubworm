@@ -1,6 +1,5 @@
 CXX ?= g++
-COMMON_CXXFLAGS := -std=c++23 -Wall -Wextra -Wpedantic -Wconversion \
-		   -Wsign-conversion -Weffc++ -MMD -MP
+COMMON_CXXFLAGS := -std=c++23 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Weffc++ -MMD -MP
 RELEASE_CXXFLAGS ?= -O2
 DEBUG_CXXFLAGS ?= -g3 -fsanitize=address
 RELEASE_BUILD_CXXFLAGS = $(COMMON_CXXFLAGS) $(RELEASE_CXXFLAGS) $(CXXFLAGS)
@@ -31,16 +30,12 @@ LIB_OBJS := $(LIB_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 MAIN_OBJS := $(OBJ_DIR)/main.o $(LIB_OBJS)
 LIB_OBJS_DEBUG := $(LIB_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DEBUG)/%.o)
 MAIN_OBJS_DEBUG := $(OBJ_DIR_DEBUG)/main.o $(LIB_OBJS_DEBUG)
-TEST_OBJS := $(OBJ_DIR_DEBUG)/test_main.o $(OBJ_DIR_DEBUG)/test.o \
-	     $(LIB_OBJS_DEBUG)
-VENDORED_FILES := tinyxml2.cpp tinyxml2.hpp miniz_cpp.hpp stb_image.hpp \
-		  base64.hpp
-PROJECT_FILES := $(filter-out $(addprefix $(SRC_DIR)/,$(VENDORED_FILES)), \
-		 $(wildcard $(SRC_DIR)/*.cpp $(SRC_DIR)/*.hpp))
+TEST_OBJS := $(OBJ_DIR_DEBUG)/test_main.o $(OBJ_DIR_DEBUG)/test.o $(LIB_OBJS_DEBUG)
+VENDORED_FILES := tinyxml2.cpp tinyxml2.hpp miniz_cpp.hpp stb_image.hpp base64.hpp
+PROJECT_FILES := $(filter-out $(addprefix $(SRC_DIR)/,$(VENDORED_FILES)), $(wildcard $(SRC_DIR)/*.cpp $(SRC_DIR)/*.hpp))
 
 .DELETE_ON_ERROR:
-.PHONY: clean fmt fmt-check fmt-check-diff lint lint-fix test release debug \
-	install install-user uninstall uninstall-user
+.PHONY: clean fmt fmt-check fmt-check-diff lint lint-fix test release debug install install-user uninstall uninstall-user
 
 release: $(BIN)
 
@@ -60,27 +55,22 @@ install-user: $(BIN)
 
 uninstall:
 	rm -f "$(DESTDIR)$(BINDIR)/$(notdir $(BIN))"
-	rm -f "$(DESTDIR)$(DOCDIR)/LICENSE" \
-	      "$(DESTDIR)$(DOCDIR)/THIRD_PARTY_LICENSES"
+	rm -f "$(DESTDIR)$(DOCDIR)/LICENSE" "$(DESTDIR)$(DOCDIR)/THIRD_PARTY_LICENSES"
 	rmdir "$(DESTDIR)$(DOCDIR)" 2>/dev/null || true
 
 uninstall-user:
 	rm -f "$(DESTDIR)$(USER_BINDIR)/$(notdir $(BIN))"
-	rm -f "$(DESTDIR)$(USER_DOCDIR)/LICENSE" \
-	      "$(DESTDIR)$(USER_DOCDIR)/THIRD_PARTY_LICENSES"
+	rm -f "$(DESTDIR)$(USER_DOCDIR)/LICENSE" "$(DESTDIR)$(USER_DOCDIR)/THIRD_PARTY_LICENSES"
 	rmdir "$(DESTDIR)$(USER_DOCDIR)" 2>/dev/null || true
 
 $(BIN): $(BUILD_DIR) $(OBJ_DIR) $(MAIN_OBJS)
-	$(CXX) $(RELEASE_BUILD_CXXFLAGS) $(LDFLAGS) \
-		$(MAIN_OBJS) -o $@ $(LDLIBS) $(PLATFORM_LDLIBS)
+	$(CXX) $(RELEASE_BUILD_CXXFLAGS) $(LDFLAGS) $(MAIN_OBJS) -o $@ $(LDLIBS) $(PLATFORM_LDLIBS)
 
 $(DEBUG_BIN): $(BUILD_DIR) $(OBJ_DIR_DEBUG) $(MAIN_OBJS_DEBUG)
-	$(CXX) $(DEBUG_BUILD_CXXFLAGS) $(LDFLAGS) \
-		$(MAIN_OBJS_DEBUG) -o $@ $(LDLIBS) $(PLATFORM_LDLIBS)
+	$(CXX) $(DEBUG_BUILD_CXXFLAGS) $(LDFLAGS) $(MAIN_OBJS_DEBUG) -o $@ $(LDLIBS) $(PLATFORM_LDLIBS)
 
 $(TEST_BIN): $(BUILD_DIR) $(OBJ_DIR_DEBUG) $(TEST_OBJS)
-	$(CXX) $(DEBUG_BUILD_CXXFLAGS) $(LDFLAGS) \
-		$(TEST_OBJS) -o $@ $(LDLIBS) $(PLATFORM_LDLIBS)
+	$(CXX) $(DEBUG_BUILD_CXXFLAGS) $(LDFLAGS) $(TEST_OBJS) -o $@ $(LDLIBS) $(PLATFORM_LDLIBS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	$(CXX) $(CPPFLAGS) $(RELEASE_BUILD_CXXFLAGS) -c $< -o $@
