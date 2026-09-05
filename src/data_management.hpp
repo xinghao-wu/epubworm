@@ -52,10 +52,10 @@ void initLibrary(const std::filesystem::path& libraryFileAbs);
 void setConfigLineLength(const std::filesystem::path& configFileAbs,
                          int chars);
 
-// Generates a SHA-256 hash of `fileAbs` via `shasum` and returns it truncated
-// to 128 bits (32 hex characters).
+// Generates a SHA-256 hash of `fileAbs` via `shasum` on macOS and `sha256sum`
+// otherwise, then returns it truncated to 128 bits (32 hex characters).
 // Throws `std::invalid_argument`, `std::system_error`, or `std::runtime_error`
-// from `execute()` on failure to run `shasum`.
+// from `execute()` on failure to run the hashing command.
 [[nodiscard]] std::string
 getTruncatedSHA256Sum(const std::filesystem::path& fileAbs);
 

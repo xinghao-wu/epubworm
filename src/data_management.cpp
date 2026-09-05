@@ -122,8 +122,13 @@ void setConfigLineLength(const fs::path& configFileAbs, int chars) {
 }
 
 std::string getTruncatedSHA256Sum(const fs::path& fileAbs) {
+#ifdef __APPLE__
     const std::string sha256{execute(std::vector<std::string>{
             "shasum", "-a", "256", fileAbs.string()})};
+#else
+    const std::string sha256{
+            execute(std::vector<std::string>{"sha256sum", fileAbs.string()})};
+#endif
     return sha256.substr(0, 32); // 128 bits = 32 hex chars
 }
 
