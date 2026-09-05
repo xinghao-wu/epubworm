@@ -26,7 +26,7 @@ macOS builds require the Xcode Command Line Tools:
 xcode-select --install
 ```
 
-Install system-wide:
+Install system-wide **(recommended)**:
 ```bash
 sudo make install CXX=clang++
 ```
@@ -35,7 +35,7 @@ Or, install for only the current user:
 ```bash
 make install-user CXX=clang++
 ```
-When on macOS and installing for the current user, ensure `~/.local/bin` is in `$PATH`.
+When on macOS and installing for only the current user, ensure `~/.local/bin` is in `$PATH` and `~/.local/share/zsh/site-functions` is in Zsh's `$fpath`.
 
 ## Image Support
 epubworm uses the unicode placeholders feature of the [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/) to display images. Any combination of supported terminal + supported multiplexer (or no multiplexer at all) works.

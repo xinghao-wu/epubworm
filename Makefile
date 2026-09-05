@@ -17,6 +17,15 @@ BINDIR ?= $(PREFIX)/bin
 USER_BINDIR ?= $(USER_PREFIX)/bin
 DOCDIR ?= $(PREFIX)/share/doc/epubworm
 USER_DOCDIR ?= $(USER_PREFIX)/share/doc/epubworm
+DATADIR ?= $(PREFIX)/share
+XDG_DATA_HOME_FIRST_CHAR := $(shell printf '%.1s' "$$XDG_DATA_HOME")
+USER_COMPLETION_DATADIR ?= $(if $(filter /,$(XDG_DATA_HOME_FIRST_CHAR)),$(XDG_DATA_HOME),$(HOME)/.local/share)
+BASH_COMPLETION_DIR ?= $(DATADIR)/bash-completion/completions
+USER_BASH_COMPLETION_DIR ?= $(USER_COMPLETION_DATADIR)/bash-completion/completions
+ZSH_COMPLETION_DIR ?= $(DATADIR)/zsh/site-functions
+USER_ZSH_COMPLETION_DIR ?= $(USER_COMPLETION_DATADIR)/zsh/site-functions
+FISH_COMPLETION_DIR ?= $(DATADIR)/fish/vendor_completions.d
+USER_FISH_COMPLETION_DIR ?= $(USER_COMPLETION_DATADIR)/fish/vendor_completions.d
 UNAME_S := $(shell uname -s)
 PLATFORM_LDLIBS :=
 ifeq ($(UNAME_S),Darwin)
@@ -46,22 +55,34 @@ install: $(BIN)
 	install -m 755 "$(BIN)" "$(DESTDIR)$(BINDIR)/$(notdir $(BIN))"
 	install -d "$(DESTDIR)$(DOCDIR)"
 	install -m 644 LICENSE THIRD_PARTY_LICENSES "$(DESTDIR)$(DOCDIR)"
+	install -d "$(DESTDIR)$(BASH_COMPLETION_DIR)" "$(DESTDIR)$(ZSH_COMPLETION_DIR)" "$(DESTDIR)$(FISH_COMPLETION_DIR)"
+	install -m 644 completions/bash/epubworm "$(DESTDIR)$(BASH_COMPLETION_DIR)/epubworm"
+	install -m 644 completions/zsh/_epubworm "$(DESTDIR)$(ZSH_COMPLETION_DIR)/_epubworm"
+	install -m 644 completions/fish/epubworm.fish "$(DESTDIR)$(FISH_COMPLETION_DIR)/epubworm.fish"
 
 install-user: $(BIN)
 	install -d "$(DESTDIR)$(USER_BINDIR)"
 	install -m 755 "$(BIN)" "$(DESTDIR)$(USER_BINDIR)/$(notdir $(BIN))"
 	install -d "$(DESTDIR)$(USER_DOCDIR)"
 	install -m 644 LICENSE THIRD_PARTY_LICENSES "$(DESTDIR)$(USER_DOCDIR)"
+	install -d "$(DESTDIR)$(USER_BASH_COMPLETION_DIR)" "$(DESTDIR)$(USER_ZSH_COMPLETION_DIR)" "$(DESTDIR)$(USER_FISH_COMPLETION_DIR)"
+	install -m 644 completions/bash/epubworm "$(DESTDIR)$(USER_BASH_COMPLETION_DIR)/epubworm"
+	install -m 644 completions/zsh/_epubworm "$(DESTDIR)$(USER_ZSH_COMPLETION_DIR)/_epubworm"
+	install -m 644 completions/fish/epubworm.fish "$(DESTDIR)$(USER_FISH_COMPLETION_DIR)/epubworm.fish"
 
 uninstall:
 	rm -f "$(DESTDIR)$(BINDIR)/$(notdir $(BIN))"
 	rm -f "$(DESTDIR)$(DOCDIR)/LICENSE" "$(DESTDIR)$(DOCDIR)/THIRD_PARTY_LICENSES"
+	rm -f "$(DESTDIR)$(BASH_COMPLETION_DIR)/epubworm" "$(DESTDIR)$(ZSH_COMPLETION_DIR)/_epubworm" "$(DESTDIR)$(FISH_COMPLETION_DIR)/epubworm.fish"
 	rmdir "$(DESTDIR)$(DOCDIR)" 2>/dev/null || true
+	rmdir "$(DESTDIR)$(BASH_COMPLETION_DIR)" "$(DESTDIR)$(ZSH_COMPLETION_DIR)" "$(DESTDIR)$(FISH_COMPLETION_DIR)" 2>/dev/null || true
 
 uninstall-user:
 	rm -f "$(DESTDIR)$(USER_BINDIR)/$(notdir $(BIN))"
 	rm -f "$(DESTDIR)$(USER_DOCDIR)/LICENSE" "$(DESTDIR)$(USER_DOCDIR)/THIRD_PARTY_LICENSES"
+	rm -f "$(DESTDIR)$(USER_BASH_COMPLETION_DIR)/epubworm" "$(DESTDIR)$(USER_ZSH_COMPLETION_DIR)/_epubworm" "$(DESTDIR)$(USER_FISH_COMPLETION_DIR)/epubworm.fish"
 	rmdir "$(DESTDIR)$(USER_DOCDIR)" 2>/dev/null || true
+	rmdir "$(DESTDIR)$(USER_BASH_COMPLETION_DIR)" "$(DESTDIR)$(USER_ZSH_COMPLETION_DIR)" "$(DESTDIR)$(USER_FISH_COMPLETION_DIR)" 2>/dev/null || true
 
 $(BIN): $(BUILD_DIR) $(OBJ_DIR) $(MAIN_OBJS)
 	$(CXX) $(RELEASE_BUILD_CXXFLAGS) $(LDFLAGS) $(MAIN_OBJS) -o $@ $(LDLIBS) $(PLATFORM_LDLIBS)

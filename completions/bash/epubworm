@@ -1,0 +1,18 @@
+_epubworm()
+{
+    local cur
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+
+    if (( COMP_CWORD == 1 )); then
+        COMPREPLY=( $(compgen -W 'add remove rm delete list ls open set-line-length -h --help' -- "$cur") )
+        return
+    fi
+
+    if [[ ${COMP_WORDS[1]} == add ]]; then
+        _filedir epub
+    fi
+}
+
+complete -F _epubworm epubworm

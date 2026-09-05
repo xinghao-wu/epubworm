@@ -1,0 +1,33 @@
+#compdef epubworm
+
+local context state state_descr line
+local curcontext="$curcontext"
+typeset -A opt_args
+local -a commands
+
+commands=(
+  'add:Add .epub files to the library'
+  'remove:Remove an epub from the library'
+  'rm:Remove an epub from the library'
+  'delete:Remove an epub from the library'
+  'list:List epubs in the library'
+  'ls:List epubs in the library'
+  'open:Open an epub from the library'
+  'set-line-length:Set the maximum characters per line'
+)
+
+_arguments -C \
+  '(- 1 *)'{-h,--help}'[Show help page]' \
+  '1:command:->command' \
+  '*::argument:->argument'
+
+case $state in
+  command)
+    _describe 'command' commands
+    ;;
+  argument)
+    if [[ $line[1] == add ]]; then
+      _files -g '*.(epub|EPUB)(-.)'
+    fi
+    ;;
+esac
