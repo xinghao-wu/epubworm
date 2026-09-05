@@ -1,6 +1,42 @@
 # epubworm
 An image-capable, minimalistic TUI epub reader written in C++.
 
+## Install
+epubworm supports Linux and macOS.
+
+### Build From Source
+First, clone the repo and `cd` into it.
+
+#### Linux
+Linux builds require `make` and `g++` installed.
+
+Install system-wide:
+```bash
+sudo make install
+```
+
+Or, install for only the current user:
+```bash
+make install-user
+```
+
+#### macOS
+macOS builds require the Xcode Command Line Tools:
+```bash
+xcode-select --install
+```
+
+Install system-wide:
+```bash
+sudo make install CXX=clang++
+```
+
+Or, install for only the current user:
+```bash
+make install-user CXX=clang++
+```
+When on macOS and installing for the current user, ensure `~/.local/bin` is in `$PATH`.
+
 ## Image Support
 epubworm uses the unicode placeholders feature of the [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/) to display images. Any combination of supported terminal + supported multiplexer (or no multiplexer at all) works.
 
