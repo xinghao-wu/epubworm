@@ -72,16 +72,15 @@ static void printLibraryUpdate(std::string_view label, std::string_view color,
     boldColorIfTerm(stdout, color);
     std::cout << label;
     resetBoldColorIfTerm(stdout);
-    std::cout << ' ';
     printEpubInfo(info, libraryRoot);
     std::cout << '\n';
 }
 
 static void displayDuplicateEpub(std::string_view filePath) {
     boldColorIfTerm(stdout, redFG);
-    std::cout << "Epub is already in library: " << filePath;
+    std::cout << "Epub is already in library: ";
     resetBoldColorIfTerm(stdout);
-    std::cout << '\n';
+    std::cout << filePath << '\n';
 }
 
 static CliCommand parseCommand(int argc, char** argv) {
@@ -223,7 +222,7 @@ int dispatchCli(int argc, char** argv) {
             if (!result.has_value()) {
                 displayDuplicateEpub(argv[argIndex]);
             } else {
-                printLibraryUpdate("Added:", greenFG, result.value(),
+                printLibraryUpdate("Added: ", greenFG, result.value(),
                                    libraryRoot);
             }
             ++argIndex;
@@ -253,7 +252,7 @@ int dispatchCli(int argc, char** argv) {
             throw std::runtime_error{
                     "root element `<library>` missing in library file"};
         }
-        printLibraryUpdate("Removed:", greenFG, removed.value(), libraryRoot);
+        printLibraryUpdate("Removed: ", greenFG, removed.value(), libraryRoot);
         return 0;
     }
     case CliCommand::list:
@@ -277,9 +276,8 @@ int dispatchCli(int argc, char** argv) {
         }
         setConfigLineLength(configFileAbs, chars);
         boldColorIfTerm(stdout, greenFG);
-        std::cout << "Line length set to " << chars;
+        std::cout << "Line length set to " << chars << '\n';
         resetBoldColorIfTerm(stdout);
-        std::cout << '\n';
         return 0;
     }
     default:
@@ -396,9 +394,8 @@ void listLibrary(const fs::path& shareAbs) {
     }
 
     boldColorIfTerm(stdout, greenFG);
-    std::cout << "Last read:";
+    std::cout << "Last read: ";
     resetBoldColorIfTerm(stdout);
-    std::cout << ' ';
     boldColorIfTerm(stdout, magentaFG);
     std::cout << lastRead->title;
     resetBoldColorIfTerm(stdout);
