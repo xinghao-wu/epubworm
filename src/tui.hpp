@@ -57,31 +57,31 @@ inline constexpr Key ctrlB{2};
 inline constexpr Key ctrlF{6};
 inline constexpr Key ctrlU{21};
 inline constexpr Key ctrlD{4};
-inline constexpr std::string esc{'\033'};
-inline constexpr std::string imgCellPlaceholder{"\U0010EEEE"};
+inline const std::string esc{'\033'};
+inline const std::string imgCellPlaceholder{"\U0010EEEE"};
 // Don't forget to modify `getInvisEscSeqLen()` when you change constants
 // below.
-inline constexpr std::string escEnd{esc + '\\'};
-inline constexpr std::string clearScreen{"[2J"};
-inline constexpr std::string posCursorTopLeft{"[H"};
-inline constexpr std::string eraseLine{"[2K"};
-inline constexpr std::string hideCursor{"[?25l"};
-inline constexpr std::string showCursor{"[?25h"};
-inline constexpr std::string enableMouseEventReporting{"[?1003h"};
-inline constexpr std::string disableMouseEventReporting{"[?1003l"};
-inline constexpr std::string enableDecimalReportingFormat{"[?1006h"};
-inline constexpr std::string disableDecimalReportingFormat{"[?1006l"};
-inline constexpr std::string bold{"[1m"};
-inline constexpr std::string resetBold{"[22m"};
-inline constexpr std::string italic{"[3m"};
-inline constexpr std::string resetItalic{"[23m"};
-inline constexpr std::string yellowFG{"[33m"};
-inline constexpr std::string redFG{"[31m"};
-inline constexpr std::string greenFG{"[32m"};
-inline constexpr std::string blueFG{"[34m"};
-inline constexpr std::string magentaFG{"[35m"};
-inline constexpr std::string cyanFG{"[36m"};
-inline constexpr std::string resetFG{"[39m"};
+inline const std::string escEnd{esc + '\\'};
+inline const std::string clearScreen{"[2J"};
+inline const std::string posCursorTopLeft{"[H"};
+inline const std::string eraseLine{"[2K"};
+inline const std::string hideCursor{"[?25l"};
+inline const std::string showCursor{"[?25h"};
+inline const std::string enableMouseEventReporting{"[?1003h"};
+inline const std::string disableMouseEventReporting{"[?1003l"};
+inline const std::string enableDecimalReportingFormat{"[?1006h"};
+inline const std::string disableDecimalReportingFormat{"[?1006l"};
+inline const std::string bold{"[1m"};
+inline const std::string resetBold{"[22m"};
+inline const std::string italic{"[3m"};
+inline const std::string resetItalic{"[23m"};
+inline const std::string yellowFG{"[33m"};
+inline const std::string redFG{"[31m"};
+inline const std::string greenFG{"[32m"};
+inline const std::string blueFG{"[34m"};
+inline const std::string magentaFG{"[35m"};
+inline const std::string cyanFG{"[36m"};
+inline const std::string resetFG{"[39m"};
 
 // Load an image to the terminal (create a virtual placement)
 // to be displayed later using special unicode characters.
