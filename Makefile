@@ -1,8 +1,10 @@
-CXX := g++
-CXXFLAGS := -std=c++23 -O2 -Wall -Wextra -Wpedantic -Wconversion \
-	    -Wsign-conversion -Weffc++ -MMD -MP
-DEBUG_CXXFLAGS := -std=c++23 -g3 -fsanitize=address -Wall -Wextra -Wpedantic \
-		  -Wconversion -Wsign-conversion -Weffc++ -MMD -MP
+CXX ?= g++
+COMMON_CXXFLAGS := -std=c++23 -Wall -Wextra -Wpedantic -Wconversion \
+		   -Wsign-conversion -Weffc++ -MMD -MP
+RELEASE_CXXFLAGS ?= -O2
+DEBUG_CXXFLAGS ?= -g3 -fsanitize=address
+RELEASE_BUILD_CXXFLAGS = $(COMMON_CXXFLAGS) $(RELEASE_CXXFLAGS) $(CXXFLAGS)
+DEBUG_BUILD_CXXFLAGS = $(COMMON_CXXFLAGS) $(DEBUG_CXXFLAGS) $(CXXFLAGS)
 SRC_DIR := src
 BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj
@@ -16,6 +18,11 @@ BINDIR ?= $(PREFIX)/bin
 USER_BINDIR ?= $(USER_PREFIX)/bin
 DOCDIR ?= $(PREFIX)/share/doc/epubworm
 USER_DOCDIR ?= $(USER_PREFIX)/share/doc/epubworm
+UNAME_S := $(shell uname -s)
+PLATFORM_LDLIBS :=
+ifeq ($(UNAME_S),Darwin)
+PLATFORM_LDLIBS += -liconv
+endif
 SRCS := $(wildcard $(SRC_DIR)/*.cpp)
 MAIN_SRC := $(SRC_DIR)/main.cpp
 TEST_SRCS := $(SRC_DIR)/test_main.cpp $(SRC_DIR)/test.cpp
@@ -64,26 +71,29 @@ uninstall-user:
 	rmdir "$(DESTDIR)$(USER_DOCDIR)" 2>/dev/null || true
 
 $(BIN): $(BUILD_DIR) $(OBJ_DIR) $(MAIN_OBJS)
-	$(CXX) $(CXXFLAGS) $(MAIN_OBJS) -o $@
+	$(CXX) $(RELEASE_BUILD_CXXFLAGS) $(LDFLAGS) \
+		$(MAIN_OBJS) -o $@ $(LDLIBS) $(PLATFORM_LDLIBS)
 
 $(DEBUG_BIN): $(BUILD_DIR) $(OBJ_DIR_DEBUG) $(MAIN_OBJS_DEBUG)
-	$(CXX) $(DEBUG_CXXFLAGS) $(MAIN_OBJS_DEBUG) -o $@
+	$(CXX) $(DEBUG_BUILD_CXXFLAGS) $(LDFLAGS) \
+		$(MAIN_OBJS_DEBUG) -o $@ $(LDLIBS) $(PLATFORM_LDLIBS)
 
 $(TEST_BIN): $(BUILD_DIR) $(OBJ_DIR_DEBUG) $(TEST_OBJS)
-	$(CXX) $(DEBUG_CXXFLAGS) $(TEST_OBJS) -o $@
+	$(CXX) $(DEBUG_BUILD_CXXFLAGS) $(LDFLAGS) \
+		$(TEST_OBJS) -o $@ $(LDLIBS) $(PLATFORM_LDLIBS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(RELEASE_BUILD_CXXFLAGS) -c $< -o $@
 
 $(OBJ_DIR_DEBUG)/%.o: $(SRC_DIR)/%.cpp
-	$(CXX) $(DEBUG_CXXFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(DEBUG_BUILD_CXXFLAGS) -c $< -o $@
 
 # specialized object compilation for tinyxml2.cpp to suppress warnings
 $(OBJ_DIR)/tinyxml2.o: $(SRC_DIR)/tinyxml2.cpp
-	$(CXX) $(CXXFLAGS) -w -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(RELEASE_BUILD_CXXFLAGS) -w -c $< -o $@
 
 $(OBJ_DIR_DEBUG)/tinyxml2.o: $(SRC_DIR)/tinyxml2.cpp
-	$(CXX) $(DEBUG_CXXFLAGS) -w -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(DEBUG_BUILD_CXXFLAGS) -w -c $< -o $@
 
 $(BUILD_DIR) $(OBJ_DIR) $(OBJ_DIR_DEBUG):
 	mkdir -p $@
@@ -113,6 +123,6 @@ lint:
 lint-fix:
 	clang-tidy --fix $(PROJECT_FILES)
 
-# g++-generated dependency files for incremental rebuilds on header changes
+# Compiler-generated dependency files for incremental rebuilds on header changes
 DEPS := $(MAIN_OBJS:.o=.d) $(MAIN_OBJS_DEBUG:.o=.d) $(TEST_OBJS:.o=.d)
 -include $(DEPS)

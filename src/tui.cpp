@@ -8,7 +8,6 @@
 
 #include <algorithm>
 #include <array>
-#include <asm-generic/ioctls.h>
 #include <cassert>
 #include <cerrno>
 #include <chrono>
@@ -42,6 +41,10 @@
 #include <utility>
 #include <vector>
 #include <wchar.h>
+
+#ifdef __APPLE__
+#include <crt_externs.h>
+#endif
 
 using namespace tinyxml2;
 namespace fs = std::filesystem;
@@ -241,7 +244,7 @@ void enableRawMode() {
 
     termios rawTermFlags{g_ogTermFlags};
     // disable echo and canonical mode
-    rawTermFlags.c_lflag &= static_cast<unsigned int>(~(ECHO | ICANON));
+    rawTermFlags.c_lflag &= ~static_cast<tcflag_t>(ECHO | ICANON);
     // let `read()` return 0 every 100ms when not receiving input
     rawTermFlags.c_cc[VMIN] = 0;
     rawTermFlags.c_cc[VTIME] = 1;
@@ -960,9 +963,14 @@ std::string execute(const std::vector<std::string>& argV) {
     }
 
     pid_t pid{};
+#ifdef __APPLE__
+    char* const* const environment{*_NSGetEnviron()};
+#else
+    char* const* const environment{environ};
+#endif
     const int spawnStatus{posix_spawnp(&pid, posixAPIArgV.front(),
                                        &fileActions, nullptr,
-                                       posixAPIArgV.data(), environ)};
+                                       posixAPIArgV.data(), environment)};
     posix_spawn_file_actions_destroy(&fileActions);
     close(pipeFds[1]); // parent closes write end so `read()` can hit EOF
     if (spawnStatus != 0) {

@@ -377,11 +377,10 @@ void execute() {
     assert(::execute(std::vector<std::string>{"printf", "a\\nb\\nc\\n"})
            == "a\nb\nc\n");
 
-    const std::string largeOutput{
-            ::execute(std::vector<std::string>{"seq", "50000"})};
-    assert(largeOutput.size() > 65536);
-    assert(largeOutput.starts_with("1\n"));
-    assert(largeOutput.ends_with("50000\n"));
+    const std::string expectedLargeOutput(70000, 'x');
+    const std::string largeOutput{::execute(
+            std::vector<std::string>{"printf", "%s", expectedLargeOutput})};
+    assert(largeOutput == expectedLargeOutput);
 }
 
 void displayChapter() {

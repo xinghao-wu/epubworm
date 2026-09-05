@@ -44,3 +44,6 @@ Checks: >
   -clang-analyzer-deadcode.DeadStores,
   -modernize-deprecated-headers,
   -hicpp-deprecated-headers
+CheckOptions:
+  # sys/ioctl.h is the portable provider for this Linux UAPI definition.
+  misc-include-cleaner.IgnoreHeaders: 'asm-generic/ioctls\.h'
