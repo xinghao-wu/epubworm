@@ -92,7 +92,7 @@ inline constexpr std::string resetFG{"[39m"};
 // Throws `std::runtime_error` if:
 // `id` is not in valid range,
 // `imgAbs` could not be decoded into pixel data,
-// or the temp image data shared memory file failed to open.
+// or the temp image data file failed to open.
 void loadImg(const std::filesystem::path& imgAbs, std::uint32_t id, int rows,
              int cols);
 

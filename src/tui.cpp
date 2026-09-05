@@ -60,10 +60,9 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     int xPixels{};
     int yPixels{};
     int channels{};
-    constexpr int noRequiredChannelNum{0};
 
     unsigned char* pixelData{stbi_load(imgAbs.c_str(), &xPixels, &yPixels,
-                                       &channels, noRequiredChannelNum)};
+                                       &channels, STBI_default)};
     if (pixelData == nullptr) {
         throw std::runtime_error{stbi_failure_reason()};
     }
@@ -73,8 +72,12 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
             reinterpret_cast<const char*>(pixelData),
             static_cast<std::size_t>(pixelDataSize)};
 
+    fs::path tempDataDirAbs{"/dev/shm"};
+    if (!fs::exists(tempDataDirAbs)) {
+        tempDataDirAbs = fs::temp_directory_path();
+    }
     const fs::path tempDataFileAbs{
-            "/dev/shm/epubworm-img-data-tty-graphics-protocol"};
+            tempDataDirAbs / "epubworm-img-data-tty-graphics-protocol"};
     std::ofstream tempDataFile{tempDataFileAbs};
     if (!tempDataFile.is_open()) {
         throw std::runtime_error{"image temp data file failed to open"};
@@ -126,32 +129,39 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
     if (rows == 0 || cols == 0) {
         winsize winInfo{};
         ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
-        const int cellXPix{winInfo.ws_xpixel / winInfo.ws_col};
-        const int cellYPix{winInfo.ws_ypixel / winInfo.ws_row};
+        if (winInfo.ws_xpixel == 0 || winInfo.ws_ypixel == 0) {
+            rows = 35;
+            cols = 60;
+        } else {
+            const int cellXPix{winInfo.ws_xpixel / winInfo.ws_col};
+            const int cellYPix{winInfo.ws_ypixel / winInfo.ws_row};
 
-        int imgXPix{};
-        int imgYPix{};
-        int imgChannels{};
-        stbi_info(imgAbs.c_str(), &imgXPix, &imgYPix, &imgChannels);
+            int imgXPix{};
+            int imgYPix{};
+            int imgChannels{};
+            stbi_info(imgAbs.c_str(), &imgXPix, &imgYPix, &imgChannels);
 
-        const int rowsDesired{(imgYPix / cellYPix) + 1};
-        const int colsDesired{(imgXPix / cellXPix) + 1};
-        const int maxRows{winInfo.ws_row - 1};
-        const int maxCols{winInfo.ws_col - horizontalMarginChars * 2};
-        const double rowShrinkMultiplier{maxRows
-                                         / static_cast<double>(rowsDesired)};
-        const double colShrinkMultiplier{maxCols
-                                         / static_cast<double>(colsDesired)};
-        rows = rowsDesired;
-        cols = colsDesired;
+            const int rowsDesired{(imgYPix / cellYPix) + 1};
+            const int colsDesired{(imgXPix / cellXPix) + 1};
+            const int maxRows{winInfo.ws_row - 1};
+            const int maxCols{winInfo.ws_col - horizontalMarginChars * 2};
+            const double rowShrinkMultiplier{
+                    maxRows / static_cast<double>(rowsDesired)};
+            const double colShrinkMultiplier{
+                    maxCols / static_cast<double>(colsDesired)};
+            rows = rowsDesired;
+            cols = colsDesired;
 
-        if (rowShrinkMultiplier < 1 || colShrinkMultiplier < 1) {
-            if (rowShrinkMultiplier < colShrinkMultiplier) {
-                rows = maxRows;
-                cols = static_cast<int>(rowShrinkMultiplier * colsDesired) + 1;
-            } else {
-                cols = maxCols;
-                rows = static_cast<int>(colShrinkMultiplier * rowsDesired) + 1;
+            if (rowShrinkMultiplier < 1 || colShrinkMultiplier < 1) {
+                if (rowShrinkMultiplier < colShrinkMultiplier) {
+                    rows = maxRows;
+                    cols = static_cast<int>(rowShrinkMultiplier * colsDesired)
+                           + 1;
+                } else {
+                    cols = maxCols;
+                    rows = static_cast<int>(colShrinkMultiplier * rowsDesired)
+                           + 1;
+                }
             }
         }
     }
