@@ -5,15 +5,15 @@ epubworm is an image-capable TUI epub reader written in C++23.
 
 ## Command Reference
 ```bash
-make fmt            # Applies proposed formatting changes.
-make lint           # Runs clang-tidy (ignore "suppressed warnings" from this).
-make test           # Builds and run the test suite.
-make                # Builds release binary.
+make fmt     # Runs clang-format to format code.
+make lint    # Lints with clang-tidy (ignore "suppressed warnings" from this).
+make test    # Builds and runs the test suite.
+make         # Builds release binary.
 ```
 
 ## Repository Structure
 - Project source and vendored libraries live flat in `src/`.
-- Unzipped and zipped epubs used for testing are found at `test_epubs/`.
+- Unzipped and zipped test fixture epubs are found at `test_epubs/`.
 
 ## Vendored Libraries
 - tinyxml2
