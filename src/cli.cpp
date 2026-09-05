@@ -236,7 +236,8 @@ int dispatchCli(int argc, char** argv) {
         const std::expected<EpubInfo, LibraryUpdateError> removed{
                 deleteFromLibrary(argv[2], shareAbs)};
         if (!removed.has_value()) {
-            displayError("epub id was not found or is ambiguous");
+            displayError("epub with provided id hash not found, or the prefix "
+                         "is ambiguous");
             return 1;
         }
 
@@ -260,7 +261,8 @@ int dispatchCli(int argc, char** argv) {
         return 0;
     case CliCommand::open:
         if (!readEpubInLibrary(argv[2], shareAbs, conf.lineLength)) {
-            displayError("epub id was not found or is ambiguous");
+            displayError("epub with provided id hash not found, or the prefix "
+                         "is ambiguous");
             return 1;
         }
         return 0;
@@ -305,19 +307,23 @@ void displayHelp() {
     boldColorIfTerm(stdout, yellowFG);
     std::cout << "Commands:\n";
     resetBoldColorIfTerm(stdout);
-    printAligned("  -h, --help", "Display this help message");
     printAligned("  add <file>...", "Add .epub files to library");
-    printAligned("  rm, remove <id prefix>", "Remove epub from library");
-    printAligned("  open <id prefix>", "Open TUI to read epub in library");
+    printAligned("  rm, remove <id hash>", "Remove epub from library");
+    printAligned("  open <id hash>", "Open TUI to read epub in library");
     printAligned("  ls, list", "List info of epubs in library");
     printAligned("  set-line-length <chars>",
                  "Set the TUI's max characters per line");
     std::cout << '\n';
 
-    std::cout << "When run without a command (as just epubworm), "
-                 "the last-read epub is opened.\n";
-    std::cout << "ids are displayed as unambiguous prefixes of at least four "
-                 "characters and can be used in place of full ids.\n\n";
+    std::cout << "Run without a command (as just epubworm) "
+                 "to open the last-read epub.\n\n";
+    std::cout
+            << "epubworm uses an id hash system similar to git's. Once added "
+               "to the library, an epub "
+               "file's hash serves as its id to be used in commands. id "
+               "hashes are displayed as unambiguous prefixes of at least four "
+               "characters. Any unambiguous prefix can be used in place of "
+               "a full id hash.\n\n";
 
     boldColorIfTerm(stdout, magentaFG);
     std::cout << "TUI Keyboard & Mouse Controls:\n";
