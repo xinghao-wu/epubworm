@@ -620,6 +620,28 @@ void findEpubById() {
     assert(::findEpubById(libraryRoot, "cccc") == nullptr);
 }
 
+void getUnambiguousEpubIdPrefix() {
+    constexpr std::string_view idA{"01234567a11111111111111111111111"};
+    constexpr std::string_view idB{"01234567b22222222222222222222222"};
+    constexpr std::string_view idC{"fedcba98333333333333333333333333"};
+
+    XMLDocument library{};
+    library.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                  "<library>"
+                  "<epub id=\"01234567a11111111111111111111111\"/>"
+                  "<epub id=\"01234567b22222222222222222222222\"/>"
+                  "<epub id=\"fedcba98333333333333333333333333\"/>"
+                  "</library>");
+    assert(!library.Error());
+
+    const XMLElement* const libraryRoot{library.FirstChildElement("library")};
+    assert(libraryRoot != nullptr);
+
+    assert(::getUnambiguousEpubIdPrefix(libraryRoot, idA) == "01234567a");
+    assert(::getUnambiguousEpubIdPrefix(libraryRoot, idB) == "01234567b");
+    assert(::getUnambiguousEpubIdPrefix(libraryRoot, idC) == "fedc");
+}
+
 void addToLibrary() {
     const fs::path tmpShareAbs{fs::temp_directory_path()
                                / "epubworm_test_addToLibrary"};

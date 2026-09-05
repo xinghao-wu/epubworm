@@ -79,6 +79,8 @@ void getTruncatedSHA256Sum();
 
 void findEpubById();
 
+void getUnambiguousEpubIdPrefix();
+
 void addToLibrary();
 
 void queryEpubElem();

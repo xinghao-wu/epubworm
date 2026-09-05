@@ -27,6 +27,7 @@ int main() {
         test::readConfig();
         test::getTruncatedSHA256Sum();
         test::findEpubById();
+        test::getUnambiguousEpubIdPrefix();
         test::addToLibrary();
         test::queryEpubElem();
         test::writeProgress();

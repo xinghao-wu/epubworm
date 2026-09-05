@@ -3,6 +3,8 @@
 #include "miniz_cpp.hpp"
 #include "tinyxml2.hpp"
 #include "tui.hpp"
+#include <algorithm>
+#include <cstddef>
 #include <expected>
 #include <filesystem>
 #include <stdexcept>
@@ -159,6 +161,35 @@ XMLElement* findEpubById(XMLElement* libraryRoot, std::string_view idPrefix) {
         }
     }
     return match;
+}
+
+std::string_view getUnambiguousEpubIdPrefix(const XMLElement* libraryRoot,
+                                            std::string_view id) {
+    std::size_t prefixLength{4};
+
+    for (const XMLElement* epub{libraryRoot->FirstChildElement("epub")};
+         epub != nullptr; epub = epub->NextSiblingElement("epub")) {
+        const char* const epubIdAttr{epub->Attribute("id")};
+        if (epubIdAttr == nullptr) {
+            throw std::runtime_error{
+                    "`<epub>` element missing `id` attribute"};
+        }
+
+        const std::string_view epubId{epubIdAttr};
+        if (epubId == id) {
+            continue;
+        }
+
+        std::size_t commonLength{};
+        while (commonLength < id.size() && commonLength < epubId.size()
+               && id[commonLength] == epubId[commonLength]) {
+            ++commonLength;
+        }
+        prefixLength =
+                std::max(prefixLength, std::min(commonLength + 1, id.size()));
+    }
+
+    return id.substr(0, prefixLength);
 }
 
 std::pair<std::string, EpubProg> queryEpubElem(const XMLElement* epub,

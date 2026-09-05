@@ -70,6 +70,14 @@ getTruncatedSHA256Sum(const std::filesystem::path& fileAbs);
 [[nodiscard]] tinyxml2::XMLElement*
 findEpubById(tinyxml2::XMLElement* libraryRoot, std::string_view idPrefix);
 
+// Returns the shortest prefix of `id` that is at least four characters and
+// does not prefix any other epub ID in `libraryRoot`. `id` is assumed to be a
+// unique full id.
+// Throws `std::runtime_error` if an `<epub>` is missing its `id`.
+[[nodiscard]] std::string_view
+getUnambiguousEpubIdPrefix(const tinyxml2::XMLElement* libraryRoot,
+                           std::string_view id);
+
 // Queries an `<epub>` element for its id and `EpubProg`.
 // `chapterAbs` is built as an absolute path:
 // `shareAbs/epubworm/extracted_epubs/<id>/<opened-chapter>`.

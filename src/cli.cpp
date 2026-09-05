@@ -6,6 +6,7 @@
 #include <charconv>
 #include <cstddef>
 #include <cstdlib>
+#include <exception>
 #include <expected>
 #include <filesystem>
 #include <iostream>
@@ -49,7 +50,8 @@ static void displayError(std::string_view message) {
     resetBoldColorIfTerm(stderr);
 }
 
-static void printEpubInfo(const EpubInfo& info) {
+static void printEpubInfo(const EpubInfo& info,
+                          const XMLElement* libraryRoot) {
     boldColorIfTerm(stdout, magentaFG);
     std::cout << info.title;
     resetBoldColorIfTerm(stdout);
@@ -57,19 +59,20 @@ static void printEpubInfo(const EpubInfo& info) {
     boldColorIfTerm(stdout, blueFG);
     std::cout << info.author;
     resetBoldColorIfTerm(stdout);
-    std::cout << " - ";
+    std::cout << " | ";
     boldColorIfTerm(stdout, yellowFG);
-    std::cout << info.id;
+    std::cout << getUnambiguousEpubIdPrefix(libraryRoot, info.id);
     resetBoldColorIfTerm(stdout);
 }
 
 static void printLibraryUpdate(std::string_view label, std::string_view color,
-                               const EpubInfo& info) {
+                               const EpubInfo& info,
+                               const XMLElement* libraryRoot) {
     boldColorIfTerm(stdout, color);
     std::cout << label;
     resetBoldColorIfTerm(stdout);
     std::cout << ' ';
-    printEpubInfo(info);
+    printEpubInfo(info, libraryRoot);
     std::cout << '\n';
 }
 
@@ -174,24 +177,58 @@ int dispatchCli(int argc, char** argv) {
         }
         const std::string id{getLastRead(library)};
         if (id.empty()) {
-            displayError("library does not contain a last read epub");
+            displayError("no last-read epub, or its no longer in library");
             return 1;
         }
         if (!readEpubInLibrary(id, shareAbs, conf.lineLength)) {
-            displayError("last read epub is not in library anymore");
+            displayError("no last-read epub, or its no longer in library");
             return 1;
         }
         return 0;
     }
     case CliCommand::add: {
+        std::vector<std::expected<EpubInfo, LibraryUpdateError>> results{};
+        results.reserve(static_cast<std::size_t>(argc - 2));
+        std::exception_ptr addError{};
         for (int i{2}; i < argc; ++i) {
-            const std::expected<EpubInfo, LibraryUpdateError> added{
-                    addToLibrary(argv[i], shareAbs)};
-            if (!added.has_value()) {
-                displayDuplicateEpub(argv[i]);
-                continue;
+            try {
+                boldColorIfTerm(stdout, cyanFG);
+                std::cout << "Processing: ";
+                resetBoldColorIfTerm(stdout);
+                std::cout << argv[i] << '\n';
+
+                results.emplace_back(addToLibrary(argv[i], shareAbs));
+            } catch (...) {
+                addError = std::current_exception();
+                break;
             }
-            printLibraryUpdate("Added:", greenFG, added.value());
+        }
+
+        XMLDocument libraryDoc{};
+        if (libraryDoc.LoadFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
+            throw std::runtime_error{
+                    std::string{"error loading library file: "}
+                    + XMLDocument::ErrorIDToName(libraryDoc.ErrorID())};
+        }
+        const XMLElement* const libraryRoot{
+                libraryDoc.FirstChildElement("library")};
+        if (libraryRoot == nullptr) {
+            throw std::runtime_error{
+                    "root element `<library>` missing in library file"};
+        }
+
+        int argIndex{2};
+        for (const auto& result : results) {
+            if (!result.has_value()) {
+                displayDuplicateEpub(argv[argIndex]);
+            } else {
+                printLibraryUpdate("Added:", greenFG, result.value(),
+                                   libraryRoot);
+            }
+            ++argIndex;
+        }
+        if (addError != nullptr) {
+            std::rethrow_exception(addError);
         }
         return 0;
     }
@@ -202,7 +239,20 @@ int dispatchCli(int argc, char** argv) {
             displayError("epub id was not found or is ambiguous");
             return 1;
         }
-        printLibraryUpdate("Removed:", greenFG, removed.value());
+
+        XMLDocument libraryDoc{};
+        if (libraryDoc.LoadFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
+            throw std::runtime_error{
+                    std::string{"error loading library file: "}
+                    + XMLDocument::ErrorIDToName(libraryDoc.ErrorID())};
+        }
+        const XMLElement* const libraryRoot{
+                libraryDoc.FirstChildElement("library")};
+        if (libraryRoot == nullptr) {
+            throw std::runtime_error{
+                    "root element `<library>` missing in library file"};
+        }
+        printLibraryUpdate("Removed:", greenFG, removed.value(), libraryRoot);
         return 0;
     }
     case CliCommand::list:
@@ -267,8 +317,8 @@ void displayHelp() {
 
     std::cout << "When run without a command (as just epubworm), "
                  "the last-read epub is opened.\n";
-    std::cout << "id prefixes can be used in place of full ids. "
-                 "(read a6ce475b738e1cd7 = read a6c)\n\n";
+    std::cout << "ids are displayed as unambiguous prefixes of at least four "
+                 "characters and can be used in place of full ids.\n\n";
 
     boldColorIfTerm(stdout, magentaFG);
     std::cout << "TUI Keyboard & Mouse Controls:\n";
@@ -331,14 +381,14 @@ void listLibrary(const fs::path& shareAbs) {
     std::ranges::sort(rows, {}, &EpubInfo::title);
 
     for (const auto& r : rows) {
-        printEpubInfo(r);
+        printEpubInfo(r, libraryRoot);
         std::cout << '\n';
     }
 
     const auto lastRead{std::ranges::find(rows, lastReadId, &EpubInfo::id)};
     if (lastRead == rows.end()) {
         boldColorIfTerm(stdout, redFG);
-        std::cout << "Last read epub no longer in library";
+        std::cout << "There's no last-read epub, or its no longer in library";
         resetBoldColorIfTerm(stdout);
         std::cout << '\n';
         return;
