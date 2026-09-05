@@ -323,8 +323,8 @@ void registerSigwinchHandler();
 void tocDataToString(const TocData& data, std::string_view title,
                      std::string_view author, std::string& str);
 
-// Checks `TERM_PROGRAM` environment variable for whether or not running in
-// tmux session.
+// Checks `TMUX`, falling back to `TERM_PROGRAM`, for whether or not running in
+// a tmux session.
 [[nodiscard]] bool inTmuxSession();
 
 // In raw mode, create a tui interface to view `tocData` with the epub's title

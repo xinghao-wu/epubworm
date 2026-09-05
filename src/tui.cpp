@@ -1048,6 +1048,11 @@ void tocDataToString(const TocData& data, std::string_view title,
 }
 
 bool inTmuxSession() {
+    const char* tmux{std::getenv("TMUX")};
+    if (tmux != nullptr && *tmux != '\0') {
+        return true;
+    }
+
     const char* termProgram{std::getenv("TERM_PROGRAM")};
     return termProgram != nullptr && std::string_view{termProgram} == "tmux";
 }
