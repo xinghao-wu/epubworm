@@ -180,19 +180,34 @@ void wrapForTmuxPassthrough() {
 }
 
 void imageEscCodes() {
-    std::string output{};
-    ::displayLoadedImg(0x010203, 2, 3, output);
+    std::string compactOutput{};
+    ::displayLoadedImg(0x010203, 2, 3, compactOutput, false);
 
-    std::string expected{};
+    std::string expectedCompact{};
     for (int r{0}; r < 2; ++r) {
-        expected += esc + "[38;2;1;2;3m";
-        for (int c{0}; c < 3; ++c) {
-            expected += imgCellPlaceholder + rowColDiacritics.data()[r]
-                        + rowColDiacritics.data()[c];
+        expectedCompact += esc + "[38;2;1;2;3m";
+        expectedCompact += imgCellPlaceholder + rowColDiacritics.data()[r];
+        for (int c{1}; c < 3; ++c) {
+            expectedCompact += imgCellPlaceholder;
         }
-        expected += esc + resetFG + '\n';
+        expectedCompact += esc + resetFG + '\n';
     }
-    assert(output == expected);
+    assert(compactOutput == expectedCompact);
+
+    std::string iTerm2Output{};
+    ::displayLoadedImg(0x010203, 2, 3, iTerm2Output, true);
+
+    std::string expectedITerm2{};
+    for (int r{0}; r < 2; ++r) {
+        expectedITerm2 += esc + "[38;2;1;2;3m";
+        for (int c{0}; c < 3; ++c) {
+            expectedITerm2 += imgCellPlaceholder + rowColDiacritics.data()[r]
+                              + rowColDiacritics.data()[c]
+                              + rowColDiacritics.front();
+        }
+        expectedITerm2 += esc + resetFG + '\n';
+    }
+    assert(iTerm2Output == expectedITerm2);
 
     const std::string graphicsEscCode{::getGraphicsEscCode(
             "/tmp/test-tty-graphics-protocol", 4, 10, 20, 0x010203, 2, 3)};

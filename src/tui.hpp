@@ -100,8 +100,10 @@ void loadImg(const std::filesystem::path& imgAbs, std::uint32_t id, int rows,
 // using `rows` * `cols` special unicode characters.
 // Appends unicode characters (the image) to `out`.
 // `id` must be an integer between 1 and 2^24 - 1, inclusive.
+// `forITerm2` enables its more explicit placeholder encoding workaround.
 // Throws `std::runtime_error` if `id` is not in valid range.
-void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out);
+void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
+                      bool forITerm2);
 
 // Using the kitty graphics protocol, display an image to the terminal.
 // Appends unicode characters showing the image to `out`.
@@ -326,6 +328,10 @@ void tocDataToString(const TocData& data, std::string_view title,
 // Checks `TMUX`, falling back to `TERM_PROGRAM`, for whether or not running in
 // a tmux session.
 [[nodiscard]] bool inTmuxSession();
+
+// Checks `TERM_PROGRAM`, falling back to `LC_TERMINAL` for tmux sessions, for
+// whether or not running in iTerm2.
+[[nodiscard]] bool inITerm2Session();
 
 // In raw mode, create a tui interface to view `tocData` with the epub's title
 // and author in the header.

@@ -97,7 +97,8 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     std::cout << graphicsEscCode << std::flush;
 }
 
-void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out) {
+void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
+                      bool forITerm2) {
     if (id < 1 || id > static_cast<std::uint32_t>((1 << 24) - 1)) {
         throw std::runtime_error{"image id not in valid range"};
     }
@@ -111,9 +112,16 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out) {
 
     for (int r{0}; r < rows; ++r) {
         out += esc + idInFG;
-        for (int c{0}; c < cols; ++c) {
-            out += imgCellPlaceholder + rowColDiacritics.data()[r]
-                   + rowColDiacritics.data()[c];
+        if (forITerm2) {
+            for (int c{0}; c < cols; ++c) {
+                out += imgCellPlaceholder + rowColDiacritics.data()[r]
+                       + rowColDiacritics.data()[c] + rowColDiacritics.front();
+            }
+        } else {
+            out += imgCellPlaceholder + rowColDiacritics.data()[r];
+            for (int c{1}; c < cols; ++c) {
+                out += imgCellPlaceholder;
+            }
         }
         out += esc + resetFG;
         out += '\n';
@@ -167,7 +175,7 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
         }
     }
     loadImg(imgAbs, id, rows, cols);
-    displayLoadedImg(id, rows, cols, out);
+    displayLoadedImg(id, rows, cols, out, inITerm2Session());
 }
 
 std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
@@ -1059,6 +1067,22 @@ bool inTmuxSession() {
 
     const char* termProgram{std::getenv("TERM_PROGRAM")};
     return termProgram != nullptr && std::string_view{termProgram} == "tmux";
+}
+
+bool inITerm2Session() {
+    const char* termProgram{std::getenv("TERM_PROGRAM")};
+    if (termProgram != nullptr && *termProgram != '\0') {
+        const std::string_view termProgramView{termProgram};
+        if (termProgramView == "iTerm.app") {
+            return true;
+        }
+        if (termProgramView != "tmux") {
+            return false;
+        }
+    }
+
+    const char* lcTerminal{std::getenv("LC_TERMINAL")};
+    return lcTerminal != nullptr && std::string_view{lcTerminal} == "iTerm2";
 }
 
 fs::path displayTOC(const TocData& tocData, std::string_view title,
