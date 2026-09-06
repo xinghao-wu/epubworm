@@ -70,6 +70,8 @@ void displayEpub();
 
 void styleEachLineIndividually();
 
+void headingColors();
+
 void initConf();
 
 void initLibrary();

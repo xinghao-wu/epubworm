@@ -6,6 +6,7 @@
 #include "tinyxml2.hpp"
 #include "tui.hpp"
 #include <cassert>
+#include <cstddef>
 #include <expected>
 #include <filesystem>
 #include <iostream>
@@ -534,6 +535,41 @@ void styleEachLineIndividually() {
     std::string str{"\033[1mfirst line\nsec line\033[22mout"};
     ::styleEachLineIndividually(str, "\033[1m", "\033[22m");
     assert(str == "\033[1mfirst line\033[22m\n\033[1msec line\033[22mout");
+}
+
+void headingColors() {
+    XMLDocument chapter{};
+    assert(chapter.Parse("<body><h1>H1</h1><h2>H2</h2><h3>H3</h3>"
+                         "<h4>H4</h4><h5>H5</h5><h6>H6</h6></body>")
+           == XML_SUCCESS);
+
+    std::string parsed{};
+    ::parseContentElem(chapter.FirstChildElement("body"), parsed, {});
+    assert(getOccurrences<std::string_view>(parsed, esc + yellowFG) == 1);
+    assert(getOccurrences<std::string_view>(parsed, esc + cyanFG) == 5);
+    for (int level{1}; level <= 6; ++level) {
+        std::string expected{esc};
+        expected += bold;
+        expected += esc;
+        expected += (level == 1 ? yellowFG : cyanFG);
+        expected += 'H';
+        expected += std::to_string(level);
+        expected += esc;
+        expected += resetBold;
+        expected += esc;
+        expected += resetFG;
+        assert(parsed.contains(expected));
+    }
+
+    std::string processed{esc + cyanFG + "one two three" + esc + resetFG};
+    ::processContentText(processed, 7);
+    assert(getOccurrences<std::string_view>(processed, esc + cyanFG) == 2);
+    assert(processed.contains(esc + cyanFG + "one two" + esc + resetFG + '\n'
+                              + esc + cyanFG));
+    const std::size_t secondCyan{processed.rfind(esc + cyanFG)};
+    const std::size_t three{processed.find("three", secondCyan)};
+    assert(three != std::string::npos);
+    assert(three > secondCyan + esc.size() + cyanFG.size());
 }
 
 void initConf() {

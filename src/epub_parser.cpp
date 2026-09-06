@@ -143,7 +143,7 @@ void parseContentElem(const XMLElement* parent, std::string& out,
             } else if (name == "h1" || name == "h2" || name == "h3"
                        || name == "h4" || name == "h5" || name == "h6") {
                 out += esc + bold;
-                out += esc + yellowFG;
+                out += esc + (name == "h1" ? yellowFG : cyanFG);
                 parseContentElem(childElem, out, chapterAbs);
                 out += esc + resetBold;
                 out += esc + resetFG;

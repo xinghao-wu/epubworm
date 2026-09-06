@@ -693,6 +693,7 @@ void processContentText(std::string& str, int maxLen) {
     collapseConsecutiveNewlines(str);
     wrapLines(str, maxLen);
     centerJustify(esc + yellowFG, esc + resetFG, str, maxLen);
+    centerJustify(esc + cyanFG, esc + resetFG, str, maxLen);
     centerJustify(esc + blueFG, esc + resetFG, str, maxLen);
     centerJustify(esc + redFG, esc + resetFG, str, maxLen);
     centerJustify(esc + magentaFG, esc + resetFG, str, maxLen);
@@ -700,6 +701,7 @@ void processContentText(std::string& str, int maxLen) {
     styleEachLineIndividually(str, esc + bold, esc + resetBold);
     styleEachLineIndividually(str, esc + italic, esc + resetItalic);
     styleEachLineIndividually(str, esc + yellowFG, esc + resetFG);
+    styleEachLineIndividually(str, esc + cyanFG, esc + resetFG);
     styleEachLineIndividually(str, esc + redFG, esc + resetFG);
     styleEachLineIndividually(str, esc + greenFG, esc + resetFG);
     styleEachLineIndividually(str, esc + blueFG, esc + resetFG);
