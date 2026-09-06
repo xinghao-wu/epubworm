@@ -7,6 +7,7 @@
 
 int main() {
     try {
+        useSystemLocale();
         test::getOPFRel();
         test::getMetadata();
         test::getTitle();

@@ -8,6 +8,8 @@
 
 int main(int argc, char* argv[]) {
     try {
+        useSystemLocale();
+
         const SingleInstanceLock instanceLock{getInstanceLockPath()};
         if (!instanceLock.isFirstInstance()) {
             boldColorIfTerm(stderr, redFG);
@@ -17,7 +19,6 @@ int main(int argc, char* argv[]) {
                          "close it first to prevent data corruption\n";
             return 1;
         }
-
         return dispatchCli(argc, argv);
     } catch (const std::system_error& e) {
         std::cerr << '\n';

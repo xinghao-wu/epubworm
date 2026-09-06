@@ -260,8 +260,6 @@ void parseChapter() {
 
 void dumpEpub() {
 
-    useSystemLocale();
-
     std::string result{};
     ::dumpEpub(parasiteRootAbs, result);
     ::dumpEpub(spiceWolfRootAbs, result);
@@ -384,7 +382,6 @@ void execute() {
 }
 
 void displayChapter() {
-    ::useSystemLocale();
     ::enableRawMode();
 
     std::cout << esc << clearScreen;
@@ -428,7 +425,6 @@ void tocDataToString() {
 }
 
 void displayTOC() {
-    ::useSystemLocale();
     ::enableRawMode();
 
     std::cout << esc << clearScreen;
@@ -452,7 +448,6 @@ void displayTOC() {
 }
 
 void displayEpub() {
-    ::useSystemLocale();
     ::enableRawMode();
 
     const EpubProg mysteriesIniProg{mysteriesRootAbs / "index_split_117.html",

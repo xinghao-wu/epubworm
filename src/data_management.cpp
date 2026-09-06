@@ -397,7 +397,6 @@ bool readEpubInLibrary(std::string_view idPrefix, const fs::path& shareAbs,
     const auto [id, iniProg]{queryEpubElem(epubElem, shareAbs)};
     const fs::path epubRootAbs{shareAbs / "epubworm/extracted_epubs" / id};
 
-    useSystemLocale();
     enableRawMode();
     const EpubProg exitProg{displayEpub(iniProg, epubRootAbs, desiredMaxLen)};
 
