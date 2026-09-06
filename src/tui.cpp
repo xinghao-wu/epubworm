@@ -10,7 +10,6 @@
 #include <array>
 #include <cassert>
 #include <cerrno>
-#include <chrono>
 #include <cmath>
 #include <csignal>
 #include <cstdint>
@@ -35,7 +34,6 @@
 #include <sys/wait.h>
 #include <system_error>
 #include <termios.h>
-#include <thread>
 #include <tuple>
 #include <unistd.h>
 #include <utility>
@@ -79,8 +77,9 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     if (!fs::exists(tempDataDirAbs)) {
         tempDataDirAbs = fs::temp_directory_path();
     }
-    const fs::path tempDataFileAbs{
-            tempDataDirAbs / "epubworm-img-data-tty-graphics-protocol"};
+    const fs::path tempDataFileAbs{tempDataDirAbs
+                                   / ("epubworm-img-data-" + std::to_string(id)
+                                      + "-tty-graphics-protocol")};
     std::ofstream tempDataFile{tempDataFileAbs};
     if (!tempDataFile.is_open()) {
         throw std::runtime_error{"image temp data file failed to open"};
@@ -112,10 +111,9 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out) {
 
     for (int r{0}; r < rows; ++r) {
         out += esc + idInFG;
-        out += imgCellPlaceholder + rowColDiacritics.data()[r];
-
-        for (int c{1}; c < cols; ++c) {
-            out += imgCellPlaceholder;
+        for (int c{0}; c < cols; ++c) {
+            out += imgCellPlaceholder + rowColDiacritics.data()[r]
+                   + rowColDiacritics.data()[c];
         }
         out += esc + resetFG;
         out += '\n';
@@ -170,8 +168,6 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
     }
     loadImg(imgAbs, id, rows, cols);
     displayLoadedImg(id, rows, cols, out);
-    // Fixes images breaking if multiple are displayed too fast in succession.
-    std::this_thread::sleep_for(std::chrono::milliseconds{5});
 }
 
 std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
@@ -187,7 +183,7 @@ std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
     ctrlData += "t=t,";
     ctrlData += "U=1,";
     ctrlData += "a=T,";
-    ctrlData += "q=2";
+    ctrlData += "q=1";
 
     const std::string tempDataFileAbsEncoded{
             base64::to_base64(tempDataFileAbs.string())};

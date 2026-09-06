@@ -1,6 +1,7 @@
 #include "test.hpp"
 #include "data_management.hpp"
 #include "epub_parser.hpp"
+#include "row_col_diacritics.hpp"
 #include "single_instance.hpp"
 #include "tinyxml2.hpp"
 #include "tui.hpp"
@@ -176,6 +177,28 @@ void wrapForTmuxPassthrough() {
     std::string empty{};
     ::wrapForTmuxPassthrough(empty);
     assert(empty == "\033Ptmux;\033\\");
+}
+
+void imageEscCodes() {
+    std::string output{};
+    ::displayLoadedImg(0x010203, 2, 3, output);
+
+    std::string expected{};
+    for (int r{0}; r < 2; ++r) {
+        expected += esc + "[38;2;1;2;3m";
+        for (int c{0}; c < 3; ++c) {
+            expected += imgCellPlaceholder + rowColDiacritics.data()[r]
+                        + rowColDiacritics.data()[c];
+        }
+        expected += esc + resetFG + '\n';
+    }
+    assert(output == expected);
+
+    const std::string graphicsEscCode{::getGraphicsEscCode(
+            "/tmp/test-tty-graphics-protocol", 4, 10, 20, 0x010203, 2, 3)};
+    assert(graphicsEscCode.starts_with(
+            "\033_Gf=32,s=10,v=20,i=66051,r=2,c=3,t=t,U=1,a=T,q=1;"));
+    assert(graphicsEscCode.ends_with(escEnd));
 }
 
 void displayImg() {

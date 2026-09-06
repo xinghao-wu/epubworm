@@ -17,9 +17,10 @@ void findAndReplaceAll();
 
 void wrapForTmuxPassthrough();
 
+void imageEscCodes();
+
 // non-self-validating
-// Also exercises `loadImg()`, `displayLoadedImg()`,
-// `getGraphicsEscCode()`.
+// Also exercises `loadImg()`.
 void displayImg();
 
 // Also exercises `getHrefFromID()`.

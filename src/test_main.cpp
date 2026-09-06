@@ -14,6 +14,7 @@ int main() {
         test::getAuthor();
         test::findAndReplaceAll();
         test::wrapForTmuxPassthrough();
+        test::imageEscCodes();
         test::getSpine();
         test::getTOC();
         test::utf8ToWide();
