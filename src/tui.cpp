@@ -191,7 +191,7 @@ std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
     ctrlData += "t=t,";
     ctrlData += "U=1,";
     ctrlData += "a=T,";
-    ctrlData += "q=1";
+    ctrlData += "q=2";
 
     const std::string tempDataFileAbsEncoded{
             base64::to_base64(tempDataFileAbs.string())};

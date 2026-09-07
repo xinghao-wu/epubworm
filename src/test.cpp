@@ -213,7 +213,7 @@ void imageEscCodes() {
     const std::string graphicsEscCode{::getGraphicsEscCode(
             "/tmp/test-tty-graphics-protocol", 4, 10, 20, 0x010203, 2, 3)};
     assert(graphicsEscCode.starts_with(
-            "\033_Gf=32,s=10,v=20,i=66051,r=2,c=3,t=t,U=1,a=T,q=1;"));
+            "\033_Gf=32,s=10,v=20,i=66051,r=2,c=3,t=t,U=1,a=T,q=2;"));
     assert(graphicsEscCode.ends_with(escEnd));
 }
 
