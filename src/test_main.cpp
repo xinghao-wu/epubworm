@@ -15,6 +15,7 @@ int main() {
         test::findAndReplaceAll();
         test::wrapForTmuxPassthrough();
         test::imageEscCodes();
+        test::imageChannels();
         test::getSpine();
         test::getTOC();
         test::utf8ToWide();

@@ -5,11 +5,16 @@
 #include "single_instance.hpp"
 #include "tinyxml2.hpp"
 #include "tui.hpp"
+#include <array>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <expected>
 #include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <iterator>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -215,6 +220,70 @@ void imageEscCodes() {
     assert(graphicsEscCode.starts_with(
             "\033_Gf=32,s=10,v=20,i=66051,r=2,c=3,t=t,U=1,a=T,q=2;"));
     assert(graphicsEscCode.ends_with(escEnd));
+}
+
+void imageChannels() {
+    constexpr std::array<unsigned char, 4> sourcePixel{17, 34, 51, 68};
+    constexpr std::uint32_t firstTestImageID{0xFFFFFFF0};
+    constexpr std::array<std::string_view, 4> pngDataEncoded{
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAAAAAA6fptVAAAACklEQVR4nGMQBAAAE"
+            "wASpgy+1QAAAABJRU5ErkJggg==",
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGMQVAIAA"
+            "EcANCQ5aoYAAAAASUVORK5CYII=",
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGMQVDIGA"
+            "ACuAGcVHqFfAAAAAElFTkSuQmCC",
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGMQVDJ2A"
+            "QABWQCrEyolqwAAAABJRU5ErkJggg=="};
+    const fs::path rawDataDirAbs{fs::exists("/dev/shm")
+                                         ? fs::path{"/dev/shm"}
+                                         : fs::temp_directory_path()};
+
+    for (int sourceChannels{1}; sourceChannels <= 4; ++sourceChannels) {
+        const std::string pngData{base64::from_base64(pngDataEncoded.at(
+                static_cast<std::size_t>(sourceChannels - 1)))};
+
+        const fs::path imageAbs{fs::temp_directory_path()
+                                / ("epubworm-test-"
+                                   + std::to_string(sourceChannels)
+                                   + "-channel.png")};
+        std::ofstream imageFile{imageAbs, std::ios::binary};
+        assert(imageFile.is_open());
+        imageFile.write(pngData.data(),
+                        static_cast<std::streamsize>(pngData.size()));
+        imageFile.close();
+
+        const std::uint32_t id{firstTestImageID
+                               + static_cast<std::uint32_t>(sourceChannels)};
+        const fs::path rawDataAbs{rawDataDirAbs
+                                  / ("epubworm-img-data-" + std::to_string(id)
+                                     + "-tty-graphics-protocol")};
+
+        const std::ostringstream graphicsOutput{};
+        std::streambuf* originalCoutBuffer{
+                std::cout.rdbuf(graphicsOutput.rdbuf())};
+        ::loadImg(imageAbs, id, 1, 1);
+        std::cout.rdbuf(originalCoutBuffer);
+
+        const int loadedChannels{sourceChannels < 3 ? 3 : sourceChannels};
+        assert(graphicsOutput.str().contains(
+                "f=" + std::to_string(loadedChannels * 8) + ','));
+
+        std::ifstream rawDataFile{rawDataAbs, std::ios::binary};
+        const std::string rawData{std::istreambuf_iterator<char>{rawDataFile},
+                                  std::istreambuf_iterator<char>{}};
+        if (sourceChannels < 3) {
+            assert(rawData
+                   == std::string(3, static_cast<char>(sourcePixel[0])));
+        } else {
+            const std::string expectedRawData{
+                    reinterpret_cast<const char*>(sourcePixel.data()),
+                    static_cast<std::size_t>(sourceChannels)};
+            assert(rawData == expectedRawData);
+        }
+
+        fs::remove(imageAbs);
+        fs::remove(rawDataAbs);
+    }
 }
 
 void displayImg() {

@@ -60,15 +60,22 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
 
     int xPixels{};
     int yPixels{};
-    int channels{};
+    int sourceChannels{};
+
+    if (stbi_info(imgAbs.c_str(), &xPixels, &yPixels, &sourceChannels) == 0) {
+        throw std::runtime_error{stbi_failure_reason()};
+    }
+
+    const int loadedChannels{
+            std::max(sourceChannels, static_cast<int>(STBI_rgb))};
 
     unsigned char* pixelData{stbi_load(imgAbs.c_str(), &xPixels, &yPixels,
-                                       &channels, STBI_default)};
+                                       &sourceChannels, loadedChannels)};
     if (pixelData == nullptr) {
         throw std::runtime_error{stbi_failure_reason()};
     }
 
-    const int pixelDataSize{xPixels * yPixels * channels};
+    const int pixelDataSize{xPixels * yPixels * loadedChannels};
     const std::string_view pixelDataView{
             reinterpret_cast<const char*>(pixelData),
             static_cast<std::size_t>(pixelDataSize)};
@@ -89,8 +96,9 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
     tempDataFile.close();
     stbi_image_free(pixelData);
 
-    std::string graphicsEscCode{getGraphicsEscCode(
-            tempDataFileAbs, channels, xPixels, yPixels, id, rows, cols)};
+    std::string graphicsEscCode{getGraphicsEscCode(tempDataFileAbs,
+                                                   loadedChannels, xPixels,
+                                                   yPixels, id, rows, cols)};
     if (inTmuxSession()) {
         wrapForTmuxPassthrough(graphicsEscCode);
     }

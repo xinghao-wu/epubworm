@@ -19,6 +19,8 @@ void wrapForTmuxPassthrough();
 
 void imageEscCodes();
 
+void imageChannels();
+
 // non-self-validating
 // Also exercises `loadImg()`.
 void displayImg();
