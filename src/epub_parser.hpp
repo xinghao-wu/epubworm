@@ -61,8 +61,9 @@ void collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
 
 // Parse all text and elements contained within `parent` recursively,
 // appending result to `out`.
-// The elements `<em>`, `<i>`, `<strong>`, `<b>`, `<br/>`, `<h1>` to `<h6>`,
-// `<p>`, `<li>`, `<image/>`, and `<img/>` will be handled,
+// The elements `<em>`, `<i>`, `<strong>`, `<b>`, `<code>`, `<br/>`, `<hr/>`,
+// `<h1>` to `<h6>`, `<p>`, `<li>`, `<div>`, `<pre>`, `<tr>`, `<td>`,
+// `<image/>`, and `<img/>` will be handled,
 // all other elements will be ignored and traversed through.
 // Semantic alignment classes, inline `text-align`, and legacy `align`
 // attributes are preserved as internal layout markers.

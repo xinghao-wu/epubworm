@@ -670,6 +670,11 @@ void contentAlignment() {
                    "<p class='justify'>justified</p>"
                    "<p style='color: red; text-align : right !important'>"
                    "inline</p></div>"
+                   "<p class='right'>before <code>code</code> after</p>"
+                   "<div class='center'><pre>pre</pre></div>"
+                   "<div class='right'><table><tr><td>one</td><td>two</td>"
+                   "</tr></table></div>"
+                   "<div class='right'><hr/></div>"
                    "<p "
                    "align='center'>legacy</p><center><p>element</p></center>"
                    "<center>direct</center>"
@@ -697,10 +702,33 @@ void contentAlignment() {
     appendParagraph(centerAlignBegin, "center", centerAlignEnd);
     appendParagraph(centerAlignBegin, "separator", centerAlignEnd);
     appendParagraph(centerAlignBegin, "fallback", centerAlignEnd);
+    expected += "\n\n";
     appendParagraph(rightAlignBegin, "right", rightAlignEnd);
     appendParagraph(centerAlignBegin, "inherited", centerAlignEnd);
     appendParagraph("", "justified", "");
     appendParagraph(rightAlignBegin, "inline", rightAlignEnd);
+    expected += "\n\n";
+    appendParagraph(rightAlignBegin,
+                    "before " + esc + greenFG + "code" + esc + resetFG
+                            + " after",
+                    rightAlignEnd);
+    appendParagraph(centerAlignBegin, "pre", centerAlignEnd);
+    expected += "\n\n";
+    appendParagraph(rightAlignBegin, "one | two", rightAlignEnd);
+    expected += "\n\n";
+    expected += centerAlignBegin;
+    expected += esc;
+    expected += bold;
+    expected += esc;
+    expected += cyanFG;
+    expected += "***";
+    expected += esc;
+    expected += resetBold;
+    expected += esc;
+    expected += resetFG;
+    expected += centerAlignEnd;
+    expected += "\n\n";
+    expected += "\n\n";
     appendParagraph(centerAlignBegin, "legacy", centerAlignEnd);
     appendParagraph(centerAlignBegin, "element", centerAlignEnd);
     appendParagraph(centerAlignBegin, "direct", centerAlignEnd);

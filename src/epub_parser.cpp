@@ -176,11 +176,12 @@ bool hasTextContent(const XMLNode* parent) {
 }
 
 bool isAlignmentBlock(std::string_view name) {
-    return name == "p" || name == "li" || name == "h1" || name == "h2"
-           || name == "h3" || name == "h4" || name == "h5" || name == "h6"
-           || name == "div" || name == "section" || name == "article"
-           || name == "aside" || name == "main" || name == "header"
-           || name == "footer" || name == "blockquote" || name == "center";
+    return name == "p" || name == "li" || name == "pre" || name == "tr"
+           || name == "hr" || name == "h1" || name == "h2" || name == "h3"
+           || name == "h4" || name == "h5" || name == "h6" || name == "div"
+           || name == "section" || name == "article" || name == "aside"
+           || name == "main" || name == "header" || name == "footer"
+           || name == "blockquote" || name == "center";
 }
 
 bool hasAlignmentBlockDescendant(const XMLNode* parent) {
@@ -195,9 +196,9 @@ bool hasAlignmentBlockDescendant(const XMLNode* parent) {
 }
 
 bool isAlignmentContainer(std::string_view name) {
-    return name == "div" || name == "section" || name == "article"
-           || name == "aside" || name == "main" || name == "header"
-           || name == "footer" || name == "blockquote" || name == "center";
+    return name == "section" || name == "article" || name == "aside"
+           || name == "main" || name == "header" || name == "footer"
+           || name == "blockquote" || name == "center";
 }
 
 void appendAlignmentBegin(std::string& out, TextAlignment alignment) {
@@ -328,6 +329,7 @@ namespace {
 void parseContentElemImpl(const XMLElement* parent, std::string& out,
                           const fs::path& chapterAbs,
                           TextAlignment inheritedAlignment) {
+    constexpr std::string_view tableCellSeparator{" | "};
     for (const XMLNode* childNode{parent->FirstChild()}; childNode != nullptr;
          childNode = childNode->NextSibling()) {
         if (const XMLText* childText = childNode->ToText()) {
@@ -347,8 +349,22 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                 parseContentElemImpl(childElem, out, chapterAbs,
                                      childAlignment);
                 out += esc + resetItalic;
+            } else if (name == "code") {
+                out += esc + greenFG;
+                parseContentElemImpl(childElem, out, chapterAbs,
+                                     childAlignment);
+                out += esc + resetFG;
             } else if (name == "br") {
                 out += '\n';
+            } else if (name == "hr") {
+                out += centerAlignBegin;
+                out += esc + bold;
+                out += esc + cyanFG;
+                out += "***";
+                out += esc + resetBold;
+                out += esc + resetFG;
+                out += centerAlignEnd;
+                out += "\n\n";
             } else if (name == "h1" || name == "h2" || name == "h3"
                        || name == "h4" || name == "h5" || name == "h6") {
                 out += centerAlignBegin;
@@ -360,16 +376,27 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                 out += esc + resetFG;
                 out += centerAlignEnd;
                 out += "\n\n";
-            } else if (name == "p" || name == "li") {
+            } else if (name == "p" || name == "li" || name == "div"
+                       || name == "pre" || name == "tr") {
                 const bool markAlignment{
                         childAlignment != TextAlignment::left
                         && hasTextContent(childElem)
                         && !hasAlignmentBlockDescendant(childElem)};
                 if (markAlignment) appendAlignmentBegin(out, childAlignment);
+                const std::size_t contentBegin{out.size()};
                 parseContentElemImpl(childElem, out, chapterAbs,
                                      childAlignment);
+                if (name == "tr"
+                    && out.size() >= contentBegin + tableCellSeparator.size()
+                    && out.ends_with(tableCellSeparator)) {
+                    out.resize(out.size() - tableCellSeparator.size());
+                }
                 if (markAlignment) appendAlignmentEnd(out, childAlignment);
                 out += "\n\n";
+            } else if (name == "td") {
+                parseContentElemImpl(childElem, out, chapterAbs,
+                                     childAlignment);
+                out += tableCellSeparator;
             } else if (isAlignmentContainer(name)
                        && childAlignment != TextAlignment::left
                        && hasTextContent(childElem)
