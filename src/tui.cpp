@@ -758,7 +758,7 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
 
         eraseScreen();
         std::cout << dispView << std::flush;
-        // In ghostty, images on right-side tmux panes are broken until redraw.
+        // Sometimes, images on right-side tmux panes are broken until redraw.
         if (inTmuxSession()) {
             execute(std::vector<std::string>{"tmux", "refresh-client"});
         }
