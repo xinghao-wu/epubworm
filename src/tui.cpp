@@ -464,8 +464,16 @@ void wrapLines(std::string& str, int maxLen) {
             lineEndIndex = str.size() - 1;
         }
 
-        const std::wstring wideLine{utf8ToWide(std::string_view{str}.substr(
-                lineBeginIndex, lineEndIndex - lineBeginIndex + 1))};
+        const std::string_view line{std::string_view{str}.substr(
+                lineBeginIndex, lineEndIndex - lineBeginIndex + 1)};
+        if (line.contains(imgCellPlaceholder)) {
+            continue;
+        }
+
+        const std::wstring wideLine{utf8ToWide(line)};
+        if (getVisualLen(wideLine) <= maxLen) {
+            continue;
+        }
 
         bool lineDone{false};
         std::size_t wideLineBreakIndex{};
@@ -493,17 +501,55 @@ void wrapLines(std::string& str, int maxLen) {
         }
         wideLineBreakIndex = wideLine.rfind(L' ', wideLineBreakIndex - 1);
 
-        if (wideLineBreakIndex == std::string::npos || lineDone) {
+        if (lineDone) {
             continue;
         }
 
-        const std::string beginToLineBreak{
-                wideToUTF8(std::wstring_view{wideLine}.substr(
-                        0, wideLineBreakIndex + 1))};
-        const std::size_t lineBreakIndex{lineBeginIndex
-                                         + beginToLineBreak.size() - 1};
+        std::size_t lineBreakIndex{};
+        if (wideLineBreakIndex == std::string::npos) {
+            std::size_t hardBreakWideIndex{};
+            int hardBreakVisualLen{};
+            for (std::size_t nextWideIndex{1};
+                 nextWideIndex <= wideLine.size(); ++nextWideIndex) {
+                const int nextVisualLen{getVisualLen(
+                        std::wstring_view{wideLine}.substr(0, nextWideIndex))};
+                if (nextVisualLen <= maxLen) {
+                    hardBreakWideIndex = nextWideIndex;
+                    hardBreakVisualLen = nextVisualLen;
+                }
+            }
 
-        str.replace(lineBreakIndex, 1, "\n");
+            // A glyph can be wider than maxLen. Include it and any trailing
+            // zero-width characters so wrapping always makes progress.
+            if (hardBreakVisualLen == 0) {
+                int firstGlyphVisualLen{};
+                for (std::size_t nextWideIndex{hardBreakWideIndex + 1};
+                     nextWideIndex <= wideLine.size(); ++nextWideIndex) {
+                    const int nextVisualLen{
+                            getVisualLen(std::wstring_view{wideLine}.substr(
+                                    0, nextWideIndex))};
+                    if (firstGlyphVisualLen == 0 && nextVisualLen > 0) {
+                        firstGlyphVisualLen = nextVisualLen;
+                    }
+                    if (nextVisualLen == firstGlyphVisualLen) {
+                        hardBreakWideIndex = nextWideIndex;
+                    }
+                }
+            }
+
+            const std::string beginToLineBreak{
+                    wideToUTF8(std::wstring_view{wideLine}.substr(
+                            0, hardBreakWideIndex))};
+            lineBreakIndex = lineBeginIndex + beginToLineBreak.size();
+            str.insert(lineBreakIndex, 1, '\n');
+        } else {
+            const std::string beginToLineBreak{
+                    wideToUTF8(std::wstring_view{wideLine}.substr(
+                            0, wideLineBreakIndex + 1))};
+            lineBreakIndex = lineBeginIndex + beginToLineBreak.size() - 1;
+            str.replace(lineBreakIndex, 1, "\n");
+        }
+
         lineEndIndex = lineBreakIndex;
     }
 }

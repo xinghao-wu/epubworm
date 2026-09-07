@@ -185,6 +185,34 @@ void wrapForTmuxPassthrough() {
     assert(empty == "\033Ptmux;\033\\");
 }
 
+void wrapLines() {
+    std::string breakable{"one two three"};
+    ::wrapLines(breakable, 7);
+    assert(breakable == "one two\nthree");
+
+    std::string unbreakable{"abcdefghij"};
+    ::wrapLines(unbreakable, 4);
+    assert(unbreakable == "abcd\nefgh\nij");
+
+    std::string longFirstWord{"abcdefgh ij"};
+    ::wrapLines(longFirstWord, 4);
+    assert(longFirstWord == "abcd\nefgh\nij");
+
+    std::string utf8Unbreakable{"爱潜水的"};
+    ::wrapLines(utf8Unbreakable, 4);
+    assert(utf8Unbreakable == "爱潜\n水的");
+
+    std::string styled{esc + cyanFG + "abcdefgh" + esc + resetFG};
+    ::wrapLines(styled, 4);
+    assert(styled == esc + cyanFG + "abcd\nefgh" + esc + resetFG);
+
+    std::string imageLine{};
+    ::displayLoadedImg(0x010203, 1, 8, imageLine, false);
+    const std::string originalImageLine{imageLine};
+    ::wrapLines(imageLine, 4);
+    assert(imageLine == originalImageLine);
+}
+
 void imageEscCodes() {
     std::string compactOutput{};
     ::displayLoadedImg(0x010203, 2, 3, compactOutput, false);

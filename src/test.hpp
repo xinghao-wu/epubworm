@@ -17,6 +17,8 @@ void findAndReplaceAll();
 
 void wrapForTmuxPassthrough();
 
+void wrapLines();
+
 void imageEscCodes();
 
 void imageChannels();

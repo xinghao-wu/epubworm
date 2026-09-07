@@ -14,6 +14,7 @@ int main() {
         test::getAuthor();
         test::findAndReplaceAll();
         test::wrapForTmuxPassthrough();
+        test::wrapLines();
         test::imageEscCodes();
         test::imageChannels();
         test::getSpine();

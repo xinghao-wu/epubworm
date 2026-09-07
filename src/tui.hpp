@@ -188,9 +188,9 @@ void useSystemLocale();
 // or zero-width non-joiners to at most two, removing separators between them.
 void collapseConsecutiveNewlines(std::string& str);
 
-// Split lines with visual length longer than `maxLen` in `str` at spaces.
-// If a space is not encountered on a long line, it is left as is
-// (this is to support displaying images wider than `maxLen`).
+// Split lines with visual length longer than `maxLen` in `str` at spaces,
+// or force a split at `maxLen` when no space is available.
+// Image lines are left as is to support images wider than `maxLen`.
 // This should be the first text content manipulation function called,
 // as most others depend on a correct `maxLen`.
 void wrapLines(std::string& str, int maxLen);
