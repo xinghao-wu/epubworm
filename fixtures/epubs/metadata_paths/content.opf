@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package version="2.0" unique-identifier="book-id" xmlns="http://www.idpf.org/2007/opf">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="book-id">urn:uuid:epubworm-root-layout</dc:identifier>
+    <dc:title>The Clockwork Garden</dc:title>
+    <dc:creator>Epubworm Project</dc:creator>
+    <dc:language>en</dc:language>
+    <dc:publisher>Fixture Press</dc:publisher>
+  </metadata>
+  <manifest>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="title" href="titlepage.xhtml" media-type="application/xhtml+xml"/>
+    <item id="chapter-one" href="chapters/chapter%20one.xhtml" media-type="application/xhtml+xml"/>
+    <item id="afterword" href="chapters/afterword.xhtml" media-type="application/xhtml+xml"/>
+    <item id="cover" href="images/garden%20cover.jpg" media-type="image/jpeg"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="title"/>
+    <itemref idref="chapter-one"/>
+    <itemref idref="afterword"/>
+  </spine>
+</package>

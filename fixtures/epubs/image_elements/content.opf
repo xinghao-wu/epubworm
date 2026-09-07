@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package version="2.0" unique-identifier="book-id" xmlns="http://www.idpf.org/2007/opf">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="book-id">urn:uuid:epubworm-image-layout</dc:identifier>
+    <dc:title>Illustrated Signals</dc:title>
+    <dc:creator>Fixture Workshop</dc:creator>
+    <dc:language>en</dc:language>
+  </metadata>
+  <manifest>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="svg" href="Text/svg.xhtml" media-type="application/xhtml+xml"/>
+    <item id="html-image" href="Text/html-image.xhtml" media-type="application/xhtml+xml"/>
+    <item id="prose" href="Text/prose.xhtml" media-type="application/xhtml+xml"/>
+    <item id="signal" href="Images/signal.jpg" media-type="image/jpeg"/>
+    <item id="pixels" href="Images/pixel%20art.png" media-type="image/png"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="svg"/>
+    <itemref idref="html-image"/>
+    <itemref idref="prose"/>
+  </spine>
+</package>

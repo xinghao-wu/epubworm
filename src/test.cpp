@@ -29,11 +29,11 @@ namespace fs = std::filesystem;
 namespace test {
 const fs::path projectRootAbs{fs::current_path().parent_path()};
 
-const fs::path epubsAbs{projectRootAbs / "test_epubs"};
-const fs::path mysteriesRootAbs{epubsAbs / "lord_of_mysteries_vol_1_unzipped"};
-const fs::path parasiteRootAbs{epubsAbs / "parasite_in_love_unzipped"};
-const fs::path spiceWolfRootAbs{epubsAbs / "spice_and_wolf_vol_1_unzipped"};
-const fs::path zuttomoRootAbs{epubsAbs / "zuttomo_vol_1_unzipped"};
+const fs::path epubsAbs{projectRootAbs / "fixtures/epubs"};
+const fs::path metadataPathsRootAbs{epubsAbs / "metadata_paths"};
+const fs::path nonlinearSpineRootAbs{epubsAbs / "nonlinear_spine"};
+const fs::path imageElementsRootAbs{epubsAbs / "image_elements"};
+const fs::path nestedNavigationRootAbs{epubsAbs / "nested_navigation"};
 
 const fs::path testOutputsAbs{projectRootAbs / "test_outputs"};
 
@@ -59,11 +59,11 @@ void singleInstanceLock() {
 }
 
 void unzip() {
-    const fs::path mysteriesZippedAbs{epubsAbs
-                                      / "lord_of_mysteries_vol_1.epub"};
-    const fs::path parasiteZippedAbs{epubsAbs / "parasite_in_love.epub"};
-    const fs::path spiceWolfZippedAbs{epubsAbs / "spice_and_wolf_vol_1.epub"};
-    const fs::path zuttomoZippedAbs{epubsAbs / "zuttomo_vol_1.epub"};
+    const fs::path metadataPathsZippedAbs{epubsAbs / "metadata_paths.epub"};
+    const fs::path nonlinearSpineZippedAbs{epubsAbs / "nonlinear_spine.epub"};
+    const fs::path imageElementsZippedAbs{epubsAbs / "image_elements.epub"};
+    const fs::path nestedNavigationZippedAbs{epubsAbs
+                                             / "nested_navigation.epub"};
 
     try {
         ::unzip("/bad archive path", testOutputsAbs);
@@ -72,7 +72,7 @@ void unzip() {
         assert(std::string_view{e.what()} == "bad zip");
     }
     try {
-        ::unzip(parasiteZippedAbs, "/bad destination path");
+        ::unzip(nonlinearSpineZippedAbs, "/bad destination path");
         assert(false);
     } catch (const fs::filesystem_error& e) {
         assert(std::string_view{e.what()}
@@ -81,13 +81,11 @@ void unzip() {
     }
 
     fs::create_directories(testOutputsAbs);
-    ::unzip(mysteriesZippedAbs,
-            testOutputsAbs / "unzip_lord_of_mysteries_vol_1_unzipped");
-    ::unzip(parasiteZippedAbs,
-            testOutputsAbs / "unzip_parasite_in_love_unzipped");
-    ::unzip(spiceWolfZippedAbs,
-            testOutputsAbs / "unzip_spice_and_wolf_vol_1_unzipped");
-    ::unzip(zuttomoZippedAbs, testOutputsAbs / "unzip_zuttomo_vol_1_unzipped");
+    ::unzip(metadataPathsZippedAbs, testOutputsAbs / "unzip_metadata_paths");
+    ::unzip(nonlinearSpineZippedAbs, testOutputsAbs / "unzip_nonlinear_spine");
+    ::unzip(imageElementsZippedAbs, testOutputsAbs / "unzip_image_elements");
+    ::unzip(nestedNavigationZippedAbs,
+            testOutputsAbs / "unzip_nested_navigation");
     boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::unzip()` success cases need verification, "
                  "check `test_outputs/` to verify correct result\n";
@@ -105,61 +103,67 @@ void getOPFRel() {
                   "filename=/bad epub root/META-INF/container.xml");
     }
 
-    assert(::getOPFRel(mysteriesRootAbs) == "content.opf");
-    assert(::getOPFRel(parasiteRootAbs) == "OEBPS/content.opf");
-    assert(::getOPFRel(spiceWolfRootAbs) == "content.opf");
-    assert(::getOPFRel(zuttomoRootAbs) == "content.opf");
+    assert(::getOPFRel(metadataPathsRootAbs) == "content.opf");
+    assert(::getOPFRel(nonlinearSpineRootAbs) == "OEBPS/content.opf");
+    assert(::getOPFRel(imageElementsRootAbs) == "content.opf");
+    assert(::getOPFRel(nestedNavigationRootAbs) == "Book/package.opf");
 }
 
 void getMetadata() {
-    XMLDocument mysteriesOPF{};
-    mysteriesOPF.LoadFile(
-            (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs)).c_str());
-    XMLDocument parasiteOPF{};
-    parasiteOPF.LoadFile(
-            (parasiteRootAbs / ::getOPFRel(parasiteRootAbs)).c_str());
+    XMLDocument metadataPathsOPF{};
+    metadataPathsOPF.LoadFile(
+            (metadataPathsRootAbs / ::getOPFRel(metadataPathsRootAbs))
+                    .c_str());
+    XMLDocument nonlinearSpineOPF{};
+    nonlinearSpineOPF.LoadFile(
+            (nonlinearSpineRootAbs / ::getOPFRel(nonlinearSpineRootAbs))
+                    .c_str());
 
-    const XMLElement* mysteriesMetadata{::getMetadata(mysteriesOPF)};
-    const XMLElement* parasiteMetadata{::getMetadata(parasiteOPF)};
+    const XMLElement* metadataPathsMetadata{::getMetadata(metadataPathsOPF)};
+    const XMLElement* nonlinearSpineMetadata{::getMetadata(nonlinearSpineOPF)};
 
-    assert(std::string_view{mysteriesMetadata->FirstChildElement("dc:language")
-                                    ->GetText()}
+    assert(std::string_view{
+                   metadataPathsMetadata->FirstChildElement("dc:language")
+                           ->GetText()}
            == "en");
-    assert(std::string_view{parasiteMetadata->FirstChildElement("dc:publisher")
-                                    ->GetText()}
-           == "ASCII Media Works");
+    assert(std::string_view{
+                   nonlinearSpineMetadata->FirstChildElement("dc:publisher")
+                           ->GetText()}
+           == "Nested Fixture Press");
 }
 
 void getTitle() {
-    XMLDocument mysteriesOPF{};
-    mysteriesOPF.LoadFile(
-            (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs)).c_str());
-    XMLDocument spiceWolfOPF{};
-    spiceWolfOPF.LoadFile(
-            (spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs)).c_str());
+    XMLDocument metadataPathsOPF{};
+    metadataPathsOPF.LoadFile(
+            (metadataPathsRootAbs / ::getOPFRel(metadataPathsRootAbs))
+                    .c_str());
+    XMLDocument imageElementsOPF{};
+    imageElementsOPF.LoadFile(
+            (imageElementsRootAbs / ::getOPFRel(imageElementsRootAbs))
+                    .c_str());
 
-    const XMLElement* mysteriesMetadata{::getMetadata(mysteriesOPF)};
-    const XMLElement* spiceWolfMetadata{::getMetadata(spiceWolfOPF)};
+    const XMLElement* metadataPathsMetadata{::getMetadata(metadataPathsOPF)};
+    const XMLElement* imageElementsMetadata{::getMetadata(imageElementsOPF)};
 
-    assert(::getTitle(mysteriesMetadata)
-           == "Lord of Mysteries Volume 1: Clown");
-    assert(::getTitle(spiceWolfMetadata) == "Spice and Wolf, Vol. 1");
+    assert(::getTitle(metadataPathsMetadata) == "The Clockwork Garden");
+    assert(::getTitle(imageElementsMetadata) == "Illustrated Signals");
 }
 
 void getAuthor() {
-    XMLDocument mysteriesOPF{};
-    mysteriesOPF.LoadFile(
-            (mysteriesRootAbs / ::getOPFRel(mysteriesRootAbs)).c_str());
-    XMLDocument spiceWolfOPF{};
-    spiceWolfOPF.LoadFile(
-            (spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs)).c_str());
+    XMLDocument metadataPathsOPF{};
+    metadataPathsOPF.LoadFile(
+            (metadataPathsRootAbs / ::getOPFRel(metadataPathsRootAbs))
+                    .c_str());
+    XMLDocument imageElementsOPF{};
+    imageElementsOPF.LoadFile(
+            (imageElementsRootAbs / ::getOPFRel(imageElementsRootAbs))
+                    .c_str());
 
-    const XMLElement* mysteriesMetadata{::getMetadata(mysteriesOPF)};
-    const XMLElement* spiceWolfMetadata{::getMetadata(spiceWolfOPF)};
+    const XMLElement* metadataPathsMetadata{::getMetadata(metadataPathsOPF)};
+    const XMLElement* imageElementsMetadata{::getMetadata(imageElementsOPF)};
 
-    assert(::getAuthor(mysteriesMetadata)
-           == "Cuttlefish That Loves Diving (爱潜水的乌贼)");
-    assert(::getAuthor(spiceWolfMetadata) == "Isuna Hasekura");
+    assert(::getAuthor(metadataPathsMetadata) == "Epubworm Project");
+    assert(::getAuthor(imageElementsMetadata) == "Fixture Workshop");
 }
 
 void findAndReplaceAll() {
@@ -198,9 +202,9 @@ void wrapLines() {
     ::wrapLines(longFirstWord, 4);
     assert(longFirstWord == "abcd\nefgh\nij");
 
-    std::string utf8Unbreakable{"爱潜水的"};
+    std::string utf8Unbreakable{"春夏秋冬"};
     ::wrapLines(utf8Unbreakable, 4);
-    assert(utf8Unbreakable == "爱潜\n水的");
+    assert(utf8Unbreakable == "春夏\n秋冬");
 
     std::string styled{esc + cyanFG + "abcdefgh" + esc + resetFG};
     ::wrapLines(styled, 4);
@@ -251,14 +255,14 @@ void imageEscCodes() {
 
     XMLDocument imageChapter{};
     assert(imageChapter.Parse(
-                   "<body>before<img src='../Images/ascii.png'/>after</body>")
+                   "<body>before<img src='../Images/accent.png'/>after</body>")
            == XML_SUCCESS);
     std::string parsedImage{};
     const std::ostringstream imageGraphicsOutput{};
     std::streambuf* originalCoutBuffer{
             std::cout.rdbuf(imageGraphicsOutput.rdbuf())};
     ::parseContentElem(imageChapter.FirstChildElement("body"), parsedImage,
-                       parasiteRootAbs / "OEBPS/Text/test.xhtml");
+                       nonlinearSpineRootAbs / "OEBPS/Text/test.xhtml");
     std::cout.rdbuf(originalCoutBuffer);
 
     assert(parsedImage.starts_with("before\n\n" + esc + "[38;2;"));
@@ -354,14 +358,14 @@ void displayImg() {
         assert(std::string_view{e.what()} == "Unable to open file");
     }
 
-    ::displayImg(mysteriesRootAbs / "images/Tarot Club - V01B - Justice.jpg",
-                 output);
-    ::displayImg(parasiteRootAbs / "OEBPS/Images/cover.jpg", output);
-    ::displayImg(parasiteRootAbs / "OEBPS/Images/ascii.png", output);
-    ::displayImg(spiceWolfRootAbs / "OEBPS/images/Art_P6.jpg", output);
-    ::displayImg(zuttomoRootAbs / "images/image1.jpeg", output);
-    ::displayImg(zuttomoRootAbs / "images/image3.png", output);
-    ::displayImg(zuttomoRootAbs / "images/image3.png", output, 35, 80);
+    ::displayImg(metadataPathsRootAbs / "images/garden cover.jpg", output);
+    ::displayImg(nonlinearSpineRootAbs / "OEBPS/Images/cover.jpg", output);
+    ::displayImg(nonlinearSpineRootAbs / "OEBPS/Images/accent.png", output);
+    ::displayImg(imageElementsRootAbs / "Images/signal.jpg", output);
+    ::displayImg(imageElementsRootAbs / "Images/pixel art.png", output);
+    ::displayImg(nestedNavigationRootAbs / "Book/Images/map.png", output);
+    ::displayImg(nestedNavigationRootAbs / "Book/Images/map.png", output, 35,
+                 80);
     std::cout << output;
 
     boldColorIfTerm(stdout, yellowFG);
@@ -372,50 +376,65 @@ void displayImg() {
 
 void getSpine() {
 
-    XMLDocument spiceWolfOPF{};
-    spiceWolfOPF.LoadFile(
-            (spiceWolfRootAbs / ::getOPFRel(spiceWolfRootAbs)).c_str());
-    const std::vector<fs::path> spiceWolfSpine{::getSpine(spiceWolfOPF)};
+    XMLDocument imageElementsOPF{};
+    imageElementsOPF.LoadFile(
+            (imageElementsRootAbs / ::getOPFRel(imageElementsRootAbs))
+                    .c_str());
+    const std::vector<fs::path> imageElementsSpine{
+            ::getSpine(imageElementsOPF)};
 
-    assert(spiceWolfSpine.size() == 43);
-    assert(spiceWolfSpine[0] == "toc.ncx");
-    assert(spiceWolfSpine[1] == "titlepage.xhtml");
+    assert(imageElementsSpine.size() == 4);
+    assert(imageElementsSpine[0] == "toc.ncx");
+    assert(imageElementsSpine[1] == "Text/svg.xhtml");
 
-    XMLDocument parasiteOPF{};
-    parasiteOPF.LoadFile(
-            (parasiteRootAbs / ::getOPFRel(parasiteRootAbs)).c_str());
-    const std::vector<fs::path> parasiteSpine{::getSpine(parasiteOPF)};
+    XMLDocument nonlinearSpineOPF{};
+    nonlinearSpineOPF.LoadFile(
+            (nonlinearSpineRootAbs / ::getOPFRel(nonlinearSpineRootAbs))
+                    .c_str());
+    const std::vector<fs::path> nonlinearSpineSpine{
+            ::getSpine(nonlinearSpineOPF)};
 
-    assert(parasiteSpine.size() == 15);
-    assert(parasiteSpine[0] == "toc.ncx");
-    assert(parasiteSpine[1] == "Text/cover.xhtml");
-    assert(parasiteSpine[2] == "Text/TitlePage.xhtml");
-    assert(parasiteSpine[3] == "Text/insert.xhtml");
+    assert(nonlinearSpineSpine.size() == 4);
+    assert(nonlinearSpineSpine[0] == "toc.ncx");
+    assert(nonlinearSpineSpine[1] == "Text/cover.xhtml");
+    assert(nonlinearSpineSpine[2] == "Text/intro.xhtml");
+    assert(nonlinearSpineSpine[3] == "Text/chapter.xhtml");
 }
 
 void getTOC() {
 
-    const TocData mysteriesTOC{::getTOC(mysteriesRootAbs / "toc.ncx")};
-    assert(mysteriesTOC.size() == 227);
-    assert(mysteriesTOC[0].first == "Front Cover");
-    assert(mysteriesTOC[0].second == "titlepage.xhtml");
-    assert(mysteriesTOC[222].first == "    Characters");
-    assert(mysteriesTOC[222].second == "index_split_225.html");
+    const TocData metadataPathsTOC{::getTOC(metadataPathsRootAbs / "toc.ncx")};
+    assert(metadataPathsTOC.size() == 4);
+    assert(metadataPathsTOC[0].first == "Garden Gate");
+    assert(metadataPathsTOC[0].second == "titlepage.xhtml");
+    assert(metadataPathsTOC[2].first == "    Brass Seeds");
+    assert(metadataPathsTOC[2].second == "chapters/chapter one.xhtml");
 
-    const TocData parasiteTOC{::getTOC(parasiteRootAbs / "OEBPS/toc.ncx")};
-    assert(parasiteTOC.size() == 13);
-    assert(parasiteTOC[0].first == "Cover");
-    assert(parasiteTOC[0].second == "Text/cover.xhtml");
-    assert(parasiteTOC[2].first == "Prologue");
-    assert(parasiteTOC[2].second == "Text/insert.xhtml");
+    const TocData nonlinearSpineTOC{
+            ::getTOC(nonlinearSpineRootAbs / "OEBPS/toc.ncx")};
+    assert(nonlinearSpineTOC.size() == 3);
+    assert(nonlinearSpineTOC[0].first == "Cover");
+    assert(nonlinearSpineTOC[0].second == "Text/cover.xhtml");
+    assert(nonlinearSpineTOC[2].first == "Inner Room");
+    assert(nonlinearSpineTOC[2].second == "Text/chapter.xhtml");
+
+    const TocData nestedNavigationTOC{
+            ::getTOC(nestedNavigationRootAbs / "Book/toc.ncx")};
+    assert(nestedNavigationTOC.size() == 3);
+    assert(nestedNavigationTOC[0].first == "First Branch");
+    assert(nestedNavigationTOC[0].second == "Text/one.xhtml");
+    assert(nestedNavigationTOC[1].first == "    Second Branch");
+    assert(nestedNavigationTOC[1].second == "Text/two.xhtml");
+    assert(nestedNavigationTOC[2].first == "        Third Branch");
+    assert(nestedNavigationTOC[2].second == "Text/three.xhtml");
 }
 
 void parseChapter() {
 
     std::string result{};
-    ::parseChapter(spiceWolfRootAbs / "OEBPS/chap01.xhtml", result);
-    ::parseChapter(spiceWolfRootAbs / "OEBPS/chap02.xhtml", result);
-    ::parseChapter(spiceWolfRootAbs / "OEBPS/chapter005.xhtml", result);
+    ::parseChapter(imageElementsRootAbs / "Text/svg.xhtml", result);
+    ::parseChapter(imageElementsRootAbs / "Text/html-image.xhtml", result);
+    ::parseChapter(imageElementsRootAbs / "Text/prose.xhtml", result);
     std::cout << result;
 
     boldColorIfTerm(stdout, yellowFG);
@@ -427,9 +446,9 @@ void parseChapter() {
 void dumpEpub() {
 
     std::string result{};
-    ::dumpEpub(parasiteRootAbs, result);
-    ::dumpEpub(spiceWolfRootAbs, result);
-    ::dumpEpub(zuttomoRootAbs, result);
+    ::dumpEpub(nonlinearSpineRootAbs, result);
+    ::dumpEpub(imageElementsRootAbs, result);
+    ::dumpEpub(nestedNavigationRootAbs, result);
     ::processContentText(result, 55);
     std::cout << result;
 
@@ -561,10 +580,10 @@ void displayChapter() {
     ::enableRawMode();
 
     std::cout << esc << clearScreen;
-    const std::pair imgChapterOutput{
-            ::displayChapter(spiceWolfRootAbs / "OEBPS/chap02.xhtml", 0, 55)};
+    const std::pair imgChapterOutput{::displayChapter(
+            imageElementsRootAbs / "Text/html-image.xhtml", 0, 55)};
     const std::pair textChapterOutput{::displayChapter(
-            spiceWolfRootAbs / "OEBPS/chapter005.xhtml", 0.5, 55)};
+            imageElementsRootAbs / "Text/prose.xhtml", 0.5, 55)};
     eraseScreen();
 
     boldColorIfTerm(stdout, yellowFG);
@@ -606,44 +625,44 @@ void displayTOC() {
     ::enableRawMode();
 
     std::cout << esc << clearScreen;
-    const fs::path mysteriesTOCOutput{::displayTOC(
-            ::getTOC(mysteriesRootAbs / "toc.ncx"),
-            "Lord of Mysteries Volume 1: Clown",
-            "Cuttlefish That Loves Diving (爱潜水的乌贼)", 55, 100)};
-    const fs::path parasiteTOCOutput{
-            ::displayTOC(::getTOC(parasiteRootAbs / "OEBPS/toc.ncx"),
-                         "Parasite in Love", "Sugaru Miaki", 55, 0)};
+    const fs::path metadataPathsTOCOutput{
+            ::displayTOC(::getTOC(metadataPathsRootAbs / "toc.ncx"),
+                         "The Clockwork Garden", "Epubworm Project", 55, 1)};
+    const fs::path nonlinearSpineTOCOutput{
+            ::displayTOC(::getTOC(nonlinearSpineRootAbs / "OEBPS/toc.ncx"),
+                         "Rooms Within Rooms", "Epubworm Project", 55, 0)};
     eraseScreen();
 
     boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::displayTOC()` success cases need verification, "
-                 "a tui interface for mysteries' "
-                 "and parasite's TOCs should have been displayed.\n";
+                 "a tui interface for the metadata/path and nested "
+                 "package/spine TOCs "
+                 "should have been displayed.\n";
     resetBoldColorIfTerm(stdout);
 
-    std::cout << "mysteries output: " << mysteriesTOCOutput << '\n';
-    std::cout << "parasite output: " << parasiteTOCOutput << '\n';
+    std::cout << "metadata paths output: " << metadataPathsTOCOutput << '\n';
+    std::cout << "nonlinear spine output: " << nonlinearSpineTOCOutput << '\n';
 }
 
 void displayEpub() {
     ::enableRawMode();
 
-    const EpubProg mysteriesIniProg{mysteriesRootAbs / "index_split_117.html",
-                                    0.5};
-    const EpubProg parasiteIniProg{"", 0};
-    const EpubProg spiceWolfIniProg{
-            spiceWolfRootAbs / "OEBPS/epilogue-a.xhtml", 0.25};
-    const EpubProg zuttomoIniProg{zuttomoRootAbs / "index_split_022.html",
-                                  0.75};
+    const EpubProg metadataPathsIniProg{
+            metadataPathsRootAbs / "chapters/chapter one.xhtml", 0.5};
+    const EpubProg nonlinearSpineIniProg{"", 0};
+    const EpubProg imageElementsIniProg{
+            imageElementsRootAbs / "Text/prose.xhtml", 0.25};
+    const EpubProg nestedNavigationIniProg{
+            nestedNavigationRootAbs / "Book/Text/two.xhtml", 0.75};
 
-    const EpubProg mysteriesOut{
-            ::displayEpub(mysteriesIniProg, mysteriesRootAbs, 50)};
-    const EpubProg parasiteOut{
-            ::displayEpub(parasiteIniProg, parasiteRootAbs, 55)};
-    const EpubProg spiceWolfOut{
-            ::displayEpub(spiceWolfIniProg, spiceWolfRootAbs, 60)};
-    const EpubProg zuttomoOut{
-            ::displayEpub(zuttomoIniProg, zuttomoRootAbs, 65)};
+    const EpubProg metadataPathsOut{
+            ::displayEpub(metadataPathsIniProg, metadataPathsRootAbs, 50)};
+    const EpubProg nonlinearSpineOut{
+            ::displayEpub(nonlinearSpineIniProg, nonlinearSpineRootAbs, 55)};
+    const EpubProg imageElementsOut{
+            ::displayEpub(imageElementsIniProg, imageElementsRootAbs, 60)};
+    const EpubProg nestedNavigationOut{::displayEpub(
+            nestedNavigationIniProg, nestedNavigationRootAbs, 65)};
 
     boldColorIfTerm(stdout, yellowFG);
     std::cout << "`test::displayEpub()` success cases need verification, "
@@ -651,22 +670,22 @@ void displayEpub() {
                  "test epubs should have been displayed.\n";
     resetBoldColorIfTerm(stdout);
 
-    std::cout << "mysteries exit chapter path: ";
-    std::cout << mysteriesOut.chapterAbs << '\n';
-    std::cout << "mysteries exit chapter prog: ";
-    std::cout << mysteriesOut.chapterProg << '\n';
-    std::cout << "parasite exit chapter path: ";
-    std::cout << parasiteOut.chapterAbs << '\n';
-    std::cout << "parasite exit chapter prog: ";
-    std::cout << parasiteOut.chapterProg << '\n';
-    std::cout << "spiceWolf exit chapter path: ";
-    std::cout << spiceWolfOut.chapterAbs << '\n';
-    std::cout << "spiceWolf exit chapter prog: ";
-    std::cout << spiceWolfOut.chapterProg << '\n';
-    std::cout << "zuttomo exit chapter path: ";
-    std::cout << zuttomoOut.chapterAbs << '\n';
-    std::cout << "zuttomo exit chapter prog: ";
-    std::cout << zuttomoOut.chapterProg << '\n';
+    std::cout << "metadata paths exit chapter path: ";
+    std::cout << metadataPathsOut.chapterAbs << '\n';
+    std::cout << "metadata paths exit chapter prog: ";
+    std::cout << metadataPathsOut.chapterProg << '\n';
+    std::cout << "nonlinear spine exit chapter path: ";
+    std::cout << nonlinearSpineOut.chapterAbs << '\n';
+    std::cout << "nonlinear spine exit chapter prog: ";
+    std::cout << nonlinearSpineOut.chapterProg << '\n';
+    std::cout << "image elements exit chapter path: ";
+    std::cout << imageElementsOut.chapterAbs << '\n';
+    std::cout << "image elements exit chapter prog: ";
+    std::cout << imageElementsOut.chapterProg << '\n';
+    std::cout << "nested navigation exit chapter path: ";
+    std::cout << nestedNavigationOut.chapterAbs << '\n';
+    std::cout << "nested navigation exit chapter prog: ";
+    std::cout << nestedNavigationOut.chapterProg << '\n';
 }
 
 void styleEachLineIndividually() {
@@ -911,8 +930,8 @@ void contentAlignment() {
     assert(leadingSpaces(rightLine) == leadingSpaces(colorLine) + 4);
 
     std::string fixture{};
-    ::parseChapter(parasiteRootAbs / "OEBPS/Text/c01.xhtml", fixture);
-    assert(fixture.contains(centerAlignBegin + "— ◆ —" + centerAlignEnd));
+    ::parseChapter(nonlinearSpineRootAbs / "OEBPS/Text/intro.xhtml", fixture);
+    assert(fixture.contains(centerAlignBegin + "- * -" + centerAlignEnd));
     std::string terminator{centerAlignBegin};
     terminator += esc;
     terminator += bold;
@@ -990,14 +1009,14 @@ void readConfig() {
 
 void getTruncatedSHA256Sum() {
 
-    assert(::getTruncatedSHA256Sum(epubsAbs / "lord_of_mysteries_vol_1.epub")
-           == "53760b7bdcdfa01a43ccf243f41dd912");
-    assert(::getTruncatedSHA256Sum(epubsAbs / "parasite_in_love.epub")
-           == "40c5f7dce4a5576956a094eb7fb18cf8");
-    assert(::getTruncatedSHA256Sum(epubsAbs / "spice_and_wolf_vol_1.epub")
-           == "a6ce475b738e1cd7def7ed1e958426b3");
-    assert(::getTruncatedSHA256Sum(epubsAbs / "zuttomo_vol_1.epub")
-           == "8d070ee9c3292df13dfb8471f099565a");
+    assert(::getTruncatedSHA256Sum(epubsAbs / "metadata_paths.epub")
+           == "ded2eb033d88f30e1f790619f514e305");
+    assert(::getTruncatedSHA256Sum(epubsAbs / "nonlinear_spine.epub")
+           == "fd87f609e8d91fc8902692871b8b763a");
+    assert(::getTruncatedSHA256Sum(epubsAbs / "image_elements.epub")
+           == "1dc96bb730ceeb1f80a7565542bf6d7e");
+    assert(::getTruncatedSHA256Sum(epubsAbs / "nested_navigation.epub")
+           == "18c3f848ec2b8ca63ff8d57c88f0269c");
 }
 
 void findEpubById() {
@@ -1082,14 +1101,13 @@ void addToLibrary() {
     ::setLastRead(initialLibrary, previousLastRead);
     assert(initialLibrary.SaveFile(libraryFileAbs.c_str()) == XML_SUCCESS);
 
-    const std::string mysteriesId{"53760b7bdcdfa01a43ccf243f41dd912"};
-    const std::expected<EpubInfo, LibraryUpdateError> added{::addToLibrary(
-            epubsAbs / "lord_of_mysteries_vol_1.epub", tmpShareAbs)};
+    const std::string metadataPathsId{"ded2eb033d88f30e1f790619f514e305"};
+    const std::expected<EpubInfo, LibraryUpdateError> added{
+            ::addToLibrary(epubsAbs / "metadata_paths.epub", tmpShareAbs)};
     assert(added.has_value());
-    assert(added.value().id == mysteriesId);
-    assert(added.value().title == "Lord of Mysteries Volume 1: Clown");
-    assert(added.value().author
-           == "Cuttlefish That Loves Diving (爱潜水的乌贼)");
+    assert(added.value().id == metadataPathsId);
+    assert(added.value().title == "The Clockwork Garden");
+    assert(added.value().author == "Epubworm Project");
 
     XMLDocument libraryDoc{};
     assert(libraryDoc.LoadFile(libraryFileAbs.c_str()) == XML_SUCCESS);
@@ -1107,15 +1125,15 @@ void addToLibrary() {
     const XMLElement* const epub{libraryRoot->FirstChildElement("epub")};
     assert(epub != nullptr);
     assert(epub->NextSiblingElement("epub") == nullptr);
-    assert(std::string_view{epub->Attribute("id")} == mysteriesId);
+    assert(std::string_view{epub->Attribute("id")} == metadataPathsId);
     assert(std::string_view{epub->Attribute("opened-chapter")}.empty());
     assert(epub->DoubleAttribute("chapter-progress") == 0.0);
 
     assert(fs::is_directory(tmpShareAbs / "epubworm/extracted_epubs"
-                            / mysteriesId));
+                            / metadataPathsId));
 
-    const std::expected<EpubInfo, LibraryUpdateError> duplicate{::addToLibrary(
-            epubsAbs / "lord_of_mysteries_vol_1.epub", tmpShareAbs)};
+    const std::expected<EpubInfo, LibraryUpdateError> duplicate{
+            ::addToLibrary(epubsAbs / "metadata_paths.epub", tmpShareAbs)};
     assert(!duplicate.has_value());
     assert(duplicate.error() == LibraryUpdateError::alreadyInLibrary);
 
@@ -1124,17 +1142,17 @@ void addToLibrary() {
 
 void queryEpubElem() {
     const fs::path phonyShareAbs{"/phony_share"};
-    const std::string_view idA{"53760b7bdcdfa01a43ccf243f41dd912"};
-    const std::string_view idB{"40c5f7dce4a5576956a094eb7fb18cf8"};
+    const std::string_view idA{"11111111111111111111111111111111"};
+    const std::string_view idB{"22222222222222222222222222222222"};
 
     XMLDocument library{};
     library.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                   "<library>"
-                  "<last-read id=\"53760b7bdcdfa01a43ccf243f41dd912\"/>"
-                  "<epub id=\"53760b7bdcdfa01a43ccf243f41dd912\" "
-                  "opened-chapter=\"index_split_117.html\" "
+                  "<last-read id=\"11111111111111111111111111111111\"/>"
+                  "<epub id=\"11111111111111111111111111111111\" "
+                  "opened-chapter=\"chapters/chapter one.xhtml\" "
                   "chapter-progress=\"0.5\"/>"
-                  "<epub id=\"40c5f7dce4a5576956a094eb7fb18cf8\" "
+                  "<epub id=\"22222222222222222222222222222222\" "
                   "opened-chapter=\"\" chapter-progress=\"0\"/>"
                   "</library>");
     assert(!library.Error());
@@ -1150,7 +1168,7 @@ void queryEpubElem() {
     assert(outA.first == idA);
     assert(outA.second.chapterAbs
            == phonyShareAbs / "epubworm/extracted_epubs" / idA
-                      / "index_split_117.html");
+                      / "chapters/chapter one.xhtml");
     assert(outA.second.chapterProg == 0.5);
 
     // Success case B: empty opened-chapter -> empty chapterAbs, zero progress.
@@ -1227,12 +1245,12 @@ void queryEpubElem() {
 
 void writeProgress() {
     const fs::path phonyShareAbs{"/phony_share"};
-    const std::string_view id{"53760b7bdcdfa01a43ccf243f41dd912"};
+    const std::string_view id{"11111111111111111111111111111111"};
 
     XMLDocument library{};
     library.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                   "<library>"
-                  "<epub id=\"53760b7bdcdfa01a43ccf243f41dd912\" "
+                  "<epub id=\"11111111111111111111111111111111\" "
                   "opened-chapter=\"\" chapter-progress=\"0\"/>"
                   "</library>");
     assert(!library.Error());
@@ -1243,11 +1261,11 @@ void writeProgress() {
 
     // Success case A: non-empty chapterAbs, non-zero progress.
     const EpubProg prog{phonyShareAbs / "epubworm/extracted_epubs" / id
-                                / "index_split_117.html",
+                                / "chapters/chapter one.xhtml",
                         0.5};
     ::writeProgress(epub, prog, phonyShareAbs);
     assert(std::string_view{epub->Attribute("opened-chapter")}
-           == "index_split_117.html");
+           == "chapters/chapter one.xhtml");
     assert(epub->DoubleAttribute("chapter-progress") == 0.5);
 
     // Round-trip: queryEpubElem should reconstruct the original prog.
@@ -1293,25 +1311,23 @@ void deleteFromLibrary() {
     const fs::path libraryFileAbs{tmpShareAbs / "epubworm/library.xml"};
     ::initLibrary(libraryFileAbs);
 
-    assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
-                          tmpShareAbs)
+    assert(::addToLibrary(epubsAbs / "metadata_paths.epub", tmpShareAbs)
                    .has_value());
 
-    const std::string mysteriesID{"53760b7bdcdfa01a43ccf243f41dd912"};
+    const std::string metadataPathsID{"ded2eb033d88f30e1f790619f514e305"};
     XMLDocument libraryBeforeDelete{};
     assert(libraryBeforeDelete.LoadFile(libraryFileAbs.c_str())
            == XML_SUCCESS);
-    ::setLastRead(libraryBeforeDelete, mysteriesID);
+    ::setLastRead(libraryBeforeDelete, metadataPathsID);
     assert(libraryBeforeDelete.SaveFile(libraryFileAbs.c_str())
            == XML_SUCCESS);
 
     const std::expected<EpubInfo, LibraryUpdateError> removed{
-            ::deleteFromLibrary(mysteriesID, tmpShareAbs)};
+            ::deleteFromLibrary(metadataPathsID, tmpShareAbs)};
     assert(removed.has_value());
-    assert(removed.value().id == mysteriesID);
-    assert(removed.value().title == "Lord of Mysteries Volume 1: Clown");
-    assert(removed.value().author
-           == "Cuttlefish That Loves Diving (爱潜水的乌贼)");
+    assert(removed.value().id == metadataPathsID);
+    assert(removed.value().title == "The Clockwork Garden");
+    assert(removed.value().author == "Epubworm Project");
 
     XMLDocument libraryDoc{};
     assert(libraryDoc.LoadFile(libraryFileAbs.c_str()) == XML_SUCCESS);
@@ -1327,10 +1343,10 @@ void deleteFromLibrary() {
     assert(std::string_view{id}.empty());
 
     assert(!fs::exists(tmpShareAbs / "epubworm/extracted_epubs"
-                       / mysteriesID));
+                       / metadataPathsID));
 
     const std::expected<EpubInfo, LibraryUpdateError> alreadyRemoved{
-            ::deleteFromLibrary(mysteriesID, tmpShareAbs)};
+            ::deleteFromLibrary(metadataPathsID, tmpShareAbs)};
     assert(!alreadyRemoved.has_value());
     assert(alreadyRemoved.error() == LibraryUpdateError::notFoundOrAmbiguous);
 
@@ -1349,23 +1365,22 @@ void readEpubInLibrary() {
     const fs::path libraryFileAbs{dataDirAbs / "library.xml"};
     ::initLibrary(libraryFileAbs);
 
-    assert(::addToLibrary(epubsAbs / "lord_of_mysteries_vol_1.epub",
-                          tmpShareAbs)
+    assert(::addToLibrary(epubsAbs / "metadata_paths.epub", tmpShareAbs)
                    .has_value());
-    assert(::addToLibrary(epubsAbs / "parasite_in_love.epub", tmpShareAbs)
+    assert(::addToLibrary(epubsAbs / "nonlinear_spine.epub", tmpShareAbs)
                    .has_value());
-    assert(::addToLibrary(epubsAbs / "zuttomo_vol_1.epub", tmpShareAbs)
+    assert(::addToLibrary(epubsAbs / "nested_navigation.epub", tmpShareAbs)
                    .has_value());
-    assert(::addToLibrary(epubsAbs / "spice_and_wolf_vol_1.epub", tmpShareAbs)
+    assert(::addToLibrary(epubsAbs / "image_elements.epub", tmpShareAbs)
                    .has_value());
 
     assert(!::readEpubInLibrary("000000", tmpShareAbs, 55));
     assert(!::readEpubInLibrary("", tmpShareAbs, 55));
 
-    assert(::readEpubInLibrary("53760b", tmpShareAbs, 50));
-    assert(::readEpubInLibrary("40c5f7", tmpShareAbs, 55));
-    assert(::readEpubInLibrary("a6ce47", tmpShareAbs, 60));
-    assert(::readEpubInLibrary("8d070e", tmpShareAbs, 65));
+    assert(::readEpubInLibrary("ded2eb", tmpShareAbs, 50));
+    assert(::readEpubInLibrary("fd87f6", tmpShareAbs, 55));
+    assert(::readEpubInLibrary("1dc96b", tmpShareAbs, 60));
+    assert(::readEpubInLibrary("18c3f8", tmpShareAbs, 65));
 
     fs::create_directories(testOutputsAbs);
     const fs::path outputLibraryFileAbs{testOutputsAbs
@@ -1389,10 +1404,10 @@ void getLastRead() {
     XMLDocument library{};
     library.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                   "<library>"
-                  "<last-read id=\"53760b7bdcdfa01a43ccf243f41dd912\"/>"
+                  "<last-read id=\"11111111111111111111111111111111\"/>"
                   "</library>");
     assert(!library.Error());
-    assert(::getLastRead(library) == "53760b7bdcdfa01a43ccf243f41dd912");
+    assert(::getLastRead(library) == "11111111111111111111111111111111");
 
     XMLDocument noLibraryRoot{};
     noLibraryRoot.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"

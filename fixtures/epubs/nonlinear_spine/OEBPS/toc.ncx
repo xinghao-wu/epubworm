@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ncx version="2005-1" xmlns="http://www.daisy.org/z3986/2005/ncx/">
+  <head><meta name="dtb:uid" content="urn:uuid:epubworm-nested-layout"/></head>
+  <docTitle><text>Rooms Within Rooms</text></docTitle>
+  <navMap>
+    <navPoint id="cover" playOrder="1"><navLabel><text>Cover</text></navLabel><content src="Text/cover.xhtml"/></navPoint>
+    <navPoint id="intro" playOrder="2"><navLabel><text>Introduction</text></navLabel><content src="Text/intro.xhtml"/></navPoint>
+    <navPoint id="chapter" playOrder="3"><navLabel><text>Inner Room</text></navLabel><content src="Text/chapter.xhtml"/></navPoint>
+  </navMap>
+</ncx>

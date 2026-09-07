@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package version="2.0" unique-identifier="book-id" xmlns="http://www.idpf.org/2007/opf">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="book-id">urn:uuid:epubworm-navigation-layout</dc:identifier>
+    <dc:title>Branches and Fragments</dc:title>
+    <dc:creator>Fixture Workshop</dc:creator>
+    <dc:language>en</dc:language>
+  </metadata>
+  <manifest>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="one" href="Text/one.xhtml" media-type="application/xhtml+xml"/>
+    <item id="two" href="Text/two.xhtml" media-type="application/xhtml+xml"/>
+    <item id="three" href="Text/three.xhtml" media-type="application/xhtml+xml"/>
+    <item id="map" href="Images/map.png" media-type="image/png"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="one"/>
+    <itemref idref="two"/>
+    <itemref idref="three"/>
+  </spine>
+</package>

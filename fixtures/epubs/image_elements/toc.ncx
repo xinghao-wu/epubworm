@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ncx version="2005-1" xmlns="http://www.daisy.org/z3986/2005/ncx/">
+  <head><meta name="dtb:uid" content="urn:uuid:epubworm-image-layout"/></head>
+  <docTitle><text>Illustrated Signals</text></docTitle>
+  <navMap>
+    <navPoint id="svg" playOrder="1"><navLabel><text>SVG Image</text></navLabel><content src="Text/svg.xhtml"/></navPoint>
+    <navPoint id="html" playOrder="2"><navLabel><text>HTML Image</text></navLabel><content src="Text/html-image.xhtml"/></navPoint>
+    <navPoint id="prose" playOrder="3"><navLabel><text>Signal Notes</text></navLabel><content src="Text/prose.xhtml"/></navPoint>
+  </navMap>
+</ncx>

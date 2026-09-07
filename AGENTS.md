@@ -13,7 +13,7 @@ make         # Builds release binary.
 
 ## Repository Structure
 - Project source and vendored libraries live flat in `src/`.
-- Unzipped and zipped test fixture epubs are found at `test_epubs/`.
+- Unzipped and zipped test fixture epubs are found at `fixtures/epubs/`.
 
 ## Vendored Libraries
 - tinyxml2

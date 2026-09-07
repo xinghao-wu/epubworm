@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ncx version="2005-1" xmlns="http://www.daisy.org/z3986/2005/ncx/">
+  <head><meta name="dtb:uid" content="urn:uuid:epubworm-navigation-layout"/></head>
+  <docTitle><text>Branches and Fragments</text></docTitle>
+  <navMap>
+    <navPoint id="one" playOrder="1">
+      <navLabel><text>First Branch</text></navLabel>
+      <content src="Text/one.xhtml#start"/>
+      <navPoint id="two" playOrder="2">
+        <navLabel><text>Second Branch</text></navLabel>
+        <content src="Text/two.xhtml#middle"/>
+        <navPoint id="three" playOrder="3">
+          <navLabel><text>Third Branch</text></navLabel>
+          <content src="Text/three.xhtml#finish"/>
+        </navPoint>
+      </navPoint>
+    </navPoint>
+  </navMap>
+</ncx>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package version="3.0" unique-identifier="book-id" xmlns="http://www.idpf.org/2007/opf">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="book-id">urn:uuid:epubworm-nested-layout</dc:identifier>
+    <dc:title>Rooms Within Rooms</dc:title>
+    <dc:creator>Epubworm Project</dc:creator>
+    <dc:language>en</dc:language>
+    <dc:publisher>Nested Fixture Press</dc:publisher>
+  </metadata>
+  <manifest>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="cover" href="Text/cover.xhtml" media-type="application/xhtml+xml"/>
+    <item id="intro" href="Text/intro.xhtml" media-type="application/xhtml+xml"/>
+    <item id="chapter" href="Text/chapter.xhtml" media-type="application/xhtml+xml"/>
+    <item id="nav" href="Text/nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="cover-image" href="Images/cover.jpg" media-type="image/jpeg"/>
+    <item id="accent" href="Images/accent.png" media-type="image/png"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="cover"/>
+    <itemref idref="intro"/>
+    <itemref idref="nav" linear="no"/>
+    <itemref idref="chapter"/>
+  </spine>
+</package>
