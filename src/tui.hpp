@@ -86,6 +86,7 @@ inline const std::string greenFG{"[32m"};
 inline const std::string blueFG{"[34m"};
 inline const std::string magentaFG{"[35m"};
 inline const std::string cyanFG{"[36m"};
+inline const std::string lightGrayFG{"[37m"};
 inline const std::string resetFG{"[39m"};
 
 // Load an image to the terminal (create a virtual placement)

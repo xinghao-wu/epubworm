@@ -626,16 +626,18 @@ void headingColors() {
 
     std::string parsed{};
     ::parseContentElem(chapter.FirstChildElement("body"), parsed, {});
-    assert(getOccurrences<std::string_view>(parsed, esc + yellowFG) == 1);
-    assert(getOccurrences<std::string_view>(parsed, esc + cyanFG) == 5);
-    for (int level{1}; level <= 6; ++level) {
+    const std::array<std::string_view, 6> colors{
+            yellowFG, magentaFG, blueFG, cyanFG, greenFG, lightGrayFG};
+    for (std::size_t level{0}; level < colors.size(); ++level) {
+        const std::string colorCode{esc + std::string{colors.at(level)}};
+        assert(getOccurrences<std::string_view>(parsed, colorCode) == 1);
         std::string expected{centerAlignBegin};
         expected += esc;
         expected += bold;
         expected += esc;
-        expected += (level == 1 ? yellowFG : cyanFG);
+        expected += colors.at(level);
         expected += 'H';
-        expected += std::to_string(level);
+        expected += std::to_string(level + 1);
         expected += esc;
         expected += resetBold;
         expected += esc;
@@ -719,13 +721,9 @@ void contentAlignment() {
     expected += centerAlignBegin;
     expected += esc;
     expected += bold;
-    expected += esc;
-    expected += cyanFG;
     expected += "***";
     expected += esc;
     expected += resetBold;
-    expected += esc;
-    expected += resetFG;
     expected += centerAlignEnd;
     expected += "\n\n";
     expected += "\n\n";
@@ -743,7 +741,7 @@ void contentAlignment() {
     expected += esc;
     expected += bold;
     expected += esc;
-    expected += cyanFG;
+    expected += magentaFG;
     expected += "heading";
     expected += esc;
     expected += resetBold;
@@ -762,8 +760,8 @@ void contentAlignment() {
     ::parseContentElem(nestedChapter.FirstChildElement("body"), nestedParsed,
                        {});
     assert(!nestedParsed.contains(rightAlignBegin));
-    assert(nestedParsed.contains(centerAlignBegin + esc + bold + esc + cyanFG
-                                 + "Nested heading"));
+    assert(nestedParsed.contains(centerAlignBegin + esc + bold + esc
+                                 + magentaFG + "Nested heading"));
 
     std::string centered{centerAlignBegin + "one two\nthree" + centerAlignEnd};
     ::centerJustify(centerAlignBegin, centerAlignEnd, centered, 7);

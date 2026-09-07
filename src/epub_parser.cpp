@@ -211,6 +211,15 @@ void appendAlignmentEnd(std::string& out, TextAlignment alignment) {
     if (alignment == TextAlignment::right) out += rightAlignEnd;
 }
 
+const std::string& getHeadingColor(std::string_view name) {
+    if (name == "h1") return yellowFG;
+    if (name == "h2") return magentaFG;
+    if (name == "h3") return blueFG;
+    if (name == "h4") return cyanFG;
+    if (name == "h5") return greenFG;
+    return lightGrayFG;
+}
+
 void parseContentElemImpl(const XMLElement* parent, std::string& out,
                           const fs::path& chapterAbs,
                           TextAlignment inheritedAlignment);
@@ -359,17 +368,15 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
             } else if (name == "hr") {
                 out += centerAlignBegin;
                 out += esc + bold;
-                out += esc + cyanFG;
                 out += "***";
                 out += esc + resetBold;
-                out += esc + resetFG;
                 out += centerAlignEnd;
                 out += "\n\n";
             } else if (name == "h1" || name == "h2" || name == "h3"
                        || name == "h4" || name == "h5" || name == "h6") {
                 out += centerAlignBegin;
                 out += esc + bold;
-                out += esc + (name == "h1" ? yellowFG : cyanFG);
+                out += esc + getHeadingColor(name);
                 parseContentElemImpl(childElem, out, chapterAbs,
                                      TextAlignment::center);
                 out += esc + resetBold;

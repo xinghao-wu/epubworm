@@ -383,6 +383,7 @@ int getInvisEscSeqLen(std::wstring_view str) {
     totalLen += getOccurrences<std::wstring_view>(str, L"\033[34m") * 4;
     totalLen += getOccurrences<std::wstring_view>(str, L"\033[35m") * 4;
     totalLen += getOccurrences<std::wstring_view>(str, L"\033[36m") * 4;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[37m") * 4;
     totalLen += getOccurrences<std::wstring_view>(str, L"\033[39m") * 4;
     return totalLen;
 }
