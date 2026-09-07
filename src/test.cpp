@@ -685,10 +685,12 @@ void headingColors() {
     std::string parsed{};
     ::parseContentElem(chapter.FirstChildElement("body"), parsed, {});
     const std::array<std::string_view, 6> colors{
-            yellowFG, magentaFG, blueFG, cyanFG, greenFG, lightGrayFG};
+            yellowFG, magentaFG, blueFG, cyanFG, lightGrayFG, lightGrayFG};
     for (std::size_t level{0}; level < colors.size(); ++level) {
         const std::string colorCode{esc + std::string{colors.at(level)}};
-        assert(getOccurrences<std::string_view>(parsed, colorCode) == 1);
+        const int expectedOccurrences{level >= 4 ? 2 : 1};
+        assert(getOccurrences<std::string_view>(parsed, colorCode)
+               == expectedOccurrences);
         std::string expected{centerAlignBegin};
         expected += esc;
         expected += bold;

@@ -216,7 +216,7 @@ const std::string& getHeadingColor(std::string_view name) {
     if (name == "h2") return magentaFG;
     if (name == "h3") return blueFG;
     if (name == "h4") return cyanFG;
-    if (name == "h5") return greenFG;
+    if (name == "h5") return lightGrayFG;
     return lightGrayFG;
 }
 
