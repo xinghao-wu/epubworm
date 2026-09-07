@@ -528,43 +528,68 @@ void centerOnScreen(std::string& str, int maxLen) {
     }
 }
 
-void centerJustify(std::string_view prefix, std::string_view postfix,
-                   std::string& str, int maxLen) {
-    for (std::size_t specBeginIndex{str.find(prefix)},
-         specEndIndex{str.find(postfix, specBeginIndex + prefix.size())};
-         specBeginIndex != std::string::npos;
-         specBeginIndex = str.find(prefix, specEndIndex + postfix.size()),
-         specEndIndex = str.find(postfix, specBeginIndex + prefix.size())) {
+namespace {
+enum class MarkedAlignment {
+    center,
+    right,
+};
 
-        for (std::size_t lineBeginIndex{specBeginIndex},
-             lineEndIndex{str.find('\n', lineBeginIndex) > specEndIndex
-                                  ? specEndIndex
-                                  : str.find('\n', lineBeginIndex)};
-             lineBeginIndex <= specEndIndex;
-             lineBeginIndex = lineEndIndex + 1,
-             lineEndIndex = str.find('\n', lineBeginIndex) > specEndIndex
-                                    ? specEndIndex
-                                    : str.find('\n', lineBeginIndex)) {
+void alignMarkedText(std::string_view prefix, std::string_view postfix,
+                     std::string& str, int maxLen, MarkedAlignment alignment) {
+    if (prefix.empty() || postfix.empty()) return;
 
-            if (lineEndIndex == lineBeginIndex) {
-                continue;
+    std::size_t rangeBegin{str.find(prefix)};
+    while (rangeBegin != std::string::npos) {
+        const std::size_t postfixBegin{
+                str.find(postfix, rangeBegin + prefix.size())};
+        if (postfixBegin == std::string::npos) break;
+        std::size_t rangeEnd{postfixBegin + postfix.size() - 1};
+
+        std::size_t lineBegin{rangeBegin};
+        while (lineBegin <= rangeEnd) {
+            const std::size_t newline{str.find('\n', lineBegin)};
+            const bool finalLine{newline == std::string::npos
+                                 || newline > rangeEnd};
+            std::size_t lineEnd{finalLine ? rangeEnd : newline};
+
+            const std::string_view line{std::string_view{str}.substr(
+                    lineBegin, lineEnd - lineBegin + 1)};
+            const std::wstring wideLine{utf8ToWide(line)};
+            const int lineVisualLen{getVisualLen(wideLine)};
+            const int remainingWidth{maxLen - lineVisualLen};
+            int paddingLen{};
+            if (!line.contains(imgCellPlaceholder) && lineVisualLen > 0
+                && remainingWidth > 0) {
+                paddingLen = alignment == MarkedAlignment::center
+                                     ? remainingWidth / 2
+                                     : remainingWidth;
             }
 
-            const std::wstring wideLine{
-                    utf8ToWide(std::string_view{str}.substr(
-                            lineBeginIndex,
-                            lineEndIndex - lineBeginIndex + 1))};
+            if (paddingLen > 0) {
+                const std::size_t padding{
+                        static_cast<std::size_t>(paddingLen)};
+                str.insert(lineBegin, padding, ' ');
+                lineEnd += padding;
+                rangeEnd += padding;
+            }
 
-            const int lineVisualLen{getVisualLen(wideLine)};
-
-            const std::size_t paddingLen{
-                    static_cast<std::size_t>((maxLen - lineVisualLen) / 2)};
-
-            str.insert(lineBeginIndex, paddingLen, ' ');
-            lineEndIndex += paddingLen;
-            specEndIndex += paddingLen;
+            if (finalLine) break;
+            lineBegin = lineEnd + 1;
         }
+
+        rangeBegin = str.find(prefix, rangeEnd + 1);
     }
+}
+} // namespace
+
+void centerJustify(std::string_view prefix, std::string_view postfix,
+                   std::string& str, int maxLen) {
+    alignMarkedText(prefix, postfix, str, maxLen, MarkedAlignment::center);
+}
+
+void rightJustify(std::string_view prefix, std::string_view postfix,
+                  std::string& str, int maxLen) {
+    alignMarkedText(prefix, postfix, str, maxLen, MarkedAlignment::right);
 }
 
 std::tuple<Key, int, int> readRawInput() {
@@ -692,11 +717,12 @@ void processContentText(std::string& str, int maxLen) {
     expandEllipsesAndTabs(str);
     collapseConsecutiveNewlines(str);
     wrapLines(str, maxLen);
-    centerJustify(esc + yellowFG, esc + resetFG, str, maxLen);
-    centerJustify(esc + cyanFG, esc + resetFG, str, maxLen);
-    centerJustify(esc + blueFG, esc + resetFG, str, maxLen);
-    centerJustify(esc + redFG, esc + resetFG, str, maxLen);
-    centerJustify(esc + magentaFG, esc + resetFG, str, maxLen);
+    centerJustify(centerAlignBegin, centerAlignEnd, str, maxLen);
+    rightJustify(rightAlignBegin, rightAlignEnd, str, maxLen);
+    findAndReplaceAll(str, centerAlignBegin, "");
+    findAndReplaceAll(str, centerAlignEnd, "");
+    findAndReplaceAll(str, rightAlignBegin, "");
+    findAndReplaceAll(str, rightAlignEnd, "");
     centerOnScreen(str, maxLen);
     styleEachLineIndividually(str, esc + bold, esc + resetBold);
     styleEachLineIndividually(str, esc + italic, esc + resetItalic);
@@ -1034,18 +1060,22 @@ void registerSigwinchHandler() {
 
 void tocDataToString(const TocData& data, std::string_view title,
                      std::string_view author, std::string& str) {
+    str += centerAlignBegin;
     str += esc + magentaFG;
     str += esc + bold;
     str += title;
     str += esc + resetFG;
     str += esc + resetBold;
+    str += centerAlignEnd;
     str += '\n';
 
+    str += centerAlignBegin;
     str += esc + blueFG;
     str += esc + bold;
     str += author;
     str += esc + resetFG;
     str += esc + resetBold;
+    str += centerAlignEnd;
     str += "\n\n";
 
     for (const auto& navPoint : data) {
@@ -1053,11 +1083,13 @@ void tocDataToString(const TocData& data, std::string_view title,
     }
     str.pop_back();
 
+    str += centerAlignBegin;
     str += esc + redFG;
     str += esc + bold;
     str += "---";
     str += esc + resetFG;
     str += esc + resetBold;
+    str += centerAlignEnd;
     str += '\n';
 }
 

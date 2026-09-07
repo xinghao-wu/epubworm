@@ -455,11 +455,13 @@ void tocDataToString() {
     ::tocDataToString(toc, "Test Title", "Test Author", str);
 
     const std::string expected{
-            esc + magentaFG + esc + bold + "Test Title" + esc + resetFG + esc
-            + resetBold + '\n' + esc + blueFG + esc + bold + "Test Author"
-            + esc + resetFG + esc + resetBold
-            + "\n\nChapter 1\n\n    Section 1\n" + esc + redFG + esc + bold
-            + "---" + esc + resetFG + esc + resetBold + '\n'};
+            centerAlignBegin + esc + magentaFG + esc + bold + "Test Title"
+            + esc + resetFG + esc + resetBold + centerAlignEnd + '\n'
+            + centerAlignBegin + esc + blueFG + esc + bold + "Test Author"
+            + esc + resetFG + esc + resetBold + centerAlignEnd
+            + "\n\nChapter 1\n\n    Section 1\n" + centerAlignBegin + esc
+            + redFG + esc + bold + "---" + esc + resetFG + esc + resetBold
+            + centerAlignEnd + '\n'};
     assert(str == expected);
 }
 
@@ -548,7 +550,8 @@ void headingColors() {
     assert(getOccurrences<std::string_view>(parsed, esc + yellowFG) == 1);
     assert(getOccurrences<std::string_view>(parsed, esc + cyanFG) == 5);
     for (int level{1}; level <= 6; ++level) {
-        std::string expected{esc};
+        std::string expected{centerAlignBegin};
+        expected += esc;
         expected += bold;
         expected += esc;
         expected += (level == 1 ? yellowFG : cyanFG);
@@ -558,11 +561,15 @@ void headingColors() {
         expected += resetBold;
         expected += esc;
         expected += resetFG;
+        expected += centerAlignEnd;
         assert(parsed.contains(expected));
     }
 
-    std::string processed{esc + cyanFG + "one two three" + esc + resetFG};
+    std::string processed{centerAlignBegin + esc + cyanFG + "one two three"
+                          + esc + resetFG + centerAlignEnd};
     ::processContentText(processed, 7);
+    assert(!processed.contains(centerAlignBegin));
+    assert(!processed.contains(centerAlignEnd));
     assert(getOccurrences<std::string_view>(processed, esc + cyanFG) == 2);
     assert(processed.contains(esc + cyanFG + "one two" + esc + resetFG + '\n'
                               + esc + cyanFG));
@@ -570,6 +577,145 @@ void headingColors() {
     const std::size_t three{processed.find("three", secondCyan)};
     assert(three != std::string::npos);
     assert(three > secondCyan + esc.size() + cyanFG.size());
+}
+
+void contentAlignment() {
+    XMLDocument chapter{};
+    assert(chapter.Parse(
+                   "<body><p class='centerp section-marking'>center</p>"
+                   "<p class='separator'>separator</p>"
+                   "<div class='ornamental-break'><p "
+                   "class='ornamental-break-as-text'>fallback</p></div>"
+                   "<p class='right'>right</p>"
+                   "<div class='center'><p>inherited</p>"
+                   "<p class='justify'>justified</p>"
+                   "<p style='color: red; text-align : right !important'>"
+                   "inline</p></div>"
+                   "<p "
+                   "align='center'>legacy</p><center><p>element</p></center>"
+                   "<center>direct</center>"
+                   "<div style='text-align: right'>direct right</div>"
+                   "<p align='right'>legacy right</p>"
+                   "<p class='centerpiece'>centerpiece</p>"
+                   "<p class='section-break'>section</p>"
+                   "<p class='space-break'>space</p>"
+                   "<p class='signature'>signature</p><p>***</p>"
+                   "<h2 style='text-align: right'>heading</h2></body>")
+           == XML_SUCCESS);
+
+    std::string parsed{};
+    ::parseContentElem(chapter.FirstChildElement("body"), parsed, {});
+
+    std::string expected{};
+    const auto appendParagraph = [&expected](std::string_view begin,
+                                             std::string_view text,
+                                             std::string_view end) {
+        expected += begin;
+        expected += text;
+        expected += end;
+        expected += "\n\n";
+    };
+    appendParagraph(centerAlignBegin, "center", centerAlignEnd);
+    appendParagraph(centerAlignBegin, "separator", centerAlignEnd);
+    appendParagraph(centerAlignBegin, "fallback", centerAlignEnd);
+    appendParagraph(rightAlignBegin, "right", rightAlignEnd);
+    appendParagraph(centerAlignBegin, "inherited", centerAlignEnd);
+    appendParagraph("", "justified", "");
+    appendParagraph(rightAlignBegin, "inline", rightAlignEnd);
+    appendParagraph(centerAlignBegin, "legacy", centerAlignEnd);
+    appendParagraph(centerAlignBegin, "element", centerAlignEnd);
+    appendParagraph(centerAlignBegin, "direct", centerAlignEnd);
+    appendParagraph(rightAlignBegin, "direct right", rightAlignEnd);
+    appendParagraph(rightAlignBegin, "legacy right", rightAlignEnd);
+    appendParagraph("", "centerpiece", "");
+    appendParagraph("", "section", "");
+    appendParagraph("", "space", "");
+    appendParagraph("", "signature", "");
+    appendParagraph("", "***", "");
+    expected += centerAlignBegin;
+    expected += esc;
+    expected += bold;
+    expected += esc;
+    expected += cyanFG;
+    expected += "heading";
+    expected += esc;
+    expected += resetBold;
+    expected += esc;
+    expected += resetFG;
+    expected += centerAlignEnd;
+    expected += "\n\n";
+    assert(parsed == expected);
+
+    XMLDocument nestedChapter{};
+    assert(nestedChapter.Parse(
+                   "<body><li class='right'><h2>Nested heading</h2></li>"
+                   "</body>")
+           == XML_SUCCESS);
+    std::string nestedParsed{};
+    ::parseContentElem(nestedChapter.FirstChildElement("body"), nestedParsed,
+                       {});
+    assert(!nestedParsed.contains(rightAlignBegin));
+    assert(nestedParsed.contains(centerAlignBegin + esc + bold + esc + cyanFG
+                                 + "Nested heading"));
+
+    std::string centered{centerAlignBegin + "one two\nthree" + centerAlignEnd};
+    ::centerJustify(centerAlignBegin, centerAlignEnd, centered, 7);
+    assert(centered == centerAlignBegin + "one two\n three" + centerAlignEnd);
+
+    std::string rightAligned{rightAlignBegin + "one two\nthree"
+                             + rightAlignEnd};
+    ::rightJustify(rightAlignBegin, rightAlignEnd, rightAligned, 7);
+    assert(rightAligned
+           == rightAlignBegin + "one two\n  three" + rightAlignEnd);
+
+    std::string overlong{centerAlignBegin + "toolong" + centerAlignEnd};
+    ::centerJustify(centerAlignBegin, centerAlignEnd, overlong, 3);
+    assert(overlong == centerAlignBegin + "toolong" + centerAlignEnd);
+
+    std::string processed{centerAlignBegin + "center" + centerAlignEnd + '\n'
+                          + rightAlignBegin + "right" + rightAlignEnd + '\n'
+                          + esc + yellowFG + "color" + esc + resetFG + '\n'
+                          + centerAlignBegin + "dangling"};
+    ::processContentText(processed, 9);
+    assert(!processed.contains(centerAlignBegin));
+    assert(!processed.contains(centerAlignEnd));
+    assert(!processed.contains(rightAlignBegin));
+    assert(!processed.contains(rightAlignEnd));
+    assert(getOccurrences<std::string_view>(processed, esc + yellowFG) == 1);
+
+    const std::string_view processedView{processed};
+    const std::size_t firstNewline{processedView.find('\n')};
+    const std::size_t secondNewline{
+            processedView.find('\n', firstNewline + 1)};
+    const std::size_t thirdNewline{
+            processedView.find('\n', secondNewline + 1)};
+    const std::string_view centerLine{processedView.substr(0, firstNewline)};
+    const std::string_view rightLine{processedView.substr(
+            firstNewline + 1, secondNewline - firstNewline - 1)};
+    const std::string_view colorLine{processedView.substr(
+            secondNewline + 1, thirdNewline - secondNewline - 1)};
+    const auto leadingSpaces = [](std::string_view line) {
+        return line.find_first_not_of(' ');
+    };
+    assert(leadingSpaces(centerLine) == leadingSpaces(colorLine) + 1);
+    assert(leadingSpaces(rightLine) == leadingSpaces(colorLine) + 4);
+
+    std::string fixture{};
+    ::parseChapter(parasiteRootAbs / "OEBPS/Text/c01.xhtml", fixture);
+    assert(fixture.contains(centerAlignBegin + "— ◆ —" + centerAlignEnd));
+    std::string terminator{centerAlignBegin};
+    terminator += esc;
+    terminator += bold;
+    terminator += esc;
+    terminator += redFG;
+    terminator += "---";
+    terminator += esc;
+    terminator += resetBold;
+    terminator += esc;
+    terminator += resetFG;
+    terminator += centerAlignEnd;
+    terminator += '\n';
+    assert(fixture.ends_with(terminator));
 }
 
 void initConf() {

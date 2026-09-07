@@ -59,6 +59,11 @@ inline constexpr Key ctrlU{21};
 inline constexpr Key ctrlD{4};
 inline const std::string esc{'\033'};
 inline const std::string imgCellPlaceholder{"\U0010EEEE"};
+// Internal layout markers. These must be removed before terminal output.
+inline const std::string centerAlignBegin{'\x1C'};
+inline const std::string centerAlignEnd{'\x1D'};
+inline const std::string rightAlignBegin{'\x1E'};
+inline const std::string rightAlignEnd{'\x1F'};
 // Don't forget to modify `getInvisEscSeqLen()` when you change constants
 // below.
 inline const std::string escEnd{esc + '\\'};
@@ -198,6 +203,11 @@ void centerOnScreen(std::string& str, int maxLen);
 // and ending with `postfix`.
 void centerJustify(std::string_view prefix, std::string_view postfix,
                    std::string& str, int maxLen);
+
+// In `str`, using `maxLen`, right justify text beginning with `prefix`
+// and ending with `postfix`.
+void rightJustify(std::string_view prefix, std::string_view postfix,
+                  std::string& str, int maxLen);
 
 // Read one input in raw mode.
 // Returns the key (normal keypress integer values + values in specKey::Values)

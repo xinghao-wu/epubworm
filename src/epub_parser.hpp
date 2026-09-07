@@ -64,6 +64,8 @@ void collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
 // The elements `<em>`, `<i>`, `<strong>`, `<b>`, `<br/>`, `<h1>` to `<h6>`,
 // `<p>`, `<li>`, `<image/>`, and `<img/>` will be handled,
 // all other elements will be ignored and traversed through.
+// Semantic alignment classes, inline `text-align`, and legacy `align`
+// attributes are preserved as internal layout markers.
 void parseContentElem(const tinyxml2::XMLElement* parent, std::string& out,
                       const std::filesystem::path& chapterAbs);
 

@@ -2,6 +2,7 @@
 #include "percent_encoding_decode.hpp"
 #include "tinyxml2.hpp"
 #include "tui.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <filesystem>
 #include <stdexcept>
@@ -11,6 +12,208 @@
 
 using namespace tinyxml2;
 namespace fs = std::filesystem;
+
+namespace {
+enum class TextAlignment {
+    inherit,
+    left,
+    center,
+    right,
+};
+
+constexpr bool isHTMLWhitespace(char ch) {
+    return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '\f';
+}
+
+std::string_view trim(std::string_view str) {
+    while (!str.empty() && isHTMLWhitespace(str.front())) {
+        str.remove_prefix(1);
+    }
+    while (!str.empty() && isHTMLWhitespace(str.back())) {
+        str.remove_suffix(1);
+    }
+    return str;
+}
+
+std::string lowerASCII(std::string_view str) {
+    std::string result{str};
+    for (char& ch : result) {
+        if (ch >= 'A' && ch <= 'Z') {
+            ch = static_cast<char>(ch + ('a' - 'A'));
+        }
+    }
+    return result;
+}
+
+bool hasNumericSuffix(std::string_view str, std::string_view prefix) {
+    if (!str.starts_with(prefix) || str.size() == prefix.size()) {
+        return false;
+    }
+    return std::ranges::all_of(str.substr(prefix.size()),
+                               [](char ch) { return ch >= '0' && ch <= '9'; });
+}
+
+TextAlignment parseAlignmentValue(std::string_view value) {
+    const std::string lowerValue{lowerASCII(trim(value))};
+    if (lowerValue == "center") return TextAlignment::center;
+    if (lowerValue == "right") return TextAlignment::right;
+    if (lowerValue == "left" || lowerValue == "justify") {
+        return TextAlignment::left;
+    }
+    return TextAlignment::inherit;
+}
+
+TextAlignment getClassAlignment(const XMLElement* elem) {
+    const char* classAttr{elem->Attribute("class")};
+    if (classAttr == nullptr) return TextAlignment::inherit;
+
+    bool centerFound{false};
+    bool rightFound{false};
+    bool leftFound{false};
+    std::string_view classes{classAttr};
+    while (!classes.empty()) {
+        while (!classes.empty() && isHTMLWhitespace(classes.front())) {
+            classes.remove_prefix(1);
+        }
+        const std::size_t tokenEnd{classes.find_first_of(" \t\n\r\f")};
+        const std::string token{lowerASCII(classes.substr(0, tokenEnd))};
+
+        centerFound = centerFound || token == "center" || token == "centerp"
+                      || token == "centered" || token == "centre"
+                      || token == "centred" || token == "text-center"
+                      || token == "align-center" || token == "align-center-rw"
+                      || token == "has-text-align-center"
+                      || token == "separator" || token == "ornamental-break"
+                      || token == "ornamental-break-as-text"
+                      || hasNumericSuffix(token, "center")
+                      || hasNumericSuffix(token, "centre");
+        rightFound = rightFound || token == "right" || token == "rightp"
+                     || token == "right-aligned" || token == "text-right"
+                     || token == "align-right"
+                     || hasNumericSuffix(token, "right");
+        leftFound = leftFound || token == "left" || token == "text-left"
+                    || token == "align-left" || token == "justify"
+                    || token == "justified" || token == "text-justify"
+                    || token == "align-justify";
+
+        if (tokenEnd == std::string_view::npos) break;
+        classes.remove_prefix(tokenEnd + 1);
+    }
+
+    if (leftFound) return TextAlignment::left;
+    if (rightFound) return TextAlignment::right;
+    if (centerFound) return TextAlignment::center;
+    return TextAlignment::inherit;
+}
+
+TextAlignment getInlineStyleAlignment(const XMLElement* elem) {
+    const char* styleAttr{elem->Attribute("style")};
+    if (styleAttr == nullptr) return TextAlignment::inherit;
+
+    TextAlignment result{TextAlignment::inherit};
+    bool importantResult{false};
+    std::string_view declarations{styleAttr};
+    while (!declarations.empty()) {
+        const std::size_t declarationEnd{declarations.find(';')};
+        const std::string_view declaration{
+                declarations.substr(0, declarationEnd)};
+        const std::size_t colon{declaration.find(':')};
+        if (colon != std::string_view::npos
+            && lowerASCII(trim(declaration.substr(0, colon)))
+                       == "text-align") {
+            std::string value{lowerASCII(trim(declaration.substr(colon + 1)))};
+            constexpr std::string_view important{"!important"};
+            bool isImportant{false};
+            if (value.ends_with(important)) {
+                value = trim(std::string_view{value}.substr(
+                        0, value.size() - important.size()));
+                isImportant = true;
+            }
+            const TextAlignment alignment{parseAlignmentValue(value)};
+            if (alignment != TextAlignment::inherit
+                && (isImportant || !importantResult)) {
+                result = alignment;
+                importantResult = isImportant;
+            }
+        }
+
+        if (declarationEnd == std::string_view::npos) break;
+        declarations.remove_prefix(declarationEnd + 1);
+    }
+    return result;
+}
+
+TextAlignment getElementAlignment(const XMLElement* elem,
+                                  TextAlignment inherited) {
+    TextAlignment result{getClassAlignment(elem)};
+    if (std::string_view{elem->Name()} == "center") {
+        result = TextAlignment::center;
+    }
+    if (const char* alignAttr{elem->Attribute("align")}) {
+        const TextAlignment attrAlignment{parseAlignmentValue(alignAttr)};
+        if (attrAlignment != TextAlignment::inherit) result = attrAlignment;
+    }
+    const TextAlignment styleAlignment{getInlineStyleAlignment(elem)};
+    if (styleAlignment != TextAlignment::inherit) result = styleAlignment;
+    return result == TextAlignment::inherit ? inherited : result;
+}
+
+bool hasTextContent(const XMLNode* parent) {
+    for (const XMLNode* child{parent->FirstChild()}; child != nullptr;
+         child = child->NextSibling()) {
+        if (const XMLText* text = child->ToText()) {
+            const std::string_view value{text->Value()};
+            if (std::ranges::any_of(value, [](char ch) {
+                    return !isHTMLWhitespace(ch);
+                })) {
+                return true;
+            }
+        }
+        if (child->ToElement() != nullptr && hasTextContent(child))
+            return true;
+    }
+    return false;
+}
+
+bool isAlignmentBlock(std::string_view name) {
+    return name == "p" || name == "li" || name == "h1" || name == "h2"
+           || name == "h3" || name == "h4" || name == "h5" || name == "h6"
+           || name == "div" || name == "section" || name == "article"
+           || name == "aside" || name == "main" || name == "header"
+           || name == "footer" || name == "blockquote" || name == "center";
+}
+
+bool hasAlignmentBlockDescendant(const XMLNode* parent) {
+    for (const XMLElement* child{parent->FirstChildElement()};
+         child != nullptr; child = child->NextSiblingElement()) {
+        if (isAlignmentBlock(child->Name())
+            || hasAlignmentBlockDescendant(child)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool isAlignmentContainer(std::string_view name) {
+    return name == "div" || name == "section" || name == "article"
+           || name == "aside" || name == "main" || name == "header"
+           || name == "footer" || name == "blockquote" || name == "center";
+}
+
+void appendAlignmentBegin(std::string& out, TextAlignment alignment) {
+    if (alignment == TextAlignment::center) out += centerAlignBegin;
+    if (alignment == TextAlignment::right) out += rightAlignBegin;
+}
+
+void appendAlignmentEnd(std::string& out, TextAlignment alignment) {
+    if (alignment == TextAlignment::center) out += centerAlignEnd;
+    if (alignment == TextAlignment::right) out += rightAlignEnd;
+}
+
+void parseContentElemImpl(const XMLElement* parent, std::string& out,
+                          const fs::path& chapterAbs,
+                          TextAlignment inheritedAlignment);
+} // namespace
 
 fs::path getOPFRel(const fs::path& epubRootAbs) {
     const fs::path containerAbs{epubRootAbs / "META-INF/container.xml"};
@@ -121,8 +324,10 @@ TocData getTOC(const fs::path& tocAbs) {
     return result;
 }
 
-void parseContentElem(const XMLElement* parent, std::string& out,
-                      const fs::path& chapterAbs) {
+namespace {
+void parseContentElemImpl(const XMLElement* parent, std::string& out,
+                          const fs::path& chapterAbs,
+                          TextAlignment inheritedAlignment) {
     for (const XMLNode* childNode{parent->FirstChild()}; childNode != nullptr;
          childNode = childNode->NextSibling()) {
         if (const XMLText* childText = childNode->ToText()) {
@@ -130,26 +335,49 @@ void parseContentElem(const XMLElement* parent, std::string& out,
         }
         if (const XMLElement* childElem = childNode->ToElement()) {
             const std::string_view name{childElem->Name()};
+            const TextAlignment childAlignment{
+                    getElementAlignment(childElem, inheritedAlignment)};
             if (name == "b" || name == "strong") {
                 out += esc + bold;
-                parseContentElem(childElem, out, chapterAbs);
+                parseContentElemImpl(childElem, out, chapterAbs,
+                                     childAlignment);
                 out += esc + resetBold;
             } else if (name == "i" || name == "em") {
                 out += esc + italic;
-                parseContentElem(childElem, out, chapterAbs);
+                parseContentElemImpl(childElem, out, chapterAbs,
+                                     childAlignment);
                 out += esc + resetItalic;
             } else if (name == "br") {
                 out += '\n';
             } else if (name == "h1" || name == "h2" || name == "h3"
                        || name == "h4" || name == "h5" || name == "h6") {
+                out += centerAlignBegin;
                 out += esc + bold;
                 out += esc + (name == "h1" ? yellowFG : cyanFG);
-                parseContentElem(childElem, out, chapterAbs);
+                parseContentElemImpl(childElem, out, chapterAbs,
+                                     TextAlignment::center);
                 out += esc + resetBold;
                 out += esc + resetFG;
+                out += centerAlignEnd;
                 out += "\n\n";
             } else if (name == "p" || name == "li") {
-                parseContentElem(childElem, out, chapterAbs);
+                const bool markAlignment{
+                        childAlignment != TextAlignment::left
+                        && hasTextContent(childElem)
+                        && !hasAlignmentBlockDescendant(childElem)};
+                if (markAlignment) appendAlignmentBegin(out, childAlignment);
+                parseContentElemImpl(childElem, out, chapterAbs,
+                                     childAlignment);
+                if (markAlignment) appendAlignmentEnd(out, childAlignment);
+                out += "\n\n";
+            } else if (isAlignmentContainer(name)
+                       && childAlignment != TextAlignment::left
+                       && hasTextContent(childElem)
+                       && !hasAlignmentBlockDescendant(childElem)) {
+                appendAlignmentBegin(out, childAlignment);
+                parseContentElemImpl(childElem, out, chapterAbs,
+                                     childAlignment);
+                appendAlignmentEnd(out, childAlignment);
                 out += "\n\n";
             } else if (name == "image" || name == "img") {
                 const std::string imgAttributeName{
@@ -173,10 +401,18 @@ void parseContentElem(const XMLElement* parent, std::string& out,
                     }
                 }
             } else {
-                parseContentElem(childElem, out, chapterAbs);
+                parseContentElemImpl(childElem, out, chapterAbs,
+                                     childAlignment);
             }
         }
     }
+}
+} // namespace
+
+void parseContentElem(const XMLElement* parent, std::string& out,
+                      const fs::path& chapterAbs) {
+    parseContentElemImpl(parent, out, chapterAbs,
+                         getElementAlignment(parent, TextAlignment::left));
 }
 
 void parseChapter(const fs::path& chapterAbs, std::string& out) {
@@ -222,11 +458,13 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
     }
 
     out += '\n';
+    out += centerAlignBegin;
     out += esc + bold;
     out += esc + redFG;
     out += "---";
     out += esc + resetBold;
     out += esc + resetFG;
+    out += centerAlignEnd;
     out += '\n';
 }
 

@@ -72,6 +72,8 @@ void styleEachLineIndividually();
 
 void headingColors();
 
+void contentAlignment();
+
 void initConf();
 
 void initLibrary();

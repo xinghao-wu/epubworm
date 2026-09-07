@@ -25,6 +25,7 @@ int main() {
         test::tocDataToString();
         test::styleEachLineIndividually();
         test::headingColors();
+        test::contentAlignment();
         test::initConf();
         test::initLibrary();
         test::readConfig();
