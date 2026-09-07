@@ -220,6 +220,36 @@ void imageEscCodes() {
     assert(graphicsEscCode.starts_with(
             "\033_Gf=32,s=10,v=20,i=66051,r=2,c=3,t=t,U=1,a=T,q=2;"));
     assert(graphicsEscCode.ends_with(escEnd));
+
+    XMLDocument imageChapter{};
+    assert(imageChapter.Parse(
+                   "<body>before<img src='../Images/ascii.png'/>after</body>")
+           == XML_SUCCESS);
+    std::string parsedImage{};
+    const std::ostringstream imageGraphicsOutput{};
+    std::streambuf* originalCoutBuffer{
+            std::cout.rdbuf(imageGraphicsOutput.rdbuf())};
+    ::parseContentElem(imageChapter.FirstChildElement("body"), parsedImage,
+                       parasiteRootAbs / "OEBPS/Text/test.xhtml");
+    std::cout.rdbuf(originalCoutBuffer);
+
+    assert(parsedImage.starts_with("before\n\n" + esc + "[38;2;"));
+    assert(parsedImage.contains(imgCellPlaceholder));
+    assert(parsedImage.ends_with(esc + resetFG + "\n\n\nafter"));
+
+    const std::string imageGraphics{imageGraphicsOutput.str()};
+    const std::size_t idMarker{imageGraphics.find("i=")};
+    assert(idMarker != std::string::npos);
+    const std::size_t idBegin{idMarker + 2};
+    const std::size_t idEnd{imageGraphics.find(',', idBegin)};
+    assert(idEnd != std::string::npos);
+    const fs::path rawDataDirAbs{fs::exists("/dev/shm")
+                                         ? fs::path{"/dev/shm"}
+                                         : fs::temp_directory_path()};
+    fs::remove(rawDataDirAbs
+               / ("epubworm-img-data-"
+                  + imageGraphics.substr(idBegin, idEnd - idBegin)
+                  + "-tty-graphics-protocol"));
 }
 
 void imageChannels() {
@@ -693,9 +723,11 @@ void contentAlignment() {
     ::parseContentElem(chapter.FirstChildElement("body"), parsed, {});
 
     std::string expected{};
+    const auto appendBlockBoundary = [&expected]() { expected += "\n\n"; };
     const auto appendParagraph = [&expected](std::string_view begin,
                                              std::string_view text,
                                              std::string_view end) {
+        expected += "\n\n";
         expected += begin;
         expected += text;
         expected += end;
@@ -703,21 +735,27 @@ void contentAlignment() {
     };
     appendParagraph(centerAlignBegin, "center", centerAlignEnd);
     appendParagraph(centerAlignBegin, "separator", centerAlignEnd);
+    appendBlockBoundary();
     appendParagraph(centerAlignBegin, "fallback", centerAlignEnd);
-    expected += "\n\n";
+    appendBlockBoundary();
     appendParagraph(rightAlignBegin, "right", rightAlignEnd);
+    appendBlockBoundary();
     appendParagraph(centerAlignBegin, "inherited", centerAlignEnd);
     appendParagraph("", "justified", "");
     appendParagraph(rightAlignBegin, "inline", rightAlignEnd);
-    expected += "\n\n";
+    appendBlockBoundary();
     appendParagraph(rightAlignBegin,
                     "before " + esc + greenFG + "code" + esc + resetFG
                             + " after",
                     rightAlignEnd);
+    appendBlockBoundary();
     appendParagraph(centerAlignBegin, "pre", centerAlignEnd);
-    expected += "\n\n";
+    appendBlockBoundary();
+    appendBlockBoundary();
     appendParagraph(rightAlignBegin, "one | two", rightAlignEnd);
-    expected += "\n\n";
+    appendBlockBoundary();
+    appendBlockBoundary();
+    appendBlockBoundary();
     expected += centerAlignBegin;
     expected += esc;
     expected += bold;
@@ -725,10 +763,12 @@ void contentAlignment() {
     expected += esc;
     expected += resetBold;
     expected += centerAlignEnd;
-    expected += "\n\n";
-    expected += "\n\n";
+    appendBlockBoundary();
+    appendBlockBoundary();
     appendParagraph(centerAlignBegin, "legacy", centerAlignEnd);
+    appendBlockBoundary();
     appendParagraph(centerAlignBegin, "element", centerAlignEnd);
+    appendBlockBoundary();
     appendParagraph(centerAlignBegin, "direct", centerAlignEnd);
     appendParagraph(rightAlignBegin, "direct right", rightAlignEnd);
     appendParagraph(rightAlignBegin, "legacy right", rightAlignEnd);
@@ -737,6 +777,7 @@ void contentAlignment() {
     appendParagraph("", "space", "");
     appendParagraph("", "signature", "");
     appendParagraph("", "***", "");
+    appendBlockBoundary();
     expected += centerAlignBegin;
     expected += esc;
     expected += bold;
@@ -762,6 +803,40 @@ void contentAlignment() {
     assert(!nestedParsed.contains(rightAlignBegin));
     assert(nestedParsed.contains(centerAlignBegin + esc + bold + esc
                                  + magentaFG + "Nested heading"));
+
+    XMLDocument blockChapter{};
+    assert(blockChapter.Parse(
+                   "<body>before<div><p>inside</p></div>after</body>")
+           == XML_SUCCESS);
+    std::string blockParsed{};
+    ::parseContentElem(blockChapter.FirstChildElement("body"), blockParsed,
+                       {});
+    assert(blockParsed == "before\n\n\n\ninside\n\n\n\nafter");
+
+    constexpr std::array<std::string_view, 8> semanticBlocks{
+            "section", "article", "aside",      "main",
+            "header",  "footer",  "blockquote", "center"};
+    for (const std::string_view name : semanticBlocks) {
+        XMLDocument semanticBlockChapter{};
+        const std::string source{"<body>before<" + std::string{name}
+                                 + "><p>inside</p></" + std::string{name}
+                                 + ">after</body>"};
+        assert(semanticBlockChapter.Parse(source.c_str()) == XML_SUCCESS);
+        std::string semanticBlockParsed{};
+        ::parseContentElem(semanticBlockChapter.FirstChildElement("body"),
+                           semanticBlockParsed, {});
+        assert(semanticBlockParsed.starts_with("before\n\n\n\n"));
+        assert(semanticBlockParsed.ends_with("\n\n\n\nafter"));
+    }
+
+    XMLDocument missingImageChapter{};
+    assert(missingImageChapter.Parse(
+                   "<body>before<img src='missing.png'/>after</body>")
+           == XML_SUCCESS);
+    std::string missingImageParsed{};
+    ::parseContentElem(missingImageChapter.FirstChildElement("body"),
+                       missingImageParsed, {});
+    assert(missingImageParsed == "beforeafter");
 
     std::string centered{centerAlignBegin + "one two\nthree" + centerAlignEnd};
     ::centerJustify(centerAlignBegin, centerAlignEnd, centered, 7);

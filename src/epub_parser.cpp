@@ -175,7 +175,7 @@ bool hasTextContent(const XMLNode* parent) {
     return false;
 }
 
-bool isAlignmentBlock(std::string_view name) {
+bool isBlockElement(std::string_view name) {
     return name == "p" || name == "li" || name == "pre" || name == "tr"
            || name == "hr" || name == "h1" || name == "h2" || name == "h3"
            || name == "h4" || name == "h5" || name == "h6" || name == "div"
@@ -187,7 +187,7 @@ bool isAlignmentBlock(std::string_view name) {
 bool hasAlignmentBlockDescendant(const XMLNode* parent) {
     for (const XMLElement* child{parent->FirstChildElement()};
          child != nullptr; child = child->NextSiblingElement()) {
-        if (isAlignmentBlock(child->Name())
+        if (isBlockElement(child->Name())
             || hasAlignmentBlockDescendant(child)) {
             return true;
         }
@@ -348,6 +348,9 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
             const std::string_view name{childElem->Name()};
             const TextAlignment childAlignment{
                     getElementAlignment(childElem, inheritedAlignment)};
+            const bool isBlock{isBlockElement(name)};
+            if (isBlock) out += "\n\n";
+
             if (name == "b" || name == "strong") {
                 out += esc + bold;
                 parseContentElemImpl(childElem, out, chapterAbs,
@@ -371,7 +374,6 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                 out += "***";
                 out += esc + resetBold;
                 out += centerAlignEnd;
-                out += "\n\n";
             } else if (name == "h1" || name == "h2" || name == "h3"
                        || name == "h4" || name == "h5" || name == "h6") {
                 out += centerAlignBegin;
@@ -382,7 +384,6 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                 out += esc + resetBold;
                 out += esc + resetFG;
                 out += centerAlignEnd;
-                out += "\n\n";
             } else if (name == "p" || name == "li" || name == "div"
                        || name == "pre" || name == "tr") {
                 const bool markAlignment{
@@ -399,7 +400,6 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                     out.resize(out.size() - tableCellSeparator.size());
                 }
                 if (markAlignment) appendAlignmentEnd(out, childAlignment);
-                out += "\n\n";
             } else if (name == "td") {
                 parseContentElemImpl(childElem, out, chapterAbs,
                                      childAlignment);
@@ -412,7 +412,6 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                 parseContentElemImpl(childElem, out, chapterAbs,
                                      childAlignment);
                 appendAlignmentEnd(out, childAlignment);
-                out += "\n\n";
             } else if (name == "image" || name == "img") {
                 const std::string imgAttributeName{
                         (name == "image") ? "xlink:href" : "src"};
@@ -421,9 +420,11 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                         / childElem->Attribute(imgAttributeName.data())};
                 decodePercentEncoding(imgPathAbs);
 
+                const std::size_t imageBegin{out.size()};
                 try {
+                    out += "\n\n";
                     displayImg(imgPathAbs, out);
-                    out += '\n';
+                    out += "\n\n";
                 } catch (const std::runtime_error& e) {
                     // If the image reference points to a nonexistent file or
                     // image is of an unsupported format, its
@@ -433,11 +434,14 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                                 "Image not of any known type")) {
                         throw;
                     }
+                    out.resize(imageBegin);
                 }
             } else {
                 parseContentElemImpl(childElem, out, chapterAbs,
                                      childAlignment);
             }
+
+            if (isBlock) out += "\n\n";
         }
     }
 }
