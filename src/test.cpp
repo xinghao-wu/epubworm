@@ -431,15 +431,25 @@ void collapseConsecutiveNewlines() {
                                     "\xC2\xA0"
                                     "\n \t"
                                     "\xC2\xA0"
+                                    "\xE2\x80\x8C"
+                                    "\n"
+                                    "\xE2\x80\x8C"
                                     "\n  after"};
     ::collapseConsecutiveNewlines(whitespaceSeparated);
     assert(whitespaceSeparated == "before \n\ncontent\n\n  after");
 
     std::string unboundedWhitespace{"\n \tcontent\n \t"
-                                    "\xC2\xA0"};
+                                    "\xC2\xA0"
+                                    "\xE2\x80\x8C"};
     const std::string expectedUnboundedWhitespace{unboundedWhitespace};
     ::collapseConsecutiveNewlines(unboundedWhitespace);
     assert(unboundedWhitespace == expectedUnboundedWhitespace);
+
+    std::string embeddedNonJoiner{"before\xE2\x80\x8C"
+                                  "after"};
+    const std::string expectedEmbeddedNonJoiner{embeddedNonJoiner};
+    ::collapseConsecutiveNewlines(embeddedNonJoiner);
+    assert(embeddedNonJoiner == expectedEmbeddedNonJoiner);
 }
 
 void findNth() {

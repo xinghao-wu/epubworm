@@ -395,6 +395,7 @@ void useSystemLocale() {
 
 void collapseConsecutiveNewlines(std::string& str) {
     constexpr std::string_view nonBreakingSpace{"\xC2\xA0"};
+    constexpr std::string_view zeroWidthNonJoiner{"\xE2\x80\x8C"};
     std::size_t inputIndex{};
     std::size_t outputIndex{};
     int consecutiveNewlines{};
@@ -418,6 +419,10 @@ void collapseConsecutiveNewlines(std::string& str) {
                                                     nonBreakingSpace.size())
                        == nonBreakingSpace) {
                 whitespaceEnd += nonBreakingSpace.size();
+            } else if (std::string_view{str}.substr(whitespaceEnd,
+                                                    zeroWidthNonJoiner.size())
+                       == zeroWidthNonJoiner) {
+                whitespaceEnd += zeroWidthNonJoiner.size();
             } else {
                 break;
             }
