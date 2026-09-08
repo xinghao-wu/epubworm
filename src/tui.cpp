@@ -792,6 +792,7 @@ void processContentText(std::string& str, int maxLen) {
     styleEachLineIndividually(str, esc + greenFG, esc + resetFG);
     styleEachLineIndividually(str, esc + blueFG, esc + resetFG);
     styleEachLineIndividually(str, esc + magentaFG, esc + resetFG);
+    styleEachLineIndividually(str, esc + lightGrayFG, esc + resetFG);
 }
 
 std::pair<ChapterExit, double>

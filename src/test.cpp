@@ -689,10 +689,18 @@ void displayEpub() {
 }
 
 void styleEachLineIndividually() {
-
     std::string str{"\033[1mfirst line\nsec line\033[22mout"};
     ::styleEachLineIndividually(str, "\033[1m", "\033[22m");
     assert(str == "\033[1mfirst line\033[22m\n\033[1msec line\033[22mout");
+
+    const std::array<std::string_view, 12> styleCodes{
+            bold,    resetBold, italic,    resetItalic, yellowFG,    redFG,
+            greenFG, blueFG,    magentaFG, cyanFG,      lightGrayFG, resetFG};
+    for (const std::string_view styleCode : styleCodes) {
+        const std::wstring escapedStyle{
+                ::utf8ToWide(esc + std::string{styleCode})};
+        assert(::getVisualLen(escapedStyle) == 0);
+    }
 }
 
 void headingColors() {
@@ -725,18 +733,66 @@ void headingColors() {
         assert(parsed.contains(expected));
     }
 
-    std::string processed{centerAlignBegin + esc + cyanFG + "one two three"
-                          + esc + resetFG + centerAlignEnd};
+    XMLDocument nestedHeading{};
+    assert(nestedHeading.Parse(
+                   "<body><h2>before <span><code>code</code></span> after "
+                   "<strong>bold</strong></h2></body>")
+           == XML_SUCCESS);
+    std::string nestedHeadingParsed{};
+    ::parseContentElem(nestedHeading.FirstChildElement("body"),
+                       nestedHeadingParsed, {});
+    const std::string expectedNestedHeading{
+            "\n\n" + centerAlignBegin + esc + bold + esc + magentaFG
+            + "before " + esc + resetFG + esc + greenFG + "code" + esc
+            + resetFG + esc + magentaFG + " after bold" + esc + resetBold + esc
+            + resetFG + centerAlignEnd + "\n\n"};
+    assert(nestedHeadingParsed == expectedNestedHeading);
+
+    XMLDocument nestedStyles{};
+    assert(nestedStyles.Parse(
+                   "<body><p><em>outer <i>inner</i> after</em></p>"
+                   "<p><code>outer <code>inner</code> after</code></p>"
+                   "<strong>before<hr/>after</strong></body>")
+           == XML_SUCCESS);
+    std::string nestedStylesParsed{};
+    ::parseContentElem(nestedStyles.FirstChildElement("body"),
+                       nestedStylesParsed, {});
+    assert(getOccurrences<std::string_view>(nestedStylesParsed, esc + italic)
+           == 1);
+    assert(getOccurrences<std::string_view>(nestedStylesParsed,
+                                            esc + resetItalic)
+           == 1);
+    assert(getOccurrences<std::string_view>(nestedStylesParsed, esc + greenFG)
+           == 1);
+    assert(getOccurrences<std::string_view>(nestedStylesParsed, esc + resetFG)
+           == 1);
+    assert(getOccurrences<std::string_view>(nestedStylesParsed, esc + bold)
+           == 1);
+    assert(getOccurrences<std::string_view>(nestedStylesParsed,
+                                            esc + resetBold)
+           == 1);
+
+    std::string processed{centerAlignBegin + esc + lightGrayFG
+                          + "one two three" + esc + resetFG + centerAlignEnd};
     ::processContentText(processed, 7);
     assert(!processed.contains(centerAlignBegin));
     assert(!processed.contains(centerAlignEnd));
-    assert(getOccurrences<std::string_view>(processed, esc + cyanFG) == 2);
-    assert(processed.contains(esc + cyanFG + "one two" + esc + resetFG + '\n'
-                              + esc + cyanFG));
-    const std::size_t secondCyan{processed.rfind(esc + cyanFG)};
-    const std::size_t three{processed.find("three", secondCyan)};
+    assert(getOccurrences<std::string_view>(processed, esc + lightGrayFG)
+           == 2);
+    assert(processed.contains(esc + lightGrayFG + "one two" + esc + resetFG
+                              + '\n' + esc + lightGrayFG));
+    const std::size_t secondLightGray{processed.rfind(esc + lightGrayFG)};
+    const std::size_t three{processed.find("three", secondLightGray)};
     assert(three != std::string::npos);
-    assert(three > secondCyan + esc.size() + cyanFG.size());
+    assert(three > secondLightGray + esc.size() + lightGrayFG.size());
+
+    ::processContentText(nestedHeadingParsed, 10);
+    assert(getOccurrences<std::string_view>(nestedHeadingParsed, esc + greenFG)
+           == 1);
+    assert(nestedHeadingParsed.contains(esc + greenFG + "code" + esc + resetFG
+                                        + esc + magentaFG));
+    assert(getOccurrences<std::string_view>(nestedHeadingParsed, esc + bold)
+           == 3);
 }
 
 void contentAlignment() {
