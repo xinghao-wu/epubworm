@@ -1,6 +1,4 @@
 CXX ?= g++
-CLANG_FORMAT ?= clang-format
-CLANG_TIDY ?= clang-tidy
 COMMON_CXXFLAGS := -std=c++23 -Wall -Wextra -Wpedantic -Wconversion -Wsign-conversion -Weffc++ -MMD -MP
 RELEASE_CXXFLAGS ?= -O2
 DEBUG_CXXFLAGS ?= -g3 -fsanitize=address
@@ -118,23 +116,23 @@ test: $(TEST_BIN)
 	cd $(BUILD_DIR) && ./$(notdir $(TEST_BIN))
 
 fmt:
-	$(CLANG_FORMAT) -i $(PROJECT_FILES)
+	clang-format -i $(PROJECT_FILES)
 
 fmt-check:
-	$(CLANG_FORMAT) --dry-run --Werror $(PROJECT_FILES)
+	clang-format --dry-run --Werror $(PROJECT_FILES)
 
 fmt-check-diff:
 	@status=0; \
 	for f in $(PROJECT_FILES); do \
-		$(CLANG_FORMAT) $$f | diff -u $$f - || status=1; \
+		clang-format $$f | diff -u $$f - || status=1; \
 	done; \
 	exit $$status
 
 lint:
-	$(CLANG_TIDY) --warnings-as-errors='*' $(PROJECT_FILES)
+	clang-tidy --warnings-as-errors='*' $(PROJECT_FILES)
 
 lint-fix:
-	$(CLANG_TIDY) --fix $(PROJECT_FILES)
+	clang-tidy --fix $(PROJECT_FILES)
 
 # Compiler-generated dependency files for incremental rebuilds on header changes
 DEPS := $(MAIN_OBJS:.o=.d) $(MAIN_OBJS_DEBUG:.o=.d) $(TEST_OBJS:.o=.d)

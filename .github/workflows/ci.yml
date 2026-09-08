@@ -31,33 +31,17 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install LLVM 22 on Linux
-        if: runner.os == 'Linux'
-        run: |
-          curl --fail --silent --show-error \
-            https://apt.llvm.org/llvm-snapshot.gpg.key \
-            | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc > /dev/null
-          printf '%s\n' \
-            'deb https://apt.llvm.org/noble/ llvm-toolchain-noble-22 main' \
-            | sudo tee /etc/apt/sources.list.d/llvm.list > /dev/null
-          sudo apt-get update
-          sudo apt-get install --yes clang-format-22 clang-tidy-22
-
-      - name: Install LLVM 22 on macOS
-        if: runner.os == 'macOS'
-        run: brew install llvm@22
+      - name: Set up LLVM 22
+        uses: ZhongRuoyu/setup-llvm@eea6238baf53d41c1615923680d7a738da584318 # v0
+        with:
+          llvm-version: 22
 
       - name: Check formatting
         if: runner.os == 'Linux'
-        run: make fmt-check CLANG_FORMAT=clang-format-22
+        run: make fmt-check
 
-      - name: Lint on Linux
-        if: runner.os == 'Linux'
-        run: make lint CLANG_TIDY=clang-tidy-22
-
-      - name: Lint on macOS
-        if: runner.os == 'macOS'
-        run: make lint CLANG_TIDY="$(brew --prefix llvm@22)/bin/clang-tidy"
+      - name: Lint
+        run: make lint
 
   build-and-test:
     name: Build and test (${{ matrix.os }})
