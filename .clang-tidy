@@ -9,6 +9,7 @@ Checks: >
   -zircon-*,
   -modernize-use-trailing-return-type,
   -misc-no-recursion,
+  -misc-include-cleaner,
   -misc-use-anonymous-namespace,
   -misc-use-internal-linkage,
   -readability-identifier-length,
