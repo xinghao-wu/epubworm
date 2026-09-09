@@ -61,11 +61,11 @@ static void printEpubInfo(const EpubInfo& info,
         if (useColor) std::cout << esc << resetFG;
     };
 
-    printField(info.title, magentaFG);
+    printField(info.title, yellowFG);
     printField(" | ", cyanFG);
     printField(info.author, blueFG);
     printField(" | ", cyanFG);
-    printField(getUnambiguousEpubIdPrefix(libraryRoot, info.id), yellowFG);
+    printField(getUnambiguousEpubIdPrefix(libraryRoot, info.id), magentaFG);
 }
 
 static void printLibraryUpdate(std::string_view label, std::string_view color,

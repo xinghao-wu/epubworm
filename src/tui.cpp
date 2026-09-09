@@ -1125,7 +1125,7 @@ void registerSigwinchHandler() {
 void tocDataToString(const TocData& data, std::string_view title,
                      std::string_view author, std::string& str) {
     str += centerAlignBegin;
-    str += esc + magentaFG;
+    str += esc + cyanFG;
     str += esc + bold;
     str += esc + underline;
     str += title;
@@ -1251,7 +1251,7 @@ fs::path displayTOC(const TocData& tocData, std::string_view title,
 
         eraseScreen();
         std::cout << dispBeforeSelection;
-        std::cout << esc << greenFG;
+        std::cout << esc << magentaFG;
         std::cout << esc << bold;
         std::cout << dispSelection;
         std::cout << esc << resetFG;

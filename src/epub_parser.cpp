@@ -440,7 +440,7 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
             } else if (name == "p" || name == "li" || name == "div"
                        || name == "pre" || name == "table") {
                 TextStyle childStyle{style};
-                if (name == "pre") childStyle.foreground = magentaFG;
+                if (name == "pre") childStyle.foreground = greenFG;
                 const bool markAlignment{
                         childAlignment != TextAlignment::left
                         && hasTextContent(childElem)

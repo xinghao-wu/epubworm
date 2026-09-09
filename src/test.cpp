@@ -611,7 +611,7 @@ void tocDataToString() {
     ::tocDataToString(toc, "Test Title", "Test Author", str);
 
     const std::string expected{
-            centerAlignBegin + esc + magentaFG + esc + bold + esc + underline
+            centerAlignBegin + esc + cyanFG + esc + bold + esc + underline
             + "Test Title" + esc + resetFG + esc + resetBold + esc
             + resetUnderline + centerAlignEnd + '\n' + centerAlignBegin + esc
             + blueFG + esc + bold + "Test Author" + esc + resetFG + esc
@@ -869,7 +869,7 @@ void contentAlignment() {
                             + " after",
                     rightAlignEnd);
     appendBlockBoundary();
-    appendParagraph(centerAlignBegin + esc + magentaFG, "pre",
+    appendParagraph(centerAlignBegin + esc + greenFG, "pre",
                     esc + resetFG + centerAlignEnd);
     appendBlockBoundary();
     appendBlockBoundary();
@@ -926,7 +926,7 @@ void contentAlignment() {
     ::parseContentElem(trailingWhitespacePre.FirstChildElement("body"),
                        trailingWhitespacePreParsed, {});
     assert(trailingWhitespacePreParsed
-           == "before\n\n" + esc + magentaFG + "pre" + esc + resetFG
+           == "before\n\n" + esc + greenFG + "pre" + esc + resetFG
                       + "\n\n\nafter");
 
     ::processContentText(trailingWhitespacePreParsed, 55);
