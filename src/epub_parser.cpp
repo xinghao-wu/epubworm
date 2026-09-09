@@ -448,9 +448,21 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                         && !hasAlignmentBlockDescendant(childElem)};
                 if (markAlignment) appendAlignmentBegin(out, childAlignment);
                 appendStyleTransition(out, style, childStyle);
+                const std::size_t contentBegin{out.size()};
                 parseContentElemImpl(childElem, out, chapterAbs,
                                      childAlignment, childStyle);
-                appendStyleTransition(out, childStyle, style);
+                if (name == "pre") {
+                    std::size_t styleEnd{out.size()};
+                    while (styleEnd > contentBegin
+                           && isHTMLWhitespace(out[styleEnd - 1])) {
+                        --styleEnd;
+                    }
+                    std::string styleTransition{};
+                    appendStyleTransition(styleTransition, childStyle, style);
+                    out.insert(styleEnd, styleTransition);
+                } else {
+                    appendStyleTransition(out, childStyle, style);
+                }
                 if (markAlignment) appendAlignmentEnd(out, childAlignment);
             } else if (name == "tr") {
                 out += '\n';

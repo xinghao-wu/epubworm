@@ -904,6 +904,21 @@ void contentAlignment() {
     expected += "\n\n";
     assert(parsed == expected);
 
+    XMLDocument trailingWhitespacePre{};
+    assert(trailingWhitespacePre.Parse(
+                   "<body>before<pre>pre\n</pre>after</body>")
+           == XML_SUCCESS);
+    std::string trailingWhitespacePreParsed{};
+    ::parseContentElem(trailingWhitespacePre.FirstChildElement("body"),
+                       trailingWhitespacePreParsed, {});
+    assert(trailingWhitespacePreParsed
+           == "before\n\n" + esc + yellowFG + "pre" + esc + resetFG
+                      + "\n\n\nafter");
+
+    ::processContentText(trailingWhitespacePreParsed, 55);
+    assert(getOccurrences<std::string_view>(trailingWhitespacePreParsed, "\n")
+           == 4);
+
     XMLDocument tableChapter{};
     assert(tableChapter.Parse(
                    "<body>before<table><caption>caption</caption>"
