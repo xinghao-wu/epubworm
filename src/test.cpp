@@ -838,7 +838,7 @@ void contentAlignment() {
         expected += end;
         expected += "\n\n";
     };
-    const std::string tableSeparator{esc + magentaFG + " | " + esc + resetFG};
+    const std::string tableSeparator{esc + cyanFG + " | " + esc + resetFG};
     appendParagraph(centerAlignBegin, "center", centerAlignEnd);
     appendParagraph(centerAlignBegin, "separator", centerAlignEnd);
     appendBlockBoundary();
@@ -855,7 +855,8 @@ void contentAlignment() {
                             + " after",
                     rightAlignEnd);
     appendBlockBoundary();
-    appendParagraph(centerAlignBegin, "pre", centerAlignEnd);
+    appendParagraph(centerAlignBegin + esc + yellowFG, "pre",
+                    esc + resetFG + centerAlignEnd);
     appendBlockBoundary();
     appendBlockBoundary();
     appendBlockBoundary();
@@ -943,7 +944,7 @@ void contentAlignment() {
     ::parseContentElem(styledTable.FirstChildElement("body"),
                        styledTableParsed, {});
     const std::string unstyledSeparator{esc + resetBold + esc + resetItalic
-                                        + esc + magentaFG + " | " + esc + bold
+                                        + esc + cyanFG + " | " + esc + bold
                                         + esc + italic + esc + resetFG};
     assert(styledTableParsed.contains("one" + unstyledSeparator + "two"));
     assert(getOccurrences<std::string_view>(styledTableParsed, rightAlignBegin)

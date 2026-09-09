@@ -256,7 +256,7 @@ std::string getTableCellSeparator(const TextStyle& style) {
     TextStyle separatorStyle{style};
     separatorStyle.bold = false;
     separatorStyle.italic = false;
-    separatorStyle.foreground = magentaFG;
+    separatorStyle.foreground = cyanFG;
 
     std::string separator{};
     appendStyleTransition(separator, style, separatorStyle);
@@ -440,13 +440,17 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                 out += centerAlignEnd;
             } else if (name == "p" || name == "li" || name == "div"
                        || name == "pre" || name == "table") {
+                TextStyle childStyle{style};
+                if (name == "pre") childStyle.foreground = yellowFG;
                 const bool markAlignment{
                         childAlignment != TextAlignment::left
                         && hasTextContent(childElem)
                         && !hasAlignmentBlockDescendant(childElem)};
                 if (markAlignment) appendAlignmentBegin(out, childAlignment);
+                appendStyleTransition(out, style, childStyle);
                 parseContentElemImpl(childElem, out, chapterAbs,
-                                     childAlignment, style);
+                                     childAlignment, childStyle);
+                appendStyleTransition(out, childStyle, style);
                 if (markAlignment) appendAlignmentEnd(out, childAlignment);
             } else if (name == "tr") {
                 out += '\n';
