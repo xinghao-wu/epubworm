@@ -53,17 +53,19 @@ static void displayError(std::string_view message) {
 
 static void printEpubInfo(const EpubInfo& info,
                           const XMLElement* libraryRoot) {
-    boldColorIfTerm(stdout, magentaFG);
-    std::cout << info.title;
-    resetBoldColorIfTerm(stdout);
-    std::cout << " - ";
-    boldColorIfTerm(stdout, blueFG);
-    std::cout << info.author;
-    resetBoldColorIfTerm(stdout);
-    std::cout << " | ";
-    boldColorIfTerm(stdout, yellowFG);
-    std::cout << getUnambiguousEpubIdPrefix(libraryRoot, info.id);
-    resetBoldColorIfTerm(stdout);
+    const bool useColor{isTerm(stdout)};
+    const auto printField = [useColor](std::string_view value,
+                                       std::string_view color) {
+        if (useColor) std::cout << esc << color;
+        std::cout << value;
+        if (useColor) std::cout << esc << resetFG;
+    };
+
+    printField(info.title, magentaFG);
+    printField(" | ", cyanFG);
+    printField(info.author, blueFG);
+    printField(" | ", cyanFG);
+    printField(getUnambiguousEpubIdPrefix(libraryRoot, info.id), yellowFG);
 }
 
 static void printLibraryUpdate(std::string_view label, std::string_view color,
@@ -192,7 +194,7 @@ int dispatchCli(int argc, char** argv) {
         std::exception_ptr addError{};
         for (int i{2}; i < argc; ++i) {
             try {
-                boldColorIfTerm(stdout, cyanFG);
+                boldColorIfTerm(stdout, lightGrayFG);
                 std::cout << "Processing: ";
                 resetBoldColorIfTerm(stdout);
                 std::cout << argv[i] << '\n';
@@ -402,8 +404,6 @@ void listLibrary(const fs::path& shareAbs) {
     boldColorIfTerm(stdout, greenFG);
     std::cout << "Last read: ";
     resetBoldColorIfTerm(stdout);
-    boldColorIfTerm(stdout, magentaFG);
-    std::cout << lastRead->title;
-    resetBoldColorIfTerm(stdout);
+    printEpubInfo(*lastRead, libraryRoot);
     std::cout << '\n';
 }

@@ -377,6 +377,8 @@ int getInvisEscSeqLen(std::wstring_view str) {
     totalLen += getOccurrences<std::wstring_view>(str, L"\033[22m") * 4;
     totalLen += getOccurrences<std::wstring_view>(str, L"\033[3m") * 3;
     totalLen += getOccurrences<std::wstring_view>(str, L"\033[23m") * 4;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[4m") * 3;
+    totalLen += getOccurrences<std::wstring_view>(str, L"\033[24m") * 4;
     totalLen += getOccurrences<std::wstring_view>(str, L"\033[33m") * 4;
     totalLen += getOccurrences<std::wstring_view>(str, L"\033[31m") * 4;
     totalLen += getOccurrences<std::wstring_view>(str, L"\033[32m") * 4;
@@ -786,6 +788,7 @@ void processContentText(std::string& str, int maxLen) {
     centerOnScreen(str, maxLen);
     styleEachLineIndividually(str, esc + bold, esc + resetBold);
     styleEachLineIndividually(str, esc + italic, esc + resetItalic);
+    styleEachLineIndividually(str, esc + underline, esc + resetUnderline);
     styleEachLineIndividually(str, esc + yellowFG, esc + resetFG);
     styleEachLineIndividually(str, esc + cyanFG, esc + resetFG);
     styleEachLineIndividually(str, esc + redFG, esc + resetFG);
@@ -1124,9 +1127,11 @@ void tocDataToString(const TocData& data, std::string_view title,
     str += centerAlignBegin;
     str += esc + magentaFG;
     str += esc + bold;
+    str += esc + underline;
     str += title;
     str += esc + resetFG;
     str += esc + resetBold;
+    str += esc + resetUnderline;
     str += centerAlignEnd;
     str += '\n';
 

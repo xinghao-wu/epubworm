@@ -80,6 +80,8 @@ inline const std::string bold{"[1m"};
 inline const std::string resetBold{"[22m"};
 inline const std::string italic{"[3m"};
 inline const std::string resetItalic{"[23m"};
+inline const std::string underline{"[4m"};
+inline const std::string resetUnderline{"[24m"};
 inline const std::string yellowFG{"[33m"};
 inline const std::string redFG{"[31m"};
 inline const std::string greenFG{"[32m"};

@@ -215,15 +215,6 @@ void appendAlignmentEnd(std::string& out, TextAlignment alignment) {
     if (alignment == TextAlignment::right) out += rightAlignEnd;
 }
 
-const std::string& getHeadingColor(std::string_view name) {
-    if (name == "h1") return yellowFG;
-    if (name == "h2") return magentaFG;
-    if (name == "h3") return blueFG;
-    if (name == "h4") return cyanFG;
-    if (name == "h5") return lightGrayFG;
-    return lightGrayFG;
-}
-
 bool isHeading(std::string_view name) {
     return name == "h1" || name == "h2" || name == "h3" || name == "h4"
            || name == "h5" || name == "h6";
@@ -232,6 +223,7 @@ bool isHeading(std::string_view name) {
 struct TextStyle {
     bool bold{};
     bool italic{};
+    bool underline{};
     std::string_view foreground{};
 };
 
@@ -242,6 +234,9 @@ void appendStyleTransition(std::string& out, const TextStyle& current,
     }
     if (current.italic != next.italic) {
         out += esc + (next.italic ? italic : resetItalic);
+    }
+    if (current.underline != next.underline) {
+        out += esc + (next.underline ? underline : resetUnderline);
     }
     if (current.foreground != next.foreground) {
         if (!current.foreground.empty()) out += esc + resetFG;
@@ -256,6 +251,7 @@ std::string getTableCellSeparator(const TextStyle& style) {
     TextStyle separatorStyle{style};
     separatorStyle.bold = false;
     separatorStyle.italic = false;
+    separatorStyle.underline = false;
     separatorStyle.foreground = cyanFG;
 
     std::string separator{};
@@ -422,6 +418,7 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                 TextStyle childStyle{style};
                 childStyle.bold = true;
                 childStyle.italic = false;
+                childStyle.underline = false;
                 childStyle.foreground = {};
                 out += centerAlignBegin;
                 appendStyleTransition(out, style, childStyle);
@@ -430,8 +427,10 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
                 out += centerAlignEnd;
             } else if (isHeading(name)) {
                 TextStyle childStyle{style};
-                childStyle.bold = true;
-                childStyle.foreground = getHeadingColor(name);
+                childStyle.bold = name == "h1" || name == "h2";
+                childStyle.italic = name == "h3" || name == "h4";
+                childStyle.underline = name == "h1" || name == "h3";
+                childStyle.foreground = yellowFG;
                 out += centerAlignBegin;
                 appendStyleTransition(out, style, childStyle);
                 parseContentElemImpl(childElem, out, chapterAbs,
@@ -441,7 +440,7 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
             } else if (name == "p" || name == "li" || name == "div"
                        || name == "pre" || name == "table") {
                 TextStyle childStyle{style};
-                if (name == "pre") childStyle.foreground = yellowFG;
+                if (name == "pre") childStyle.foreground = magentaFG;
                 const bool markAlignment{
                         childAlignment != TextAlignment::left
                         && hasTextContent(childElem)

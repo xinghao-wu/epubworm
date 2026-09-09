@@ -611,13 +611,13 @@ void tocDataToString() {
     ::tocDataToString(toc, "Test Title", "Test Author", str);
 
     const std::string expected{
-            centerAlignBegin + esc + magentaFG + esc + bold + "Test Title"
-            + esc + resetFG + esc + resetBold + centerAlignEnd + '\n'
-            + centerAlignBegin + esc + blueFG + esc + bold + "Test Author"
-            + esc + resetFG + esc + resetBold + centerAlignEnd
-            + "\n\nChapter 1\n\n    Section 1\n" + centerAlignBegin + esc
-            + redFG + esc + bold + "---" + esc + resetFG + esc + resetBold
-            + centerAlignEnd + '\n'};
+            centerAlignBegin + esc + magentaFG + esc + bold + esc + underline
+            + "Test Title" + esc + resetFG + esc + resetBold + esc
+            + resetUnderline + centerAlignEnd + '\n' + centerAlignBegin + esc
+            + blueFG + esc + bold + "Test Author" + esc + resetFG + esc
+            + resetBold + centerAlignEnd + "\n\nChapter 1\n\n    Section 1\n"
+            + centerAlignBegin + esc + redFG + esc + bold + "---" + esc
+            + resetFG + esc + resetBold + centerAlignEnd + '\n'};
     assert(str == expected);
 }
 
@@ -693,14 +693,24 @@ void styleEachLineIndividually() {
     ::styleEachLineIndividually(str, "\033[1m", "\033[22m");
     assert(str == "\033[1mfirst line\033[22m\n\033[1msec line\033[22mout");
 
-    const std::array<std::string_view, 12> styleCodes{
-            bold,    resetBold, italic,    resetItalic, yellowFG,    redFG,
-            greenFG, blueFG,    magentaFG, cyanFG,      lightGrayFG, resetFG};
+    const std::array<std::string_view, 14> styleCodes{
+            bold,           resetBold, italic,      resetItalic, underline,
+            resetUnderline, yellowFG,  redFG,       greenFG,     blueFG,
+            magentaFG,      cyanFG,    lightGrayFG, resetFG};
     for (const std::string_view styleCode : styleCodes) {
         const std::wstring escapedStyle{
                 ::utf8ToWide(esc + std::string{styleCode})};
         assert(::getVisualLen(escapedStyle) == 0);
     }
+
+    std::string underlined{esc + underline + "one two three" + esc
+                           + resetUnderline};
+    ::processContentText(underlined, 7);
+    assert(getOccurrences<std::string_view>(underlined, esc + underline) == 2);
+    assert(getOccurrences<std::string_view>(underlined, esc + resetUnderline)
+           == 2);
+    assert(underlined.contains(esc + underline + "one two" + esc
+                               + resetUnderline + '\n' + esc + underline));
 }
 
 void headingColors() {
@@ -711,22 +721,26 @@ void headingColors() {
 
     std::string parsed{};
     ::parseContentElem(chapter.FirstChildElement("body"), parsed, {});
-    const std::array<std::string_view, 6> colors{
-            yellowFG, magentaFG, blueFG, cyanFG, lightGrayFG, lightGrayFG};
+    const std::array<std::string_view, 6> colors{yellowFG, yellowFG, yellowFG,
+                                                 yellowFG, yellowFG, yellowFG};
+    const std::array<bool, 6> boldLevels{true,  true,  false,
+                                         false, false, false};
+    const std::array<bool, 6> italicLevels{false, false, true,
+                                           true,  false, false};
+    const std::array<bool, 6> underlinedLevels{true,  false, true,
+                                               false, false, false};
     for (std::size_t level{0}; level < colors.size(); ++level) {
-        const std::string colorCode{esc + std::string{colors.at(level)}};
-        const int expectedOccurrences{level >= 4 ? 2 : 1};
-        assert(getOccurrences<std::string_view>(parsed, colorCode)
-               == expectedOccurrences);
         std::string expected{centerAlignBegin};
-        expected += esc;
-        expected += bold;
+        if (boldLevels.at(level)) expected += esc + bold;
+        if (italicLevels.at(level)) expected += esc + italic;
+        if (underlinedLevels.at(level)) expected += esc + underline;
         expected += esc;
         expected += colors.at(level);
         expected += 'H';
         expected += std::to_string(level + 1);
-        expected += esc;
-        expected += resetBold;
+        if (boldLevels.at(level)) expected += esc + resetBold;
+        if (italicLevels.at(level)) expected += esc + resetItalic;
+        if (underlinedLevels.at(level)) expected += esc + resetUnderline;
         expected += esc;
         expected += resetFG;
         expected += centerAlignEnd;
@@ -742,10 +756,10 @@ void headingColors() {
     ::parseContentElem(nestedHeading.FirstChildElement("body"),
                        nestedHeadingParsed, {});
     const std::string expectedNestedHeading{
-            "\n\n" + centerAlignBegin + esc + bold + esc + magentaFG
-            + "before " + esc + resetFG + esc + greenFG + "code" + esc
-            + resetFG + esc + magentaFG + " after bold" + esc + resetBold + esc
-            + resetFG + centerAlignEnd + "\n\n"};
+            "\n\n" + centerAlignBegin + esc + bold + esc + yellowFG + "before "
+            + esc + resetFG + esc + greenFG + "code" + esc + resetFG + esc
+            + yellowFG + " after bold" + esc + resetBold + esc + resetFG
+            + centerAlignEnd + "\n\n"};
     assert(nestedHeadingParsed == expectedNestedHeading);
 
     XMLDocument nestedStyles{};
@@ -790,7 +804,7 @@ void headingColors() {
     assert(getOccurrences<std::string_view>(nestedHeadingParsed, esc + greenFG)
            == 1);
     assert(nestedHeadingParsed.contains(esc + greenFG + "code" + esc + resetFG
-                                        + esc + magentaFG));
+                                        + esc + yellowFG));
     assert(getOccurrences<std::string_view>(nestedHeadingParsed, esc + bold)
            == 3);
 }
@@ -855,7 +869,7 @@ void contentAlignment() {
                             + " after",
                     rightAlignEnd);
     appendBlockBoundary();
-    appendParagraph(centerAlignBegin + esc + yellowFG, "pre",
+    appendParagraph(centerAlignBegin + esc + magentaFG, "pre",
                     esc + resetFG + centerAlignEnd);
     appendBlockBoundary();
     appendBlockBoundary();
@@ -894,7 +908,7 @@ void contentAlignment() {
     expected += esc;
     expected += bold;
     expected += esc;
-    expected += magentaFG;
+    expected += yellowFG;
     expected += "heading";
     expected += esc;
     expected += resetBold;
@@ -912,7 +926,7 @@ void contentAlignment() {
     ::parseContentElem(trailingWhitespacePre.FirstChildElement("body"),
                        trailingWhitespacePreParsed, {});
     assert(trailingWhitespacePreParsed
-           == "before\n\n" + esc + yellowFG + "pre" + esc + resetFG
+           == "before\n\n" + esc + magentaFG + "pre" + esc + resetFG
                       + "\n\n\nafter");
 
     ::processContentText(trailingWhitespacePreParsed, 55);
@@ -994,8 +1008,8 @@ void contentAlignment() {
     ::parseContentElem(nestedChapter.FirstChildElement("body"), nestedParsed,
                        {});
     assert(!nestedParsed.contains(rightAlignBegin));
-    assert(nestedParsed.contains(centerAlignBegin + esc + bold + esc
-                                 + magentaFG + "Nested heading"));
+    assert(nestedParsed.contains(centerAlignBegin + esc + bold + esc + yellowFG
+                                 + "Nested heading"));
 
     XMLDocument blockChapter{};
     assert(blockChapter.Parse(
