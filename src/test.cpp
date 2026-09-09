@@ -838,6 +838,7 @@ void contentAlignment() {
         expected += end;
         expected += "\n\n";
     };
+    const std::string tableSeparator{esc + magentaFG + " | " + esc + resetFG};
     appendParagraph(centerAlignBegin, "center", centerAlignEnd);
     appendParagraph(centerAlignBegin, "separator", centerAlignEnd);
     appendBlockBoundary();
@@ -857,7 +858,12 @@ void contentAlignment() {
     appendParagraph(centerAlignBegin, "pre", centerAlignEnd);
     appendBlockBoundary();
     appendBlockBoundary();
-    appendParagraph(rightAlignBegin, "one | two", rightAlignEnd);
+    appendBlockBoundary();
+    expected += rightAlignBegin;
+    expected += '\n';
+    expected += "one" + tableSeparator + "two";
+    expected += rightAlignEnd;
+    appendBlockBoundary();
     appendBlockBoundary();
     appendBlockBoundary();
     appendBlockBoundary();
@@ -896,6 +902,72 @@ void contentAlignment() {
     expected += centerAlignEnd;
     expected += "\n\n";
     assert(parsed == expected);
+
+    XMLDocument tableChapter{};
+    assert(tableChapter.Parse(
+                   "<body>before<table><caption>caption</caption>"
+                   "<colgroup><col/></colgroup><thead><tr><th>head one</th>"
+                   "<th>head two</th></tr></thead><tbody><tr><td>body one</td>"
+                   "<td></td><td>body two</td><td/></tr></tbody><tfoot><tr>"
+                   "<td>foot one</td><td>foot two</td></tr></tfoot></table>"
+                   "after</body>")
+           == XML_SUCCESS);
+    std::string tableParsed{};
+    ::parseContentElem(tableChapter.FirstChildElement("body"), tableParsed,
+                       {});
+    assert(tableParsed.starts_with("before\n\n\n\ncaption\n\n\n"));
+    assert(tableParsed.ends_with("foot one" + tableSeparator + "foot two\n\n"
+                                 + "after"));
+    assert(tableParsed.contains(esc + bold + "head one" + esc + resetBold
+                                + tableSeparator + esc + bold + "head two"
+                                + esc + resetBold + '\n'));
+    assert(tableParsed.contains("body one" + tableSeparator + "body two\nfoot "
+                                + "one" + tableSeparator + "foot two"));
+    assert(getOccurrences<std::string_view>(tableParsed, tableSeparator) == 3);
+    assert(!tableParsed.contains(tableSeparator + tableSeparator));
+
+    std::string tableProcessed{tableParsed};
+    ::processContentText(tableProcessed, 55);
+    assert(!tableProcessed.contains("\n\n\n"));
+    assert(tableProcessed.contains("body two\nfoot one"));
+    assert(tableProcessed.contains("caption\n\n" + esc + bold + "head one"));
+
+    XMLDocument styledTable{};
+    assert(styledTable.Parse(
+                   "<body><strong><em><table class='right'>"
+                   "<caption align='center'>caption</caption>"
+                   "<tr><td>one</td><td>two</td></tr></table></em></strong>"
+                   "</body>")
+           == XML_SUCCESS);
+    std::string styledTableParsed{};
+    ::parseContentElem(styledTable.FirstChildElement("body"),
+                       styledTableParsed, {});
+    const std::string unstyledSeparator{esc + resetBold + esc + resetItalic
+                                        + esc + magentaFG + " | " + esc + bold
+                                        + esc + italic + esc + resetFG};
+    assert(styledTableParsed.contains("one" + unstyledSeparator + "two"));
+    assert(getOccurrences<std::string_view>(styledTableParsed, rightAlignBegin)
+           == 1);
+    assert(getOccurrences<std::string_view>(styledTableParsed, rightAlignEnd)
+           == 1);
+    assert(!styledTableParsed.contains(centerAlignBegin));
+
+    std::string styledTableProcessed{styledTableParsed};
+    ::processContentText(styledTableProcessed, 55);
+    assert(!styledTableProcessed.contains(rightAlignBegin));
+    assert(!styledTableProcessed.contains(rightAlignEnd));
+    assert(getOccurrences<std::string_view>(styledTableProcessed, "\n") == 6);
+
+    XMLDocument styledRule{};
+    assert(styledRule.Parse("<body><em><code><hr/></code></em></body>")
+           == XML_SUCCESS);
+    std::string styledRuleParsed{};
+    ::parseContentElem(styledRule.FirstChildElement("body"), styledRuleParsed,
+                       {});
+    assert(styledRuleParsed.contains(centerAlignBegin + esc + bold + esc
+                                     + resetItalic + esc + resetFG + "***"
+                                     + esc + resetBold + esc + italic + esc
+                                     + greenFG + centerAlignEnd));
 
     XMLDocument nestedChapter{};
     assert(nestedChapter.Parse(

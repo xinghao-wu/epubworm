@@ -775,7 +775,6 @@ void styleEachLineIndividually(std::string& str, std::string_view style,
 
 void processContentText(std::string& str, int maxLen) {
     expandEllipsesAndTabs(str);
-    collapseConsecutiveNewlines(str);
     wrapLines(str, maxLen);
     centerJustify(centerAlignBegin, centerAlignEnd, str, maxLen);
     rightJustify(rightAlignBegin, rightAlignEnd, str, maxLen);
@@ -783,6 +782,7 @@ void processContentText(std::string& str, int maxLen) {
     findAndReplaceAll(str, centerAlignEnd, "");
     findAndReplaceAll(str, rightAlignBegin, "");
     findAndReplaceAll(str, rightAlignEnd, "");
+    collapseConsecutiveNewlines(str);
     centerOnScreen(str, maxLen);
     styleEachLineIndividually(str, esc + bold, esc + resetBold);
     styleEachLineIndividually(str, esc + italic, esc + resetItalic);
