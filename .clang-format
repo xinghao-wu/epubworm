@@ -1,13 +1,15 @@
+---
 BasedOnStyle: LLVM
 
-ColumnLimit: 79
-IndentWidth: 4
-TabWidth: 4
-ContinuationIndentWidth: 8
-AccessModifierOffset: -4
 IndentGotoLabels: false
 PointerAlignment: Left
-AllowShortFunctionsOnASingleLine: Inline
+AllowShortFunctionsOnASingleLine: InlineOnly
 AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLambdasOnASingleLine: Inline
 BreakBeforeBinaryOperators: NonAssignment
 BreakTemplateDeclarations: Yes
+LambdaBodyIndentation: OuterScope
+BreakBeforeBraces: Custom
+BraceWrapping:
+  BeforeCatch: true
+  BeforeElse: true

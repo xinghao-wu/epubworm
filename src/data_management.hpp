@@ -9,18 +9,18 @@
 #include <utility>
 
 struct ConfOpts {
-    int lineLength{55};
+  int lineLength{55};
 };
 
 struct EpubInfo {
-    std::string id;
-    std::string title;
-    std::string author;
+  std::string id;
+  std::string title;
+  std::string author;
 };
 
 enum class LibraryUpdateError {
-    alreadyInLibrary,
-    notFoundOrAmbiguous,
+  alreadyInLibrary,
+  notFoundOrAmbiguous,
 };
 
 // Extracts zipped archive to `destinationAbs`, creating directories as needed.
@@ -49,8 +49,7 @@ void initLibrary(const std::filesystem::path& libraryFileAbs);
 // Creates the element if it is missing and preserves other config options.
 // Throws `std::invalid_argument` if `chars` is not positive and
 // `std::runtime_error` on load/save failure or a missing `<conf>` root.
-void setConfigLineLength(const std::filesystem::path& configFileAbs,
-                         int chars);
+void setConfigLineLength(const std::filesystem::path& configFileAbs, int chars);
 
 // Generates a SHA-256 hash of `fileAbs` via `shasum` on macOS and `sha256sum`
 // otherwise, then returns it truncated to 128 bits (32 hex characters).

@@ -18,37 +18,37 @@ using Key = std::int16_t;
 
 namespace specKey {
 enum Values : Key {
-    // keyboard keys represented by escape sequences
-    arrowLeft = 1000, // don't conflict with normal 8-bit char values
-    arrowRight,
-    arrowUp,
-    arrowDown,
-    home,
-    end,
-    pgUp,
-    pgDown,
-    // mouse events
-    leftClickRelease,
-    rightClickRelease,
-    wheelUp,
-    wheelDown,
-    // signals
-    winResize,
-    // not recognized/supported
-    unknown,
+  // keyboard keys represented by escape sequences
+  arrowLeft = 1000, // don't conflict with normal 8-bit char values
+  arrowRight,
+  arrowUp,
+  arrowDown,
+  home,
+  end,
+  pgUp,
+  pgDown,
+  // mouse events
+  leftClickRelease,
+  rightClickRelease,
+  wheelUp,
+  wheelDown,
+  // signals
+  winResize,
+  // not recognized/supported
+  unknown,
 };
 }
 
 enum class ChapterExit {
-    prev,
-    next,
-    quit,
-    toc,
+  prev,
+  next,
+  quit,
+  toc,
 };
 
 struct EpubProg {
-    std::filesystem::path chapterAbs{};
-    double chapterProg{};
+  std::filesystem::path chapterAbs{};
+  double chapterProg{};
 };
 
 extern volatile std::sig_atomic_t g_winResize;
@@ -228,32 +228,32 @@ void eraseScreen();
 [[nodiscard]] constexpr std::size_t findNth(std::string_view str,
                                             std::string_view target, int n,
                                             std::size_t startIndex = 0) {
-    if (n == 0 || target.empty()) {
-        return std::string_view::npos;
-    }
-
-    std::size_t targetBeginIndex{startIndex};
-    int count{0};
-
-    while ((targetBeginIndex = str.find(target, targetBeginIndex))
-           != std::string_view::npos) {
-        ++count;
-        if (count == n) {
-            return targetBeginIndex;
-        }
-        targetBeginIndex += target.size();
-    }
+  if (n == 0 || target.empty()) {
     return std::string_view::npos;
+  }
+
+  std::size_t targetBeginIndex{startIndex};
+  int count{0};
+
+  while ((targetBeginIndex = str.find(target, targetBeginIndex))
+         != std::string_view::npos) {
+    ++count;
+    if (count == n) {
+      return targetBeginIndex;
+    }
+    targetBeginIndex += target.size();
+  }
+  return std::string_view::npos;
 }
 
 // In `str`, replace all occurrences of `target` with `replacement`.
 constexpr void findAndReplaceAll(std::string& str, std::string_view target,
                                  std::string_view replacement) {
-    std::size_t pos{str.find(target)};
-    while (pos != std::string::npos) {
-        str.replace(pos, target.size(), replacement);
-        pos = str.find(target, pos + replacement.size());
-    }
+  std::size_t pos{str.find(target)};
+  while (pos != std::string::npos) {
+    str.replace(pos, target.size(), replacement);
+    pos = str.find(target, pos + replacement.size());
+  }
 }
 
 // Modify `str` to wrap its content in tmux's passthrough escape sequence,
@@ -261,21 +261,21 @@ constexpr void findAndReplaceAll(std::string& str, std::string_view target,
 // emulator. Requires `set -g allow-passthrough on` in `~/.tmux.conf` for
 // passthrough.
 constexpr void wrapForTmuxPassthrough(std::string& str) {
-    findAndReplaceAll(str, esc, esc + esc);
-    str = esc + "Ptmux;" + str + escEnd;
+  findAndReplaceAll(str, esc, esc + esc);
+  str = esc + "Ptmux;" + str + escEnd;
 }
 
 // Get number of occurrences of `target` in `str`.
 // Overlapping `target` occurrences are not counted.
 template <typename TStrView>
 [[nodiscard]] constexpr int getOccurrences(TStrView str, TStrView target) {
-    int count{0};
-    std::size_t pos{};
-    while ((pos = str.find(target, pos)) != TStrView::npos) {
-        ++count;
-        pos += target.size();
-    }
-    return count;
+  int count{0};
+  std::size_t pos{};
+  while ((pos = str.find(target, pos)) != TStrView::npos) {
+    ++count;
+    pos += target.size();
+  }
+  return count;
 }
 
 // In `str`, if `style` and `resetStyle` encompass multiple lines,
