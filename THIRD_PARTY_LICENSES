@@ -2,7 +2,7 @@ epubworm includes the third-party software listed below. These components remain
 
 -------------------------------------------------------------------------------
 tinyxml2 (modified)
-Files: src/tinyxml2.cpp, src/tinyxml2.hpp
+Files: vendor/tinyxml2/tinyxml2.cpp, vendor/tinyxml2/tinyxml2.hpp
 License: zlib License
 -------------------------------------------------------------------------------
 
@@ -20,7 +20,7 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 -------------------------------------------------------------------------------
 miniz-cpp
-File: src/miniz_cpp.hpp
+File: vendor/miniz_cpp/miniz_cpp.hpp
 License: MIT License
 -------------------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 -------------------------------------------------------------------------------
 miniz.c 1.15 r4, embedded in miniz-cpp
-File: src/miniz_cpp.hpp
+File: vendor/miniz_cpp/miniz_cpp.hpp
 License: Public domain / Unlicense
 -------------------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ The embedded miniz code also credits a simple PNG writer by Alex Evans, released
 
 -------------------------------------------------------------------------------
 stb_image 2.30
-File: src/stb_image.hpp
+File: vendor/stb_image/stb_image.hpp
 License selected for this distribution: MIT License
 -------------------------------------------------------------------------------
 
@@ -68,7 +68,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 -------------------------------------------------------------------------------
 base64
-File: src/base64.hpp
+File: vendor/base64/base64.hpp
 Upstream: https://github.com/tobiaslocker/base64
 License: MIT License
 -------------------------------------------------------------------------------

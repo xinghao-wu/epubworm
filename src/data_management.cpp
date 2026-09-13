@@ -1,7 +1,7 @@
 #include "data_management.hpp"
 #include "epub_parser.hpp"
-#include "miniz_cpp.hpp"
-#include "tinyxml2.hpp"
+#include "miniz_cpp/miniz_cpp.hpp"
+#include "tinyxml2/tinyxml2.hpp"
 #include "tui.hpp"
 #include <algorithm>
 #include <cstddef>

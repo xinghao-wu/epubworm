@@ -4,7 +4,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
-#include "stb_image.hpp"
+#include "stb_image/stb_image.hpp"
 
 #include <algorithm>
 #include <array>

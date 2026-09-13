@@ -1,6 +1,6 @@
 #pragma once
 
-#include "base64.hpp"
+#include "base64/base64.hpp"
 #include "epub_parser.hpp"
 #include <csignal>
 #include <cstddef>

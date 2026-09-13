@@ -3,7 +3,7 @@
 #include "epub_parser.hpp"
 #include "row_col_diacritics.hpp"
 #include "single_instance.hpp"
-#include "tinyxml2.hpp"
+#include "tinyxml2/tinyxml2.hpp"
 #include "tui.hpp"
 #include <array>
 #include <cassert>

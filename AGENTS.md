@@ -12,7 +12,8 @@ make         # Builds release binary.
 ```
 
 ## Repository Structure
-- Project source and vendored libraries live flat in `src/`.
+- Project source lives in `src/`.
+- Vendored libraries live in per-library directories under `vendor/`.
 - Unzipped and zipped test fixture epubs are found at `fixtures/epubs/`.
 
 ## Vendored Libraries

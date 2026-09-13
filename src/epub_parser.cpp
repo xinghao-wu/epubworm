@@ -1,6 +1,6 @@
 #include "epub_parser.hpp"
 #include "percent_encoding_decode.hpp"
-#include "tinyxml2.hpp"
+#include "tinyxml2/tinyxml2.hpp"
 #include "tui.hpp"
 #include <algorithm>
 #include <cstddef>

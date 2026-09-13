@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tinyxml2.hpp"
+#include "tinyxml2/tinyxml2.hpp"
 #include "tui.hpp"
 #include <expected>
 #include <filesystem>

@@ -5,6 +5,8 @@ DEBUG_CXXFLAGS ?= -g3 -fsanitize=address
 RELEASE_BUILD_CXXFLAGS = $(COMMON_CXXFLAGS) $(RELEASE_CXXFLAGS) $(CXXFLAGS)
 DEBUG_BUILD_CXXFLAGS = $(COMMON_CXXFLAGS) $(DEBUG_CXXFLAGS) $(CXXFLAGS)
 SRC_DIR := src
+VENDOR_DIR := vendor
+INTERNAL_CPPFLAGS := -I$(VENDOR_DIR)
 BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj
 OBJ_DIR_DEBUG := $(BUILD_DIR)/obj_debug
@@ -36,12 +38,13 @@ MAIN_SRC := $(SRC_DIR)/main.cpp
 TEST_SRCS := $(SRC_DIR)/test_main.cpp $(SRC_DIR)/test.cpp
 LIB_SRCS := $(filter-out $(MAIN_SRC) $(TEST_SRCS),$(SRCS))
 LIB_OBJS := $(LIB_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
+LIB_OBJS += $(OBJ_DIR)/tinyxml2.o
 MAIN_OBJS := $(OBJ_DIR)/main.o $(LIB_OBJS)
 LIB_OBJS_DEBUG := $(LIB_SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR_DEBUG)/%.o)
+LIB_OBJS_DEBUG += $(OBJ_DIR_DEBUG)/tinyxml2.o
 MAIN_OBJS_DEBUG := $(OBJ_DIR_DEBUG)/main.o $(LIB_OBJS_DEBUG)
 TEST_OBJS := $(OBJ_DIR_DEBUG)/test_main.o $(OBJ_DIR_DEBUG)/test.o $(LIB_OBJS_DEBUG)
-VENDORED_FILES := tinyxml2.cpp tinyxml2.hpp miniz_cpp.hpp stb_image.hpp base64.hpp
-PROJECT_FILES := $(filter-out $(addprefix $(SRC_DIR)/,$(VENDORED_FILES)), $(wildcard $(SRC_DIR)/*.cpp $(SRC_DIR)/*.hpp))
+PROJECT_FILES := $(wildcard $(SRC_DIR)/*.cpp $(SRC_DIR)/*.hpp)
 
 .DELETE_ON_ERROR:
 .PHONY: clean fmt fmt-check fmt-check-diff lint lint-fix test release debug install install-user uninstall uninstall-user
@@ -94,17 +97,17 @@ $(TEST_BIN): $(BUILD_DIR) $(OBJ_DIR_DEBUG) $(TEST_OBJS)
 	$(CXX) $(DEBUG_BUILD_CXXFLAGS) $(LDFLAGS) $(TEST_OBJS) -o $@ $(LDLIBS) $(PLATFORM_LDLIBS)
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	$(CXX) $(CPPFLAGS) $(RELEASE_BUILD_CXXFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(INTERNAL_CPPFLAGS) $(RELEASE_BUILD_CXXFLAGS) -c $< -o $@
 
 $(OBJ_DIR_DEBUG)/%.o: $(SRC_DIR)/%.cpp
-	$(CXX) $(CPPFLAGS) $(DEBUG_BUILD_CXXFLAGS) -c $< -o $@
+	$(CXX) $(CPPFLAGS) $(INTERNAL_CPPFLAGS) $(DEBUG_BUILD_CXXFLAGS) -c $< -o $@
 
 # specialized object compilation for tinyxml2.cpp to suppress warnings
-$(OBJ_DIR)/tinyxml2.o: $(SRC_DIR)/tinyxml2.cpp
-	$(CXX) $(CPPFLAGS) $(RELEASE_BUILD_CXXFLAGS) -w -c $< -o $@
+$(OBJ_DIR)/tinyxml2.o: $(VENDOR_DIR)/tinyxml2/tinyxml2.cpp
+	$(CXX) $(CPPFLAGS) $(INTERNAL_CPPFLAGS) $(RELEASE_BUILD_CXXFLAGS) -w -c $< -o $@
 
-$(OBJ_DIR_DEBUG)/tinyxml2.o: $(SRC_DIR)/tinyxml2.cpp
-	$(CXX) $(CPPFLAGS) $(DEBUG_BUILD_CXXFLAGS) -w -c $< -o $@
+$(OBJ_DIR_DEBUG)/tinyxml2.o: $(VENDOR_DIR)/tinyxml2/tinyxml2.cpp
+	$(CXX) $(CPPFLAGS) $(INTERNAL_CPPFLAGS) $(DEBUG_BUILD_CXXFLAGS) -w -c $< -o $@
 
 $(BUILD_DIR) $(OBJ_DIR) $(OBJ_DIR_DEBUG):
 	mkdir -p $@

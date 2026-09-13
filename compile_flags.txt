@@ -5,3 +5,4 @@
 -Wconversion
 -Wsign-conversion
 -Weffc++
+-Ivendor

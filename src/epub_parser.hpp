@@ -1,6 +1,6 @@
 #pragma once
 
-#include "tinyxml2.hpp"
+#include "tinyxml2/tinyxml2.hpp"
 #include <filesystem>
 #include <string>
 #include <string_view>
