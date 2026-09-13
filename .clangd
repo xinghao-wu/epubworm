@@ -1,5 +1,0 @@
----
-Diagnostics:
-  MissingIncludes: Strict
-  Includes:
-    IgnoreHeader: 'asm-generic/ioctls\.h'
