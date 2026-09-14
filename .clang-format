@@ -4,11 +4,9 @@ BasedOnStyle: LLVM
 IndentGotoLabels: false
 PointerAlignment: Left
 AllowShortFunctionsOnASingleLine: InlineOnly
-AllowShortIfStatementsOnASingleLine: WithoutElse
 AllowShortLambdasOnASingleLine: Inline
 BreakBeforeBinaryOperators: NonAssignment
 BreakTemplateDeclarations: Yes
-LambdaBodyIndentation: OuterScope
 BreakBeforeBraces: Custom
 BraceWrapping:
   BeforeCatch: true
