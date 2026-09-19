@@ -119,5 +119,8 @@ set -g allow-passthrough on
 - Zellij does not support passthrough, and [doesn't support unicode placeholder graphics yet](https://github.com/zellij-org/zellij/pull/5428#issue-5031592643).
 - Images don't currently work in GNU Screen and Byubu's Screen backend due to their true color limitations. A workaround is planned.
 
+# Inspiration
+[epy](https://github.com/wustho/epy)
+
 # License
 MIT
