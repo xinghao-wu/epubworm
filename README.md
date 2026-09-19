@@ -1,17 +1,14 @@
-# Epubworm
-<p align="center">
-  <img src="assets/epubworm.png" alt="Epubworm mascot and logo" width="900">
-</p>
+<img src="assets/mascot_and_banner.png" alt="Epubworm mascot and banner">
 
-An image-capable, minimalistic TUI epub reader written in C++.
+Epubworm is an image-capable, minimalistic TUI EPUB reader written in C++.
 
-## Install
+# Install
 Epubworm supports Linux and macOS.
 
-### Build From Source
+## Build From Source
 First, clone the repo and `cd` into it.
 
-#### Linux
+### Linux
 Linux builds require `make` and `g++` installed.
 
 Install system-wide:
@@ -24,7 +21,7 @@ Or, install for only the current user:
 make install-user
 ```
 
-#### macOS
+### macOS
 macOS builds require the Xcode Command Line Tools:
 ```bash
 xcode-select --install
@@ -41,10 +38,10 @@ make install-user
 ```
 When on macOS and installing for only the current user, ensure `~/.local/bin` is in `$PATH` and `~/.local/share/zsh/site-functions` is in Zsh's `$fpath`.
 
-## Image Support
+# Image Support
 Epubworm uses the unicode placeholders feature of the [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/) to display images. This requires a terminal with Kitty Graphics Protocol unicode placeholders support, and (if you use a multiplexer) a multiplexer with escape sequence passthrough support. Epubworm displays only text in terminals and multiplexers without these features.
 
-### Terminals
+## Terminals
 Unicode placeholder graphics are supported by:
 - [Kitty](https://sw.kovidgoyal.net/kitty/)
 - [Ghostty](https://ghostty.org/)
@@ -56,8 +53,8 @@ Unicode placeholder graphics could be implemented in the near future by:
 - xterm.js: [issue](https://github.com/xtermjs/xterm.js/issues/5711)
 - Warp: [issue](https://github.com/warpdotdev/warp/issues/6210), [PR](https://github.com/warpdotdev/warp/pull/15001)
 
-### Multiplexers
-#### tmux
+## Multiplexers
+### tmux
 Make sure your `~/.tmux.conf` contains the following:
 ```
 # Enables 256 colors and italics
@@ -67,7 +64,7 @@ set -g default-terminal "tmux-256color"
 set -g allow-passthrough on
 ```
 
-#### Byobu (tmux backend)
+### Byobu (tmux backend)
 Make sure your `~/.byobu/.tmux.conf` contains the following:
 ```
 # Enables 256 colors and italics
@@ -77,9 +74,9 @@ set -g default-terminal "tmux-256color"
 set -g allow-passthrough on
 ```
 
-#### Unsupported
+### Unsupported
 - Zellij does not support passthrough, and [doesn't support unicode placeholder graphics yet](https://github.com/zellij-org/zellij/pull/5428#issue-5031592643).
 - Images don't currently work in GNU Screen and Byubu's Screen backend due to their true color limitations. A workaround is planned.
 
-## License
+# License
 MIT
