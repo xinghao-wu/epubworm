@@ -1,12 +1,12 @@
-# epubworm
+# Epubworm
 <p align="center">
-  <img src="assets/epubworm.png" alt="epubworm mascot and logo" width="900">
+  <img src="assets/epubworm.png" alt="Epubworm mascot and logo" width="900">
 </p>
 
 An image-capable, minimalistic TUI epub reader written in C++.
 
 ## Install
-epubworm supports Linux and macOS.
+Epubworm supports Linux and macOS.
 
 ### Build From Source
 First, clone the repo and `cd` into it.
@@ -42,7 +42,7 @@ make install-user
 When on macOS and installing for only the current user, ensure `~/.local/bin` is in `$PATH` and `~/.local/share/zsh/site-functions` is in Zsh's `$fpath`.
 
 ## Image Support
-epubworm uses the unicode placeholders feature of the [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/) to display images. This requires a terminal with Kitty Graphics Protocol unicode placeholders support, and (if you use a multiplexer) a multiplexer with escape sequence passthrough support. epubworm displays only text in terminals and multiplexers without these features.
+Epubworm uses the unicode placeholders feature of the [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/) to display images. This requires a terminal with Kitty Graphics Protocol unicode placeholders support, and (if you use a multiplexer) a multiplexer with escape sequence passthrough support. Epubworm displays only text in terminals and multiplexers without these features.
 
 ### Terminals
 Unicode placeholder graphics are supported by:

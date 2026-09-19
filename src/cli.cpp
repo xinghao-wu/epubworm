@@ -333,7 +333,7 @@ auto displayHelp() -> void {
 
   std::cout << "Run without a command (as just epubworm) "
                "to open the last-read epub.\n\n";
-  std::cout << "epubworm uses an id hash system similar to git's. Once added "
+  std::cout << "Epubworm uses an id hash system similar to git's. Once added "
                "to the library, an epub "
                "file's hash serves as its id to be used in commands. id "
                "hashes are displayed as unambiguous prefixes of at least four "

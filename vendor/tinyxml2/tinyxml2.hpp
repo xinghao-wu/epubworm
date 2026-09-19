@@ -21,7 +21,7 @@ must not be misrepresented as being the original software.
 distribution.
 */
 
-// This source file has been modified for epubworm.
+// This source file has been modified for Epubworm.
 
 #pragma GCC system_header
 

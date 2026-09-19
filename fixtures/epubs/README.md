@@ -1,6 +1,6 @@
 # EPUB test fixtures
 
-These EPUBs were created specifically for epubworm. Their prose, metadata, and
+These EPUBs were created specifically for Epubworm. Their prose, metadata, and
 geometric artwork are original project test data and are distributed under the
 repository's MIT license.
 

@@ -1,7 +1,7 @@
 # Agent Guidelines
 
 ## Project Context
-epubworm is an image-capable TUI epub reader written in C++23.
+Epubworm is an image-capable TUI epub reader written in C++23.
 
 ## Command Reference
 ```bash

@@ -15,7 +15,7 @@ auto main(int argc, char* argv[]) -> int {
       boldColorIfTerm(stderr, redFG);
       std::cerr << "Error: ";
       resetBoldColorIfTerm(stderr);
-      std::cerr << "another epubworm instance is already running, "
+      std::cerr << "another Epubworm instance is already running, "
                    "close it first to prevent data corruption\n";
       return 1;
     }
