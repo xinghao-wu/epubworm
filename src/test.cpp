@@ -703,6 +703,19 @@ auto styleEachLineIndividually() -> void {
          == 2);
   assert(underlined.contains(esc + underline + "one two" + esc + resetUnderline
                              + '\n' + esc + underline));
+
+  std::string centeredUnderlined{centerAlignBegin + esc + underline
+                                 + "one two three" + esc + resetUnderline
+                                 + centerAlignEnd};
+  ::processContentText(centeredUnderlined, 7);
+  const std::size_t newline{centeredUnderlined.find('\n')};
+  assert(newline != std::string::npos);
+  const std::size_t secondUnderline{
+      centeredUnderlined.find(esc + underline, newline + 1)};
+  assert(secondUnderline != std::string::npos);
+  assert(secondUnderline > newline + 1);
+  assert(centeredUnderlined.find_first_not_of(' ', newline + 1)
+         == secondUnderline);
 }
 
 auto headingColors() -> void {
@@ -791,12 +804,15 @@ auto headingColors() -> void {
   assert(!processed.contains(centerAlignBegin));
   assert(!processed.contains(centerAlignEnd));
   assert(getOccurrences<std::string_view>(processed, esc + lightGrayFG) == 2);
-  assert(processed.contains(esc + lightGrayFG + "one two" + esc + resetFG + '\n'
-                            + esc + lightGrayFG));
+  const std::size_t newline{processed.find('\n')};
+  assert(newline != std::string::npos);
+  assert(
+      processed.contains(esc + lightGrayFG + "one two" + esc + resetFG + '\n'));
   const std::size_t secondLightGray{processed.rfind(esc + lightGrayFG)};
+  assert(secondLightGray > newline + 1);
+  assert(processed.find_first_not_of(' ', newline + 1) == secondLightGray);
   const std::size_t three{processed.find("three", secondLightGray)};
-  assert(three != std::string::npos);
-  assert(three > secondLightGray + esc.size() + lightGrayFG.size());
+  assert(three == secondLightGray + esc.size() + lightGrayFG.size());
 
   ::processContentText(nestedHeadingParsed, 10);
   assert(getOccurrences<std::string_view>(nestedHeadingParsed, esc + greenFG)

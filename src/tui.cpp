@@ -801,7 +801,12 @@ auto styleEachLineIndividually(std::string& str, std::string_view style,
       str.insert(styleNewlineIndex, resetStyle);
       styleNewlineIndex += resetStyle.size();
       styleEndIndex += resetStyle.size();
-      str.insert(styleNewlineIndex + 1, style);
+      std::size_t nextLineStyleIndex{styleNewlineIndex + 1};
+      while (nextLineStyleIndex < str.size()
+             && str.at(nextLineStyleIndex) == ' ') {
+        ++nextLineStyleIndex;
+      }
+      str.insert(nextLineStyleIndex, style);
       styleEndIndex += style.size();
 
       styleNewlineIndex = str.find('\n', styleNewlineIndex + 1);
