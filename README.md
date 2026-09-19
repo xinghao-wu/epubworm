@@ -2,6 +2,31 @@
 
 An image-capable, minimalistic TUI EPUB reader written in C++.
 
+# Overview
+## Notable Features
+- Inline image display with multiplexer support via Kitty Graphics Protocol
+- Compliant text styling and formatting: *italic*, **bold**, centered, and right aligned text
+- Wide character (e.g. emojis and Japanese text) support
+- Mouse support + vim-like keybinds
+- Configurable text width
+- Responsive to window resize
+- Persistent reading progress and last-read book
+- Being really, really fast in loading and rendering content
+- Uses your terminal's colorscheme
+
+## Known Limitations
+- No search (yet)
+- No annotations or bookmarks
+- No hyperlink support
+- No whole book reading progress percentage
+- No CSS resolver: a rare minority of EPUB files' text styling and formatting will not be rendered
+- No MathML support: equations not stored as images will be displayed incorrectly
+- No TOC fragment id support: some TOC entries will point to the same place (the start of the chapter file)
+- No in-app dictionary
+- No text-to-speech
+
+Epubworm uses the relatively simple [TinyXML-2](https://github.com/leethomason/tinyxml2) for parsing, and as such is not very tolerant of malformed EPUB files. If a book crashes the application, converting the EPUB file to AZW3 and back to EPUB is an easy fix (this can be done via [Calibre](https://calibre-ebook.com/)'s [ebook-convert](https://manual.calibre-ebook.com/generated/en/ebook-convert.html) or its online hosted version at [cloudconvert](https://cloudconvert.com/)).
+
 # Install
 Epubworm supports Linux and macOS.
 
