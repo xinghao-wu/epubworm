@@ -2,7 +2,7 @@
 An image-capable, minimalistic TUI EPUB reader written in C++.
 
 # Overview
-<video src="assets/demo.mp4" controls width="100%" muted></video>
+https://github.com/user-attachments/assets/76c2db37-3419-4fe6-8e85-54b3e5678cf4
 
 ## Notable Features
 - Inline image display with multiplexer support via Kitty Graphics Protocol
