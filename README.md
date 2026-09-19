@@ -1,6 +1,6 @@
 <img src="assets/mascot_and_banner.png" alt="Epubworm mascot and banner">
 
-Epubworm is an image-capable, minimalistic TUI EPUB reader written in C++.
+An image-capable, minimalistic TUI EPUB reader written in C++.
 
 # Install
 Epubworm supports Linux and macOS.
