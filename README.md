@@ -93,8 +93,6 @@ Unicode placeholder graphics are supported by:
 
 Unicode placeholder graphics could be implemented in the near future by:
 - WezTerm: [PR](https://github.com/wezterm/wezterm/pull/7924)
-- xterm.js: [issue](https://github.com/xtermjs/xterm.js/issues/5711)
-- Warp: [issue](https://github.com/warpdotdev/warp/issues/6210), [PR](https://github.com/warpdotdev/warp/pull/15001)
 
 ## Multiplexers
 ### tmux
