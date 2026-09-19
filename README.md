@@ -6,7 +6,11 @@ An image-capable, minimalistic TUI EPUB reader written in C++.
 Epubworm supports Linux and macOS.
 
 ## Build From Source
-First, clone the repo and `cd` into it.
+First, clone the repo and `cd` into it:
+```bash
+git clone https://github.com/xinghao-wu/epubworm ~/Downloads/epubworm
+cd ~/Downloads/epubworm
+```
 
 ### Linux
 Linux builds require `make` and `g++` installed.
