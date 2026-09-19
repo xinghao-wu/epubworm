@@ -68,6 +68,19 @@ make install-user
 ```
 When on macOS and installing for only the current user, ensure `~/.local/bin` is in `$PATH` and `~/.local/share/zsh/site-functions` is in Zsh's `$fpath`.
 
+# Quickstart
+```bash
+epubworm -h
+epubworm add <file>...
+epubworm open <id hash>
+```
+
+Tip: Since `epubworm add` accepts multiple arguments, file globbing can be used to quickly add all your books to Epubworm's library.
+```bash
+shopt -s globstar # Enables globbing on bash, not necessary if you're using zsh or fish
+epubworm add books_parent_dir/**/*.epub
+```
+
 # Image Support
 Epubworm uses the unicode placeholders feature of the [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/) to display images. This requires a terminal with Kitty Graphics Protocol unicode placeholders support, and (if you use a multiplexer) a multiplexer with escape sequence passthrough support. Epubworm doesn't display images in terminals and multiplexers without these features.
 
