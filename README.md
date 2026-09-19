@@ -1,4 +1,8 @@
 # epubworm
+<p align="center">
+  <img src="assets/epubworm.png" alt="epubworm mascot and logo" width="900">
+</p>
+
 An image-capable, minimalistic TUI epub reader written in C++.
 
 ## Install
