@@ -1,10 +1,7 @@
-<img src="assets/mascot_and_banner.png" alt="Epubworm mascot and banner">
-
+![Epubworm mascot and banner](assets/mascot_and_banner.png)
 An image-capable, minimalistic TUI EPUB reader written in C++.
 
 # Overview
-<video src="assets/demo.mp4" controls></video>
-
 ## Notable Features
 - Inline image display with multiplexer support via Kitty Graphics Protocol
 - Compliant text styling and formatting: *italic*, **bold**, centered, and right aligned text
