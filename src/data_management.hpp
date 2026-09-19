@@ -14,9 +14,9 @@ struct ConfOpts {
 };
 
 struct EpubInfo {
-  std::string id;
-  std::string title;
-  std::string author;
+  std::string id{};
+  std::string title{};
+  std::string author{};
 };
 
 enum class LibraryUpdateError : std::uint8_t {

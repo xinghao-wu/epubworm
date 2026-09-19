@@ -252,7 +252,7 @@ struct TextStyle {
   bool bold{};
   bool italic{};
   bool underline{};
-  std::string_view foreground;
+  std::string_view foreground{};
 };
 
 auto appendStyleTransition(std::string& out, const TextStyle& current,
