@@ -19,35 +19,37 @@ using TocData = std::vector<std::pair<std::string, std::filesystem::path>>;
 
 // Returns .opf file's path relative to `epubRootAbs`.
 // Throws `std::runtime_error` if epub's `container.xml` failed to be loaded.
-[[nodiscard]] std::filesystem::path
-getOPFRel(const std::filesystem::path& epubRootAbs);
+[[nodiscard]] auto getOPFRel(const std::filesystem::path& epubRootAbs)
+    -> std::filesystem::path;
 
-[[nodiscard]] const tinyxml2::XMLElement*
-getMetadata(const tinyxml2::XMLDocument& opf);
+[[nodiscard]] auto getMetadata(const tinyxml2::XMLDocument& opf)
+    -> const tinyxml2::XMLElement*;
 
-[[nodiscard]] std::string getTitle(const tinyxml2::XMLElement* metadata);
+[[nodiscard]] auto getTitle(const tinyxml2::XMLElement* metadata)
+    -> std::string;
 
-[[nodiscard]] std::string getAuthor(const tinyxml2::XMLElement* metadata);
+[[nodiscard]] auto getAuthor(const tinyxml2::XMLElement* metadata)
+    -> std::string;
 
 // Searches `manifest` for child element with attribute of value `id`,
 // returning relative file path found in that element's `href` attribute.
 // Unless an exception is thrown, the caller can safely assume the return
 // value points to a valid, null-terminated string containing a file path.
 // Throws `std::runtime_error` if no element matching `id` is found.
-[[nodiscard]] const char* getHrefFromID(const tinyxml2::XMLElement* manifest,
-                                        std::string_view id);
+[[nodiscard]] auto getHrefFromID(const tinyxml2::XMLElement* manifest,
+                                 std::string_view id) -> const char*;
 
 // Returns relative paths of the epub's xml files listed in `<spine>`,
 // paths are relative to opf file's parent directory.
 // In returned vector, the table of contents is the first element,
 // the rest follow in order of appearance.
 // Skips any elements with the attribute `linear="no"` (`nav.xhtml` usually).
-[[nodiscard]] std::vector<std::filesystem::path>
-getSpine(const tinyxml2::XMLDocument& opf);
+[[nodiscard]] auto getSpine(const tinyxml2::XMLDocument& opf)
+    -> std::vector<std::filesystem::path>;
 
 // Recursive helper function for `getTOC()`.
-void collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
-                      const std::string& prefix = "");
+auto collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
+                      const std::string& prefix = "") -> void;
 
 // Returns a vector of pairs containing info about the TOC's navigation points.
 // Only works on `toc.ncx` files (EPUB 2, but found in most EPUB 3 epubs),
@@ -57,7 +59,7 @@ void collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
 // second element is its file's path relative to `toc.ncx`'s parent directory.
 // Nested nav points' names prefixed with four spaces for each level of
 // nesting. Throws `std::runtime_error` if unable to load `tocAbs`.
-[[nodiscard]] TocData getTOC(const std::filesystem::path& tocAbs);
+[[nodiscard]] auto getTOC(const std::filesystem::path& tocAbs) -> TocData;
 
 // Parse all text and elements contained within `parent` recursively,
 // appending result to `out`.
@@ -69,20 +71,22 @@ void collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
 // will be ignored and traversed through. Semantic alignment classes, inline
 // `text-align`, and legacy `align` attributes are preserved as internal layout
 // markers.
-void parseContentElem(const tinyxml2::XMLElement* parent, std::string& out,
-                      const std::filesystem::path& chapterAbs);
+auto parseContentElem(const tinyxml2::XMLElement* parent, std::string& out,
+                      const std::filesystem::path& chapterAbs) -> void;
 
 // Parse chapter content xhtml file using `parseContentElem()`,
 // appending result to `out`.
 // Chapter's extraneous leading and trailing newlines, spaces, and non-breaking
 // spaces are deleted. A red foreground colored `"---\n"` is appended to
 // chapter text.
-void parseChapter(const std::filesystem::path& chapterAbs, std::string& out);
+auto parseChapter(const std::filesystem::path& chapterAbs, std::string& out)
+    -> void;
 
 // Parse all chapters of epub, appending result to `out`.
 // Mostly for testing purposes, getting the whole epub at once is inefficient.
-void dumpEpub(const std::filesystem::path& epubRootAbs, std::string& out);
+auto dumpEpub(const std::filesystem::path& epubRootAbs, std::string& out)
+    -> void;
 
 // In `str`, expand the ugly unicode ellipses (…) into three normal dots (...)
 // and escaped tab characters `(\t)` into four spaces.
-void expandEllipsesAndTabs(std::string& str);
+auto expandEllipsesAndTabs(std::string& str) -> void;

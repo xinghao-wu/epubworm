@@ -17,7 +17,7 @@
 using Key = std::int16_t;
 
 namespace specKey {
-enum Values : Key {
+enum Values : Key { // NOLINT(cppcoreguidelines-use-enum-class)
   // keyboard keys represented by escape sequences
   arrowLeft = 1000, // don't conflict with normal 8-bit char values
   arrowRight,
@@ -39,7 +39,7 @@ enum Values : Key {
 };
 }
 
-enum class ChapterExit {
+enum class ChapterExit : std::uint8_t {
   prev,
   next,
   quit,
@@ -50,8 +50,6 @@ struct EpubProg {
   std::filesystem::path chapterAbs{};
   double chapterProg{};
 };
-
-extern volatile std::sig_atomic_t g_winResize;
 
 inline constexpr Key ctrlB{2};
 inline constexpr Key ctrlF{6};
@@ -101,8 +99,8 @@ inline const std::string resetFG{"[39m"};
 // `id` is not in valid range,
 // `imgAbs` could not be decoded into pixel data,
 // or the temp image data file failed to open.
-void loadImg(const std::filesystem::path& imgAbs, std::uint32_t id, int rows,
-             int cols);
+auto loadImg(const std::filesystem::path& imgAbs, std::uint32_t id, int rows,
+             int cols) -> void;
 
 // Display a loaded image (existing virtual placement)
 // using `rows` * `cols` special unicode characters.
@@ -110,8 +108,8 @@ void loadImg(const std::filesystem::path& imgAbs, std::uint32_t id, int rows,
 // `id` must be an integer between 1 and 2^24 - 1, inclusive.
 // `forITerm2` enables its more explicit placeholder encoding workaround.
 // Throws `std::runtime_error` if `id` is not in valid range.
-void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
-                      bool forITerm2);
+auto displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
+                      bool forITerm2) -> void;
 
 // Using the kitty graphics protocol, display an image to the terminal.
 // Appends unicode characters showing the image to `out`.
@@ -127,33 +125,33 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
 // Throws `std::runtime_error` for bad `imgAbs`.
 // Note: there's a bug on ghostty's end that images displayed on tmux panes on
 // the right side of the screen will be broken until tmux redraws the screen.
-void displayImg(const std::filesystem::path& imgAbs, std::string& out,
-                int rows = 0, int cols = 0);
+auto displayImg(const std::filesystem::path& imgAbs, std::string& out,
+                int rows = 0, int cols = 0) -> void;
 
 // Constructs the appropriate graphics escape code of the kitty image protocol
 // to load an image (create a virtual placement) based on provided parameters.
-[[nodiscard]] std::string
+[[nodiscard]] auto
 getGraphicsEscCode(const std::filesystem::path& tempDataFileAbs, int channels,
                    int xPixels, int yPixels, std::uint32_t id, int rows,
-                   int cols);
+                   int cols) -> std::string;
 
 // Trivial function to check if `fd` points to an interactive terminal.
-[[nodiscard]] bool isTerm(FILE* fd);
+[[nodiscard]] auto isTerm(FILE* fd) -> bool;
 
 // If `fd` refers to a terminal, emits bold + `fgColor` escape codes to
 // `std::cout` (when `fd` is `stdout`) or `std::cerr` (otherwise).
 // Pair with `resetBoldColorIfTerm(fd)`.
-void boldColorIfTerm(FILE* fd, std::string_view fgColor);
+auto boldColorIfTerm(FILE* fd, std::string_view fgColor) -> void;
 
 // If `fd` refers to a terminal, emits reset-bold + reset-fg escape codes
 // to the same stream chosen by the matching `boldColorIfTerm` call.
-void resetBoldColorIfTerm(FILE* fd);
+auto resetBoldColorIfTerm(FILE* fd) -> void;
 
 // Restore original terminal settings.
 // Depends on `enableRawMode()` to retrieve original terminal setting flags.
 // Never call this function before calling `enableRawMode()`.
 // Throws `std::runtime_error` on failure to set terminal settings.
-void disableRawMode();
+auto disableRawMode() -> void;
 
 // Sets terminal to raw mode, disabling echo and canonical mode.
 // `read()` returns 0 every 100ms when not receiving input.
@@ -162,72 +160,73 @@ void disableRawMode();
 // Has no effect on repeated calls.
 // Throws `std::runtime_error` on failure to read or set terminal settings,
 // and on failure to register `disableRawMode()` to run at exit.
-void enableRawMode();
+auto enableRawMode() -> void;
 
 // Converts a utf-8 encoded string into a wide string (utf-32 on posix).
 // Throws `std::system_error` on failure.
-[[nodiscard]] std::wstring utf8ToWide(std::string_view input);
+[[nodiscard]] auto utf8ToWide(std::string_view input) -> std::wstring;
 
 // Converts a wide string (utf-32 on posix) to a utf-8 encoded string.
 // Throws `std::system_error` on failure.
-[[nodiscard]] std::string wideToUTF8(std::wstring_view input);
+[[nodiscard]] auto wideToUTF8(std::wstring_view input) -> std::string;
 
 // Queries `wcwidth()` for visual length (columns) of `str`.
 // `useSystemLocale()` should be called before using this function.
 // Overestimates length of `str` containing escape sequences not accounted for
 // by `getInvisEscSeqLen()`.
-[[nodiscard]] int getVisualLen(std::wstring_view str);
+[[nodiscard]] auto getVisualLen(std::wstring_view str) -> int;
 
 // Get length of invisible escape sequence chars in `str`.
 // Only looks for plausible escape sequences.
-[[nodiscard]] int getInvisEscSeqLen(std::wstring_view str);
+[[nodiscard]] auto getInvisEscSeqLen(std::wstring_view str) -> int;
 
 // Sets program's locale to system locale, updating `std::cout` and `std::cin`.
 // Should be called before functions which depend on correct locale.
-void useSystemLocale();
+auto useSystemLocale() -> void;
 
 // Reduce each run of newlines separated by spaces, tabs, non-breaking spaces,
 // or zero-width non-joiners to at most two, removing separators between them.
-void collapseConsecutiveNewlines(std::string& str);
+auto collapseConsecutiveNewlines(std::string& str) -> void;
 
 // Split lines with visual length longer than `maxLen` in `str` at spaces,
 // or force a split at `maxLen` when no space is available.
 // Image lines are left as is to support images wider than `maxLen`.
 // This should be the first text content manipulation function called,
 // as most others depend on a correct `maxLen`.
-void wrapLines(std::string& str, int maxLen);
+auto wrapLines(std::string& str, int maxLen) -> void;
 
 // Based on screen width, center text using `maxLen`, images using image width.
 // Note this will create lines longer than `maxLen`,
 // so it should be one of the last text content manipulation functions called.
-void centerOnScreen(std::string& str, int maxLen);
+auto centerOnScreen(std::string& str, int maxLen) -> void;
 
 // In `str`, using `maxLen`, center justify text beginning with `prefix`
 // and ending with `postfix`.
-void centerJustify(std::string_view prefix, std::string_view postfix,
-                   std::string& str, int maxLen);
+auto centerJustify(std::string_view prefix, std::string_view postfix,
+                   std::string& str, int maxLen) -> void;
 
 // In `str`, using `maxLen`, right justify text beginning with `prefix`
 // and ending with `postfix`.
-void rightJustify(std::string_view prefix, std::string_view postfix,
-                  std::string& str, int maxLen);
+auto rightJustify(std::string_view prefix, std::string_view postfix,
+                  std::string& str, int maxLen) -> void;
 
 // Read one input in raw mode.
 // Returns the key (normal keypress integer values + values in specKey::Values)
 // and the row, col position where the action happened, if applicable.
 // Throws `std::system_error` on error to read key.
-[[nodiscard]] std::tuple<Key, int, int> readRawInput();
+[[nodiscard]] auto readRawInput() -> std::tuple<Key, int, int>;
 
 // Equivalent to clearing the screen, removing its content from the scrollback
 // buffer, and setting cursor position to the screen's top left cell.
-void eraseScreen();
+auto eraseScreen() -> void;
 
 // Get index of nth occurrence of `target` in `str`, starting the search
 // from `startIndex`, doesn't count overlapping `target` occurrences.
 // Returns `std::string_view::npos` if nth occurrence does not exist.
-[[nodiscard]] constexpr std::size_t findNth(std::string_view str,
-                                            std::string_view target, int n,
-                                            std::size_t startIndex = 0) {
+[[nodiscard]] constexpr auto findNth(std::string_view str,
+                                     std::string_view target, int n,
+                                     std::size_t startIndex = 0)
+    -> std::size_t {
   if (n == 0 || target.empty()) {
     return std::string_view::npos;
   }
@@ -247,8 +246,8 @@ void eraseScreen();
 }
 
 // In `str`, replace all occurrences of `target` with `replacement`.
-constexpr void findAndReplaceAll(std::string& str, std::string_view target,
-                                 std::string_view replacement) {
+constexpr auto findAndReplaceAll(std::string& str, std::string_view target,
+                                 std::string_view replacement) -> void {
   std::size_t pos{str.find(target)};
   while (pos != std::string::npos) {
     str.replace(pos, target.size(), replacement);
@@ -260,7 +259,7 @@ constexpr void findAndReplaceAll(std::string& str, std::string_view target,
 // letting escape sequences tmux doesn't know about reach the terminal
 // emulator. Requires `set -g allow-passthrough on` in `~/.tmux.conf` for
 // passthrough.
-constexpr void wrapForTmuxPassthrough(std::string& str) {
+constexpr auto wrapForTmuxPassthrough(std::string& str) -> void {
   findAndReplaceAll(str, esc, esc + esc);
   str = esc + "Ptmux;" + str + escEnd;
 }
@@ -268,7 +267,8 @@ constexpr void wrapForTmuxPassthrough(std::string& str) {
 // Get number of occurrences of `target` in `str`.
 // Overlapping `target` occurrences are not counted.
 template <typename TStrView>
-[[nodiscard]] constexpr int getOccurrences(TStrView str, TStrView target) {
+[[nodiscard]] constexpr auto getOccurrences(TStrView str, TStrView target)
+    -> int {
   int count{0};
   std::size_t pos{};
   while ((pos = str.find(target, pos)) != TStrView::npos) {
@@ -280,39 +280,39 @@ template <typename TStrView>
 
 // In `str`, if `style` and `resetStyle` encompass multiple lines,
 // give each line its own `style` and `resetStyle`.
-void styleEachLineIndividually(std::string& str, std::string_view style,
-                               std::string_view resetStyle);
+auto styleEachLineIndividually(std::string& str, std::string_view style,
+                               std::string_view resetStyle) -> void;
 
 // Process content text of epubs extracted from chapter xhtml files for
 // display.
-void processContentText(std::string& str, int maxLen);
+auto processContentText(std::string& str, int maxLen) -> void;
 
 // In raw mode, create a tui interface to view `chapterAbs`.
 // Chapter displayed starting from `iniProg`, lines wrapped at `desiredMaxLen`.
 // Returns reason for exit and progress at exit.
-[[nodiscard]] std::pair<ChapterExit, double>
-displayChapter(const std::filesystem::path& chapterAbs, double iniProg,
-               int desiredMaxLen);
+[[nodiscard]] auto displayChapter(const std::filesystem::path& chapterAbs,
+                                  double iniProg, int desiredMaxLen)
+    -> std::pair<ChapterExit, double>;
 
 // Helper for `displayChapter()`.
-void setUpDisplayChapter(const std::filesystem::path& chapterAbs, double prog,
+auto setUpDisplayChapter(const std::filesystem::path& chapterAbs, double prog,
                          int desiredMaxLen, winsize& winInfo,
                          std::string& chapter, int& chapterLines,
-                         int& screenTopLine, int& screenBotLine);
+                         int& screenTopLine, int& screenBotLine) -> void;
 
 // Helper for `displayChapter()`.
-void snapTopLineToBound(int& screenTopLine);
+auto snapTopLineToBound(int& screenTopLine) -> void;
 
 // Helper for `displayChapter()`.
-void snapBotLineToBound(int& screenBotLine, int chapterLines);
+auto snapBotLineToBound(int& screenBotLine, int chapterLines) -> void;
 
 // Helper for `displayChapter()`.
-[[nodiscard]] int calcBotLineFromTopLine(int screenTopLine,
-                                         const winsize& winInfo);
+[[nodiscard]] auto calcBotLineFromTopLine(int screenTopLine,
+                                          const winsize& winInfo) -> int;
 
 // Helper for `displayChapter()`.
-[[nodiscard]] int calcTopLineFromBotLine(int screenBotLine,
-                                         const winsize& winInfo);
+[[nodiscard]] auto calcTopLineFromBotLine(int screenBotLine,
+                                          const winsize& winInfo) -> int;
 
 // Execute a command using `posix_spawnp()`, waiting until the command exits.
 // `argV` first element should be the command binary name,
@@ -322,29 +322,29 @@ void snapBotLineToBound(int& screenBotLine, int chapterLines);
 // Throws `std::system_error` on error creating pipe, setting up spawn file
 // actions, spawning, reading command output, or waiting for command.
 // Throws `std::runtime_error` for an abnormal exit from command.
-std::string execute(const std::vector<std::string>& argV);
+auto execute(const std::vector<std::string>& argV) -> std::string;
 
 // Sets `g_winResize` to 1.
-extern "C" void handleSigwinch([[maybe_unused]] int signal);
+extern "C" auto handleSigwinch([[maybe_unused]] int signal) -> void;
 
 // Start listening for SIGWINCH signals, setting `g_winResize` to 1 on receive.
 // Throws `std::runtime_error` on failure to register handler via
 // `sigaction()`.
-void registerSigwinchHandler();
+auto registerSigwinchHandler() -> void;
 
 // Translate `data`, `title`, and `author` into a chapter-like string suitable
 // for display.
 // Output is appended to `str`.
-void tocDataToString(const TocData& data, std::string_view title,
-                     std::string_view author, std::string& str);
+auto tocDataToString(const TocData& data, std::string_view title,
+                     std::string_view author, std::string& str) -> void;
 
 // Checks `TMUX`, falling back to `TERM_PROGRAM`, for whether or not running in
 // a tmux session.
-[[nodiscard]] bool inTmuxSession();
+[[nodiscard]] auto inTmuxSession() -> bool;
 
 // Checks `TERM_PROGRAM`, falling back to `LC_TERMINAL` for tmux sessions, for
 // whether or not running in iTerm2.
-[[nodiscard]] bool inITerm2Session();
+[[nodiscard]] auto inITerm2Session() -> bool;
 
 // In raw mode, create a tui interface to view `tocData` with the epub's title
 // and author in the header.
@@ -353,16 +353,16 @@ void tocDataToString(const TocData& data, std::string_view title,
 // Returns relative path found in `tocData` of selected chapter,
 // or an empty path if user exited without selecting one.
 // Throws `std::logic_error` if provided nav point index is out of bounds.
-[[nodiscard]] std::filesystem::path displayTOC(const TocData& tocData,
-                                               std::string_view title,
-                                               std::string_view author,
-                                               int desiredMaxLen,
-                                               int selectedNavPointIndex);
+[[nodiscard]] auto displayTOC(const TocData& tocData, std::string_view title,
+                              std::string_view author, int desiredMaxLen,
+                              int selectedNavPointIndex)
+    -> std::filesystem::path;
 
 // Helper for `displayTOC()`.
-void setUpDisplayTOC(const TocData& tocData, std::string_view title,
+auto setUpDisplayTOC(const TocData& tocData, std::string_view title,
                      std::string_view author, int desiredMaxLen,
-                     winsize& winInfo, std::string& tocStr, int& tocLines);
+                     winsize& winInfo, std::string& tocStr, int& tocLines)
+    -> void;
 
 // Highest level function for creating the core TUI interface.
 // Once in raw mode, with locale set, display an epub book.
@@ -370,6 +370,6 @@ void setUpDisplayTOC(const TocData& tocData, std::string_view title,
 // If `iniProg.chapterAbs` is empty, it will be taken as the first chapter.
 // Returns progress at exit from this function.
 // Throws `std::runtime_error` for bad initial progress chapter.
-[[nodiscard]] EpubProg displayEpub(const EpubProg& iniProg,
-                                   const std::filesystem::path& epubRootAbs,
-                                   int desiredMaxLen);
+[[nodiscard]] auto displayEpub(const EpubProg& iniProg,
+                               const std::filesystem::path& epubRootAbs,
+                               int desiredMaxLen) -> EpubProg;

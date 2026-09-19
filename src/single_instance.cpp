@@ -55,11 +55,11 @@ SingleInstanceLock::~SingleInstanceLock() {
   }
 }
 
-bool SingleInstanceLock::isFirstInstance() const noexcept {
+auto SingleInstanceLock::isFirstInstance() const noexcept -> bool {
   return lockFd != -1;
 }
 
-fs::path getInstanceLockPath() {
+auto getInstanceLockPath() -> fs::path {
   const char* const xdgRuntimeDir{std::getenv("XDG_RUNTIME_DIR")};
   if (xdgRuntimeDir != nullptr) {
     const fs::path runtimeAbs{xdgRuntimeDir};

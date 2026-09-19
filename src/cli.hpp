@@ -6,14 +6,14 @@
 // Validates and dispatches command-line arguments.
 // Returns zero on success and nonzero for invalid arguments or an operation
 // that could not be completed.
-int dispatchCli(int argc, char** argv);
+auto dispatchCli(int argc, char** argv) -> int;
 
 // Helper for `displayHelp()`
-void printAligned(std::string_view left, std::string_view right);
+auto printAligned(std::string_view left, std::string_view right) -> void;
 
 // Prints the program's help text to stdout.
 // Section headers are styled bold + colored when stdout is a terminal.
-void displayHelp();
+auto displayHelp() -> void;
 
 // Lists the title, author, and ID prefix of every epub in the library at
 // `shareAbs/epubworm`, sorted by title. Each ID is shown as an unambiguous
@@ -27,4 +27,4 @@ void displayHelp();
 // `std::runtime_error` on library load failure, missing
 // `<library>` or `<last-read>`, an `<epub>` or `<last-read>` missing its `id`
 // attribute, or failure to load/parse an extracted epub's OPF.
-void listLibrary(const std::filesystem::path& shareAbs);
+auto listLibrary(const std::filesystem::path& shareAbs) -> void;

@@ -4,7 +4,7 @@
 #include <string>
 
 // Decode percent (url) encoding, needed for file paths extracted from epubs.
-constexpr void decodePercentEncoding(std::string& str) {
+constexpr auto decodePercentEncoding(std::string& str) -> void {
   if (!str.contains('%')) {
     return;
   }

@@ -20,13 +20,17 @@
 #include <fstream>
 #include <iconv.h>
 #include <iostream>
+#include <limits>
 #include <locale>
 #include <random>
+// POSIX signal APIs expose declarations not guaranteed by <csignal>.
+// NOLINTNEXTLINE(hicpp-deprecated-headers,modernize-deprecated-headers)
 #include <signal.h>
 #include <spawn.h>
 #include <stdexcept>
+// POSIX process APIs use FILE and fileno from this header.
+// NOLINTNEXTLINE(hicpp-deprecated-headers,modernize-deprecated-headers)
 #include <stdio.h>
-#include <stdlib.h>
 #include <string>
 #include <string_view>
 #include <sys/ioctl.h>
@@ -38,6 +42,8 @@
 #include <unistd.h>
 #include <utility>
 #include <vector>
+// POSIX wcwidth is declared by this header.
+// NOLINTNEXTLINE(hicpp-deprecated-headers,modernize-deprecated-headers)
 #include <wchar.h>
 
 #ifdef __APPLE__
@@ -47,13 +53,20 @@
 using namespace tinyxml2;
 namespace fs = std::filesystem;
 
-static termios g_ogTermFlags{};
+namespace {
+// Raw mode setup must retain the original terminal state for later restoration.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
+termios g_ogTermFlags{};
+// Mutable sig_atomic_t is required for communication from the signal handler.
+// NOLINTNEXTLINE(cppcoreguidelines-avoid-non-const-global-variables)
 volatile std::sig_atomic_t g_winResize{0};
+} // namespace
 
 constexpr int wheelScrollLines{3};
 constexpr int horizontalMarginChars{1};
 
-void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
+auto loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols)
+    -> void {
   if (id == 0) {
     throw std::runtime_error{"image id not in valid range"};
   }
@@ -103,15 +116,15 @@ void loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols) {
   std::cout << graphicsEscCode << std::flush;
 }
 
-void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
-                      bool forITerm2) {
-  if (id < 1 || id > static_cast<std::uint32_t>((1 << 24) - 1)) {
+auto displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
+                      bool forITerm2) -> void {
+  if (id < 1U || id > ((1U << 24U) - 1U)) {
     throw std::runtime_error{"image id not in valid range"};
   }
 
-  const std::uint32_t idRed{(id >> 16) & 255};
-  const std::uint32_t idGreen{(id >> 8) & 255};
-  const std::uint32_t idBlue{id & 255};
+  const std::uint32_t idRed{(id >> 16U) & 255U};
+  const std::uint32_t idGreen{(id >> 8U) & 255U};
+  const std::uint32_t idBlue{id & 255U};
   const std::string idInFG{"[38;2;" + std::to_string(idRed) + ';'
                            + std::to_string(idGreen) + ';'
                            + std::to_string(idBlue) + 'm'};
@@ -135,9 +148,10 @@ void displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
   }
 }
 
-void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
+auto displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols)
+    -> void {
   constexpr std::uint32_t minID{1};
-  constexpr std::uint32_t maxID{(1 << 24) - 1};
+  constexpr std::uint32_t maxID{(1U << 24U) - 1U};
 
   static std::mt19937 s_rng{std::random_device{}()};
   const std::uint32_t id{std::uniform_int_distribution{minID, maxID}(s_rng)};
@@ -161,7 +175,7 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
       const int rowsDesired{(imgYPix / cellYPix) + 1};
       const int colsDesired{(imgXPix / cellXPix) + 1};
       const int maxRows{winInfo.ws_row - 1};
-      const int maxCols{winInfo.ws_col - horizontalMarginChars * 2};
+      const int maxCols{winInfo.ws_col - (horizontalMarginChars * 2)};
       const double rowShrinkMultiplier{maxRows
                                        / static_cast<double>(rowsDesired)};
       const double colShrinkMultiplier{maxCols
@@ -185,9 +199,9 @@ void displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols) {
   displayLoadedImg(id, rows, cols, out, inITerm2Session());
 }
 
-std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
-                               int xPixels, int yPixels, std::uint32_t id,
-                               int rows, int cols) {
+auto getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
+                        int xPixels, int yPixels, std::uint32_t id, int rows,
+                        int cols) -> std::string {
   std::string ctrlData{};
   ctrlData += "f=" + std::to_string(channels * 8) + ',';
   ctrlData += "s=" + std::to_string(xPixels) + ',';
@@ -206,11 +220,11 @@ std::string getGraphicsEscCode(const fs::path& tempDataFileAbs, int channels,
   return esc + "_G" + ctrlData + ';' + tempDataFileAbsEncoded + escEnd;
 }
 
-bool isTerm(FILE* fd) {
+auto isTerm(FILE* fd) -> bool {
   return isatty(fileno(fd)) == 1;
 }
 
-void boldColorIfTerm(FILE* fd, std::string_view fgColor) {
+auto boldColorIfTerm(FILE* fd, std::string_view fgColor) -> void {
   if (!isTerm(fd)) {
     return;
   }
@@ -218,7 +232,7 @@ void boldColorIfTerm(FILE* fd, std::string_view fgColor) {
   os << esc << bold << esc << fgColor;
 }
 
-void resetBoldColorIfTerm(FILE* fd) {
+auto resetBoldColorIfTerm(FILE* fd) -> void {
   if (!isTerm(fd)) {
     return;
   }
@@ -226,7 +240,7 @@ void resetBoldColorIfTerm(FILE* fd) {
   os << esc << resetBold << esc << resetFG;
 }
 
-void disableRawMode() {
+auto disableRawMode() -> void {
   std::cout << esc << disableDecimalReportingFormat;
   std::cout << esc << disableMouseEventReporting;
   std::cout << esc << showCursor;
@@ -237,7 +251,7 @@ void disableRawMode() {
   }
 }
 
-void enableRawMode() {
+auto enableRawMode() -> void {
   static bool hasRun{false};
   if (hasRun) {
     return;
@@ -271,7 +285,7 @@ void enableRawMode() {
   registerSigwinchHandler();
 }
 
-std::wstring utf8ToWide(std::string_view input) {
+auto utf8ToWide(std::string_view input) -> std::wstring {
   if (input.empty()) {
     return {};
   }
@@ -293,7 +307,7 @@ std::wstring utf8ToWide(std::string_view input) {
 
   const std::size_t error{
       iconv(convDescriptor, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft)};
-  if (error == static_cast<std::size_t>(-1)) {
+  if (error == std::numeric_limits<std::size_t>::max()) {
     const int err{errno};
     iconv_close(convDescriptor);
     throw std::system_error{err, std::generic_category(),
@@ -309,7 +323,7 @@ std::wstring utf8ToWide(std::string_view input) {
   return output;
 }
 
-std::string wideToUTF8(std::wstring_view input) {
+auto wideToUTF8(std::wstring_view input) -> std::string {
   if (input.empty()) {
     return {};
   }
@@ -331,7 +345,7 @@ std::string wideToUTF8(std::wstring_view input) {
 
   const std::size_t error{
       iconv(convDescriptor, &inBuf, &inBytesLeft, &outBuf, &outBytesLeft)};
-  if (error == static_cast<std::size_t>(-1)) {
+  if (error == std::numeric_limits<std::size_t>::max()) {
     const int err{errno};
     iconv_close(convDescriptor);
     throw std::system_error{err, std::generic_category(),
@@ -346,7 +360,7 @@ std::string wideToUTF8(std::wstring_view input) {
   return output;
 }
 
-int getVisualLen(std::wstring_view str) {
+auto getVisualLen(std::wstring_view str) -> int {
   int totalLen{0};
   for (const auto& ch : str) {
     int chLen{wcwidth(ch)};
@@ -359,7 +373,7 @@ int getVisualLen(std::wstring_view str) {
   return totalLen;
 }
 
-int getInvisEscSeqLen(std::wstring_view str) {
+auto getInvisEscSeqLen(std::wstring_view str) -> int {
   int totalLen{0};
   totalLen += getOccurrences<std::wstring_view>(str, L"\033\\") * 1;
   totalLen += getOccurrences<std::wstring_view>(str, L"\033[2J") * 3;
@@ -388,13 +402,13 @@ int getInvisEscSeqLen(std::wstring_view str) {
   return totalLen;
 }
 
-void useSystemLocale() {
+auto useSystemLocale() -> void {
   std::locale::global(std::locale(""));
   std::cout.imbue(std::locale{});
   std::cin.imbue(std::locale{});
 }
 
-void collapseConsecutiveNewlines(std::string& str) {
+auto collapseConsecutiveNewlines(std::string& str) -> void {
   constexpr std::string_view nonBreakingSpace{"\xC2\xA0"};
   constexpr std::string_view zeroWidthNonJoiner{"\xE2\x80\x8C"};
   std::size_t inputIndex{};
@@ -454,7 +468,7 @@ void collapseConsecutiveNewlines(std::string& str) {
   str.resize(outputIndex);
 }
 
-void wrapLines(std::string& str, int maxLen) {
+auto wrapLines(std::string& str, int maxLen) -> void {
   for (std::size_t lineBeginIndex{0}, lineEndIndex{str.find('\n')};
        lineBeginIndex < str.size();
        lineBeginIndex = lineEndIndex + 1,
@@ -554,7 +568,7 @@ void wrapLines(std::string& str, int maxLen) {
   }
 }
 
-void centerOnScreen(std::string& str, int maxLen) {
+auto centerOnScreen(std::string& str, int maxLen) -> void {
   winsize winInfo{};
   ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
@@ -590,20 +604,25 @@ void centerOnScreen(std::string& str, int maxLen) {
 }
 
 namespace {
-enum class MarkedAlignment {
+enum class MarkedAlignment : std::uint8_t {
   center,
   right,
 };
 
-void alignMarkedText(std::string_view prefix, std::string_view postfix,
-                     std::string& str, int maxLen, MarkedAlignment alignment) {
-  if (prefix.empty() || postfix.empty()) return;
+auto alignMarkedText(std::string_view prefix, std::string_view postfix,
+                     std::string& str, int maxLen, MarkedAlignment alignment)
+    -> void {
+  if (prefix.empty() || postfix.empty()) {
+    return;
+  }
 
   std::size_t rangeBegin{str.find(prefix)};
   while (rangeBegin != std::string::npos) {
     const std::size_t postfixBegin{
         str.find(postfix, rangeBegin + prefix.size())};
-    if (postfixBegin == std::string::npos) break;
+    if (postfixBegin == std::string::npos) {
+      break;
+    }
     std::size_t rangeEnd{postfixBegin + postfix.size() - 1};
 
     std::size_t lineBegin{rangeBegin};
@@ -631,7 +650,9 @@ void alignMarkedText(std::string_view prefix, std::string_view postfix,
         rangeEnd += padding;
       }
 
-      if (finalLine) break;
+      if (finalLine) {
+        break;
+      }
       lineBegin = lineEnd + 1;
     }
 
@@ -640,17 +661,17 @@ void alignMarkedText(std::string_view prefix, std::string_view postfix,
 }
 } // namespace
 
-void centerJustify(std::string_view prefix, std::string_view postfix,
-                   std::string& str, int maxLen) {
+auto centerJustify(std::string_view prefix, std::string_view postfix,
+                   std::string& str, int maxLen) -> void {
   alignMarkedText(prefix, postfix, str, maxLen, MarkedAlignment::center);
 }
 
-void rightJustify(std::string_view prefix, std::string_view postfix,
-                  std::string& str, int maxLen) {
+auto rightJustify(std::string_view prefix, std::string_view postfix,
+                  std::string& str, int maxLen) -> void {
   alignMarkedText(prefix, postfix, str, maxLen, MarkedAlignment::right);
 }
 
-std::tuple<Key, int, int> readRawInput() {
+auto readRawInput() -> std::tuple<Key, int, int> {
   ssize_t err{};
   char startCh{};
   while ((err = read(STDIN_FILENO, &startCh, 1)) != 1 && g_winResize == 0) {
@@ -683,6 +704,8 @@ std::tuple<Key, int, int> readRawInput() {
     case 'm':
       ++i;
       goto exit_loop;
+    default:
+      break;
     }
     ++i;
   }
@@ -693,12 +716,24 @@ exit_loop:
     return {'\033', 0, 0};
   }
 
-  if (seq == "[5~") return {specKey::pgUp, 0, 0};
-  if (seq == "[6~") return {specKey::pgDown, 0, 0};
-  if (seq == "[A") return {specKey::arrowUp, 0, 0};
-  if (seq == "[B") return {specKey::arrowDown, 0, 0};
-  if (seq == "[C") return {specKey::arrowRight, 0, 0};
-  if (seq == "[D") return {specKey::arrowLeft, 0, 0};
+  if (seq == "[5~") {
+    return {specKey::pgUp, 0, 0};
+  }
+  if (seq == "[6~") {
+    return {specKey::pgDown, 0, 0};
+  }
+  if (seq == "[A") {
+    return {specKey::arrowUp, 0, 0};
+  }
+  if (seq == "[B") {
+    return {specKey::arrowDown, 0, 0};
+  }
+  if (seq == "[C") {
+    return {specKey::arrowRight, 0, 0};
+  }
+  if (seq == "[D") {
+    return {specKey::arrowLeft, 0, 0};
+  }
   if (seq == "[1~" || esc == "[7~" || esc == "[H" || esc == "OH") {
     return {specKey::home, 0, 0};
   }
@@ -720,34 +755,43 @@ exit_loop:
                              seq.find_first_of("mM") - secSemicolonIndex - 1))};
 
     if (seq.back() == 'm') {
-      if (action == 0) return {specKey::leftClickRelease, row, col};
-      if (action == 2) return {specKey::rightClickRelease, row, col};
+      if (action == 0) {
+        return {specKey::leftClickRelease, row, col};
+      }
+      if (action == 2) {
+        return {specKey::rightClickRelease, row, col};
+      }
     }
     if (seq.back() == 'M') {
-      if (action == 64) return {specKey::wheelUp, row, col};
-      if (action == 65) return {specKey::wheelDown, row, col};
+      if (action == 64) {
+        return {specKey::wheelUp, row, col};
+      }
+      if (action == 65) {
+        return {specKey::wheelDown, row, col};
+      }
     }
     return {specKey::unknown, row, col};
   }
   return {specKey::unknown, 0, 0};
 }
 
-void eraseScreen() {
+auto eraseScreen() -> void {
   winsize winInfo{};
   ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
   std::cout << esc << posCursorTopLeft;
-  for (int i{0}; i < winInfo.ws_row; ++i) {
+  const int windowRows{static_cast<int>(winInfo.ws_row)};
+  for (int row{0}; row < windowRows; ++row) {
     std::cout << esc << eraseLine;
-    if (i < winInfo.ws_row - 1) {
+    if (row < windowRows - 1) {
       std::cout << '\n';
     }
   }
   std::cout << esc << posCursorTopLeft;
 }
 
-void styleEachLineIndividually(std::string& str, std::string_view style,
-                               std::string_view resetStyle) {
+auto styleEachLineIndividually(std::string& str, std::string_view style,
+                               std::string_view resetStyle) -> void {
   std::size_t styleBeginIndex{str.find(style)};
   std::size_t styleEndIndex{str.find(resetStyle, styleBeginIndex + style.size())
                             + resetStyle.size() - 1};
@@ -769,7 +813,7 @@ void styleEachLineIndividually(std::string& str, std::string_view style,
   }
 }
 
-void processContentText(std::string& str, int maxLen) {
+auto processContentText(std::string& str, int maxLen) -> void {
   expandEllipsesAndTabs(str);
   wrapLines(str, maxLen);
   centerJustify(centerAlignBegin, centerAlignEnd, str, maxLen);
@@ -792,8 +836,8 @@ void processContentText(std::string& str, int maxLen) {
   styleEachLineIndividually(str, esc + lightGrayFG, esc + resetFG);
 }
 
-std::pair<ChapterExit, double>
-displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
+auto displayChapter(const fs::path& chapterAbs, double iniProg,
+                    int desiredMaxLen) -> std::pair<ChapterExit, double> {
   winsize winInfo{};
   std::string chapter{};
   int chapterLines{};
@@ -945,16 +989,18 @@ displayChapter(const fs::path& chapterAbs, double iniProg, int desiredMaxLen) {
         setUpDisplayChapter(chapterAbs, prog, desiredMaxLen, winInfo, chapter,
                             chapterLines, screenTopLine, screenBotLine);
         goto redraw_screen;
+      default:
+        break;
       }
     }
 redraw_screen:
   }
 }
 
-void setUpDisplayChapter(const fs::path& chapterAbs, double prog,
+auto setUpDisplayChapter(const fs::path& chapterAbs, double prog,
                          int desiredMaxLen, winsize& winInfo,
                          std::string& chapter, int& chapterLines,
-                         int& screenTopLine, int& screenBotLine) {
+                         int& screenTopLine, int& screenBotLine) -> void {
 
   ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
@@ -962,7 +1008,7 @@ void setUpDisplayChapter(const fs::path& chapterAbs, double prog,
   parseChapter(chapterAbs, chapter);
   const int maxLen{
       std::min(desiredMaxLen,
-               static_cast<int>(winInfo.ws_col - horizontalMarginChars * 2))};
+               static_cast<int>(winInfo.ws_col - (horizontalMarginChars * 2)))};
   processContentText(chapter, maxLen);
 
   chapterLines = getOccurrences<std::string_view>(chapter, "\n");
@@ -976,23 +1022,23 @@ void setUpDisplayChapter(const fs::path& chapterAbs, double prog,
   snapTopLineToBound(screenTopLine);
 }
 
-void snapTopLineToBound(int& screenTopLine) {
+auto snapTopLineToBound(int& screenTopLine) -> void {
   screenTopLine = std::max(screenTopLine, 1);
 }
 
-void snapBotLineToBound(int& screenBotLine, int chapterLines) {
+auto snapBotLineToBound(int& screenBotLine, int chapterLines) -> void {
   screenBotLine = std::min(screenBotLine, chapterLines);
 }
 
-int calcBotLineFromTopLine(int screenTopLine, const winsize& winInfo) {
+auto calcBotLineFromTopLine(int screenTopLine, const winsize& winInfo) -> int {
   return screenTopLine + winInfo.ws_row - 1;
 }
 
-int calcTopLineFromBotLine(int screenBotLine, const winsize& winInfo) {
+auto calcTopLineFromBotLine(int screenBotLine, const winsize& winInfo) -> int {
   return screenBotLine - winInfo.ws_row + 1;
 }
 
-std::string execute(const std::vector<std::string>& argV) {
+auto execute(const std::vector<std::string>& argV) -> std::string {
   if (argV.empty() || argV.front().empty()) {
     throw std::invalid_argument{"execute() cmd cannot be empty"};
   }
@@ -1099,11 +1145,11 @@ std::string execute(const std::vector<std::string>& argV) {
   return output;
 }
 
-extern "C" void handleSigwinch([[maybe_unused]] int signal) {
+extern "C" auto handleSigwinch([[maybe_unused]] int signal) -> void {
   g_winResize = 1;
 }
 
-void registerSigwinchHandler() {
+auto registerSigwinchHandler() -> void {
   struct sigaction sigAct{};
   sigAct.sa_handler = handleSigwinch;
   sigemptyset(&sigAct.sa_mask); // block no other signals when handling
@@ -1114,8 +1160,8 @@ void registerSigwinchHandler() {
   }
 }
 
-void tocDataToString(const TocData& data, std::string_view title,
-                     std::string_view author, std::string& str) {
+auto tocDataToString(const TocData& data, std::string_view title,
+                     std::string_view author, std::string& str) -> void {
   str += centerAlignBegin;
   str += esc + cyanFG;
   str += esc + bold;
@@ -1151,7 +1197,7 @@ void tocDataToString(const TocData& data, std::string_view title,
   str += '\n';
 }
 
-bool inTmuxSession() {
+auto inTmuxSession() -> bool {
   const char* tmux{std::getenv("TMUX")};
   if (tmux != nullptr && *tmux != '\0') {
     return true;
@@ -1161,7 +1207,7 @@ bool inTmuxSession() {
   return termProgram != nullptr && std::string_view{termProgram} == "tmux";
 }
 
-bool inITerm2Session() {
+auto inITerm2Session() -> bool {
   const char* termProgram{std::getenv("TERM_PROGRAM")};
   if (termProgram != nullptr && *termProgram != '\0') {
     const std::string_view termProgramView{termProgram};
@@ -1177,9 +1223,9 @@ bool inITerm2Session() {
   return lcTerminal != nullptr && std::string_view{lcTerminal} == "iTerm2";
 }
 
-fs::path displayTOC(const TocData& tocData, std::string_view title,
-                    std::string_view author, int desiredMaxLen,
-                    int selectedNavPointIndex) {
+auto displayTOC(const TocData& tocData, std::string_view title,
+                std::string_view author, int desiredMaxLen,
+                int selectedNavPointIndex) -> fs::path {
   winsize winInfo{};
   std::string tocStr{};
   int tocLines{};
@@ -1212,7 +1258,7 @@ fs::path displayTOC(const TocData& tocData, std::string_view title,
     const int selectionLines{selectionEndLine - selectionBeginLine + 1};
     const int nonSelectionLines{winInfo.ws_row - selectionLines};
 
-    int screenTopLine{selectionBeginLine - nonSelectionLines / 2};
+    int screenTopLine{selectionBeginLine - (nonSelectionLines / 2)};
     snapTopLineToBound(screenTopLine);
     int screenBotLine{calcBotLineFromTopLine(screenTopLine, winInfo)};
     snapBotLineToBound(screenBotLine, tocLines);
@@ -1331,15 +1377,18 @@ fs::path displayTOC(const TocData& tocData, std::string_view title,
         setUpDisplayTOC(tocData, title, author, desiredMaxLen, winInfo, tocStr,
                         tocLines);
         goto redraw_screen;
+      default:
+        break;
       }
     }
 redraw_screen:
   }
 }
 
-void setUpDisplayTOC(const TocData& tocData, std::string_view title,
+auto setUpDisplayTOC(const TocData& tocData, std::string_view title,
                      std::string_view author, int desiredMaxLen,
-                     winsize& winInfo, std::string& tocStr, int& tocLines) {
+                     winsize& winInfo, std::string& tocStr, int& tocLines)
+    -> void {
   ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
 
   tocStr.clear();
@@ -1351,8 +1400,8 @@ void setUpDisplayTOC(const TocData& tocData, std::string_view title,
   tocLines = getOccurrences<std::string_view>(tocStr, "\n");
 }
 
-EpubProg displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
-                     int desiredMaxLen) {
+auto displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
+                 int desiredMaxLen) -> EpubProg {
   const fs::path opfAbs{epubRootAbs / getOPFRel(epubRootAbs)};
   XMLDocument opf{};
   opf.LoadFile(opfAbs.c_str());
@@ -1451,7 +1500,8 @@ exit_nested_loops:
     case ChapterExit::quit:
       eraseScreen();
       std::cout << esc << showCursor;
-      return {spineWithAbs[spineIndex], chapterOut.second};
+      return {.chapterAbs = spineWithAbs[spineIndex],
+              .chapterProg = chapterOut.second};
     }
   }
 }

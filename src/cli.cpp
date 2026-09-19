@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <charconv>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <exception>
 #include <expected>
@@ -19,8 +20,10 @@
 using namespace tinyxml2;
 namespace fs = std::filesystem;
 
-static constexpr int descCol{31};
-static constexpr std::string_view mascot{R"(        ||
+namespace {
+
+constexpr int descCol{31};
+constexpr std::string_view mascot{R"(        ||
 /\      ||
 ||   .--||-.
  \\ /  _//_ `\                   ▄
@@ -33,7 +36,7 @@ static constexpr std::string_view mascot{R"(        ||
           '-._.--'
 )"};
 
-enum class CliCommand {
+enum class CliCommand : std::uint8_t {
   invalid,
   help,
   none,
@@ -44,20 +47,25 @@ enum class CliCommand {
   setLineLength,
 };
 
-static void displayError(std::string_view message) {
+auto displayError(std::string_view message) -> void {
   boldColorIfTerm(stderr, redFG);
   std::cerr << "Error: ";
   resetBoldColorIfTerm(stderr);
   std::cerr << message << '\n';
 }
 
-static void printEpubInfo(const EpubInfo& info, const XMLElement* libraryRoot) {
+auto printEpubInfo(const EpubInfo& info, const XMLElement* libraryRoot)
+    -> void {
   const bool useColor{isTerm(stdout)};
   const auto printField = [useColor](std::string_view value,
-                                     std::string_view color) {
-    if (useColor) std::cout << esc << color;
+                                     std::string_view color) -> void {
+    if (useColor) {
+      std::cout << esc << color;
+    }
     std::cout << value;
-    if (useColor) std::cout << esc << resetFG;
+    if (useColor) {
+      std::cout << esc << resetFG;
+    }
   };
 
   printField(info.title, yellowFG);
@@ -67,9 +75,9 @@ static void printEpubInfo(const EpubInfo& info, const XMLElement* libraryRoot) {
   printField(getUnambiguousEpubIdPrefix(libraryRoot, info.id), magentaFG);
 }
 
-static void printLibraryUpdate(std::string_view label, std::string_view color,
-                               const EpubInfo& info,
-                               const XMLElement* libraryRoot) {
+auto printLibraryUpdate(std::string_view label, std::string_view color,
+                        const EpubInfo& info, const XMLElement* libraryRoot)
+    -> void {
   boldColorIfTerm(stdout, color);
   std::cout << label;
   resetBoldColorIfTerm(stdout);
@@ -77,14 +85,14 @@ static void printLibraryUpdate(std::string_view label, std::string_view color,
   std::cout << '\n';
 }
 
-static void displayDuplicateEpub(std::string_view filePath) {
+auto displayDuplicateEpub(std::string_view filePath) -> void {
   boldColorIfTerm(stdout, redFG);
   std::cout << "Epub is already in library: ";
   resetBoldColorIfTerm(stdout);
   std::cout << filePath << '\n';
 }
 
-static CliCommand parseCommand(int argc, char** argv) {
+auto parseCommand(int argc, char** argv) -> CliCommand {
   if (argc <= 1) {
     return CliCommand::none;
   }
@@ -132,7 +140,7 @@ static CliCommand parseCommand(int argc, char** argv) {
   return CliCommand::invalid;
 }
 
-static fs::path getXdgDir(const char* name, const fs::path& fallback) {
+auto getXdgDir(const char* name, const fs::path& fallback) -> fs::path {
   const char* const value{std::getenv(name)};
   if (value != nullptr && fs::path{value}.is_absolute()) {
     return value;
@@ -147,7 +155,9 @@ static fs::path getXdgDir(const char* name, const fs::path& fallback) {
   return fs::path{home} / fallback;
 }
 
-int dispatchCli(int argc, char** argv) {
+} // namespace
+
+auto dispatchCli(int argc, char** argv) -> int {
   const CliCommand command{parseCommand(argc, argv)};
 
   switch (command) {
@@ -293,7 +303,7 @@ int dispatchCli(int argc, char** argv) {
   }
 }
 
-void printAligned(std::string_view left, std::string_view right) {
+auto printAligned(std::string_view left, std::string_view right) -> void {
   std::cout << left;
   const int pad{descCol - static_cast<int>(left.size())};
   if (pad > 0) {
@@ -302,7 +312,7 @@ void printAligned(std::string_view left, std::string_view right) {
   std::cout << right << '\n';
 }
 
-void displayHelp() {
+auto displayHelp() -> void {
   std::cout << mascot;
 
   boldColorIfTerm(stdout, greenFG);
@@ -351,7 +361,7 @@ void displayHelp() {
   printAligned("  <Wheel Down>", "Scroll down");
 }
 
-void listLibrary(const fs::path& shareAbs) {
+auto listLibrary(const fs::path& shareAbs) -> void {
   const fs::path libraryFileAbs{shareAbs / "epubworm/library.xml"};
   XMLDocument libraryDoc{};
   if (libraryDoc.LoadFile(libraryFileAbs.c_str()) != XML_SUCCESS) {

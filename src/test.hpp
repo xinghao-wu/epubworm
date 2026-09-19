@@ -3,105 +3,105 @@
 // Test global constants depend on binary being ran with CWD being `build/`.
 namespace test {
 // non-self-validating
-void unzip();
+auto unzip() -> void;
 
-void getOPFRel();
+auto getOPFRel() -> void;
 
-void getMetadata();
+auto getMetadata() -> void;
 
-void getTitle();
+auto getTitle() -> void;
 
-void getAuthor();
+auto getAuthor() -> void;
 
-void findAndReplaceAll();
+auto findAndReplaceAll() -> void;
 
-void wrapForTmuxPassthrough();
+auto wrapForTmuxPassthrough() -> void;
 
-void wrapLines();
+auto wrapLines() -> void;
 
-void imageEscCodes();
+auto imageEscCodes() -> void;
 
-void imageChannels();
+auto imageChannels() -> void;
 
 // non-self-validating
 // Also exercises `loadImg()`.
-void displayImg();
+auto displayImg() -> void;
 
 // Also exercises `getHrefFromID()`.
-void getSpine();
+auto getSpine() -> void;
 
 // Also exercises `collectNavPoints()`.
-void getTOC();
+auto getTOC() -> void;
 
 // TODO: Make this self-validating.
 // non-self-validating
 // Also exercises `parseContentElem()`.
-void parseChapter();
+auto parseChapter() -> void;
 
 // non-self-validating
-void dumpEpub();
+auto dumpEpub() -> void;
 
 // non-self-validating
 // Also exercises `disableRawMode()`, `enableRawMode()`,
 // `registerSigwinchHandler`, `handleSigwinch()`.
-void readRawInput();
+auto readRawInput() -> void;
 
-void utf8ToWide();
+auto utf8ToWide() -> void;
 
-void wideToUTF8();
+auto wideToUTF8() -> void;
 
-void collapseConsecutiveNewlines();
+auto collapseConsecutiveNewlines() -> void;
 
-void findNth();
+auto findNth() -> void;
 
-void execute();
+auto execute() -> void;
 
 // non-self-validating
 // Also exercises `setUpDisplayChapter()`,
 // `snapTopLineToBound()`, `snapBotLineToBound()`,
 // `calcBotLineFromTopLine()`, `calcTopLineFromBotLine()`,
 // `inTmuxSession()`.
-void displayChapter();
+auto displayChapter() -> void;
 
-void tocDataToString();
+auto tocDataToString() -> void;
 
 // non-self-validating
 // Also exercises `setUpDisplayTOC()`.
-void displayTOC();
+auto displayTOC() -> void;
 
 // non-self-validating
-void displayEpub();
+auto displayEpub() -> void;
 
-void styleEachLineIndividually();
+auto styleEachLineIndividually() -> void;
 
-void headingColors();
+auto headingColors() -> void;
 
-void contentAlignment();
+auto contentAlignment() -> void;
 
-void initConf();
+auto initConf() -> void;
 
-void initLibrary();
+auto initLibrary() -> void;
 
-void readConfig();
+auto readConfig() -> void;
 
-void getTruncatedSHA256Sum();
+auto getTruncatedSHA256Sum() -> void;
 
-void findEpubById();
+auto findEpubById() -> void;
 
-void getUnambiguousEpubIdPrefix();
+auto getUnambiguousEpubIdPrefix() -> void;
 
-void addToLibrary();
+auto addToLibrary() -> void;
 
-void queryEpubElem();
+auto queryEpubElem() -> void;
 
-void writeProgress();
+auto writeProgress() -> void;
 
-void deleteFromLibrary();
+auto deleteFromLibrary() -> void;
 
 // non-self-validating
-void readEpubInLibrary();
+auto readEpubInLibrary() -> void;
 
-void getLastRead();
+auto getLastRead() -> void;
 
-void singleInstanceLock();
+auto singleInstanceLock() -> void;
 } // namespace test

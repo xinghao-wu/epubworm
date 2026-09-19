@@ -4,6 +4,7 @@
 #include "tui.hpp"
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <stdexcept>
 #include <string>
@@ -14,18 +15,18 @@ using namespace tinyxml2;
 namespace fs = std::filesystem;
 
 namespace {
-enum class TextAlignment {
+enum class TextAlignment : std::uint8_t {
   inherit,
   left,
   center,
   right,
 };
 
-constexpr bool isHTMLWhitespace(char ch) {
+constexpr auto isHTMLWhitespace(char ch) -> bool {
   return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r' || ch == '\f';
 }
 
-std::string_view trim(std::string_view str) {
+auto trim(std::string_view str) -> std::string_view {
   while (!str.empty() && isHTMLWhitespace(str.front())) {
     str.remove_prefix(1);
   }
@@ -35,7 +36,7 @@ std::string_view trim(std::string_view str) {
   return str;
 }
 
-std::string lowerASCII(std::string_view str) {
+auto lowerASCII(std::string_view str) -> std::string {
   std::string result{str};
   for (char& ch : result) {
     if (ch >= 'A' && ch <= 'Z') {
@@ -45,27 +46,34 @@ std::string lowerASCII(std::string_view str) {
   return result;
 }
 
-bool hasNumericSuffix(std::string_view str, std::string_view prefix) {
+auto hasNumericSuffix(std::string_view str, std::string_view prefix) -> bool {
   if (!str.starts_with(prefix) || str.size() == prefix.size()) {
     return false;
   }
-  return std::ranges::all_of(str.substr(prefix.size()),
-                             [](char ch) { return ch >= '0' && ch <= '9'; });
+  return std::ranges::all_of(str.substr(prefix.size()), [](char ch) -> bool {
+    return ch >= '0' && ch <= '9';
+  });
 }
 
-TextAlignment parseAlignmentValue(std::string_view value) {
+auto parseAlignmentValue(std::string_view value) -> TextAlignment {
   const std::string lowerValue{lowerASCII(trim(value))};
-  if (lowerValue == "center") return TextAlignment::center;
-  if (lowerValue == "right") return TextAlignment::right;
+  if (lowerValue == "center") {
+    return TextAlignment::center;
+  }
+  if (lowerValue == "right") {
+    return TextAlignment::right;
+  }
   if (lowerValue == "left" || lowerValue == "justify") {
     return TextAlignment::left;
   }
   return TextAlignment::inherit;
 }
 
-TextAlignment getClassAlignment(const XMLElement* elem) {
+auto getClassAlignment(const XMLElement* elem) -> TextAlignment {
   const char* classAttr{elem->Attribute("class")};
-  if (classAttr == nullptr) return TextAlignment::inherit;
+  if (classAttr == nullptr) {
+    return TextAlignment::inherit;
+  }
 
   bool centerFound{false};
   bool rightFound{false};
@@ -95,19 +103,29 @@ TextAlignment getClassAlignment(const XMLElement* elem) {
                 || token == "justified" || token == "text-justify"
                 || token == "align-justify";
 
-    if (tokenEnd == std::string_view::npos) break;
+    if (tokenEnd == std::string_view::npos) {
+      break;
+    }
     classes.remove_prefix(tokenEnd + 1);
   }
 
-  if (leftFound) return TextAlignment::left;
-  if (rightFound) return TextAlignment::right;
-  if (centerFound) return TextAlignment::center;
+  if (leftFound) {
+    return TextAlignment::left;
+  }
+  if (rightFound) {
+    return TextAlignment::right;
+  }
+  if (centerFound) {
+    return TextAlignment::center;
+  }
   return TextAlignment::inherit;
 }
 
-TextAlignment getInlineStyleAlignment(const XMLElement* elem) {
+auto getInlineStyleAlignment(const XMLElement* elem) -> TextAlignment {
   const char* styleAttr{elem->Attribute("style")};
-  if (styleAttr == nullptr) return TextAlignment::inherit;
+  if (styleAttr == nullptr) {
+    return TextAlignment::inherit;
+  }
 
   TextAlignment result{TextAlignment::inherit};
   bool importantResult{false};
@@ -134,43 +152,51 @@ TextAlignment getInlineStyleAlignment(const XMLElement* elem) {
       }
     }
 
-    if (declarationEnd == std::string_view::npos) break;
+    if (declarationEnd == std::string_view::npos) {
+      break;
+    }
     declarations.remove_prefix(declarationEnd + 1);
   }
   return result;
 }
 
-TextAlignment getElementAlignment(const XMLElement* elem,
-                                  TextAlignment inherited) {
+auto getElementAlignment(const XMLElement* elem, TextAlignment inherited)
+    -> TextAlignment {
   TextAlignment result{getClassAlignment(elem)};
   if (std::string_view{elem->Name()} == "center") {
     result = TextAlignment::center;
   }
   if (const char* alignAttr{elem->Attribute("align")}) {
     const TextAlignment attrAlignment{parseAlignmentValue(alignAttr)};
-    if (attrAlignment != TextAlignment::inherit) result = attrAlignment;
+    if (attrAlignment != TextAlignment::inherit) {
+      result = attrAlignment;
+    }
   }
   const TextAlignment styleAlignment{getInlineStyleAlignment(elem)};
-  if (styleAlignment != TextAlignment::inherit) result = styleAlignment;
+  if (styleAlignment != TextAlignment::inherit) {
+    result = styleAlignment;
+  }
   return result == TextAlignment::inherit ? inherited : result;
 }
 
-bool hasTextContent(const XMLNode* parent) {
+auto hasTextContent(const XMLNode* parent) -> bool {
   for (const XMLNode* child{parent->FirstChild()}; child != nullptr;
        child = child->NextSibling()) {
     if (const XMLText* text = child->ToText()) {
       const std::string_view value{text->Value()};
-      if (std::ranges::any_of(value,
-                              [](char ch) { return !isHTMLWhitespace(ch); })) {
+      if (std::ranges::any_of(
+              value, [](char ch) -> bool { return !isHTMLWhitespace(ch); })) {
         return true;
       }
     }
-    if (child->ToElement() != nullptr && hasTextContent(child)) return true;
+    if (child->ToElement() != nullptr && hasTextContent(child)) {
+      return true;
+    }
   }
   return false;
 }
 
-bool isBlockElement(std::string_view name) {
+auto isBlockElement(std::string_view name) -> bool {
   return name == "p" || name == "li" || name == "pre" || name == "table"
          || name == "caption" || name == "hr" || name == "h1" || name == "h2"
          || name == "h3" || name == "h4" || name == "h5" || name == "h6"
@@ -179,11 +205,11 @@ bool isBlockElement(std::string_view name) {
          || name == "footer" || name == "blockquote" || name == "center";
 }
 
-bool handlesAlignment(std::string_view name) {
+auto handlesAlignment(std::string_view name) -> bool {
   return isBlockElement(name) && name != "caption";
 }
 
-bool hasAlignmentBlockDescendant(const XMLNode* parent) {
+auto hasAlignmentBlockDescendant(const XMLNode* parent) -> bool {
   for (const XMLElement* child{parent->FirstChildElement()}; child != nullptr;
        child = child->NextSiblingElement()) {
     if (handlesAlignment(child->Name()) || hasAlignmentBlockDescendant(child)) {
@@ -193,23 +219,31 @@ bool hasAlignmentBlockDescendant(const XMLNode* parent) {
   return false;
 }
 
-bool isAlignmentContainer(std::string_view name) {
+auto isAlignmentContainer(std::string_view name) -> bool {
   return name == "section" || name == "article" || name == "aside"
          || name == "main" || name == "header" || name == "footer"
          || name == "blockquote" || name == "center";
 }
 
-void appendAlignmentBegin(std::string& out, TextAlignment alignment) {
-  if (alignment == TextAlignment::center) out += centerAlignBegin;
-  if (alignment == TextAlignment::right) out += rightAlignBegin;
+auto appendAlignmentBegin(std::string& out, TextAlignment alignment) -> void {
+  if (alignment == TextAlignment::center) {
+    out += centerAlignBegin;
+  }
+  if (alignment == TextAlignment::right) {
+    out += rightAlignBegin;
+  }
 }
 
-void appendAlignmentEnd(std::string& out, TextAlignment alignment) {
-  if (alignment == TextAlignment::center) out += centerAlignEnd;
-  if (alignment == TextAlignment::right) out += rightAlignEnd;
+auto appendAlignmentEnd(std::string& out, TextAlignment alignment) -> void {
+  if (alignment == TextAlignment::center) {
+    out += centerAlignEnd;
+  }
+  if (alignment == TextAlignment::right) {
+    out += rightAlignEnd;
+  }
 }
 
-bool isHeading(std::string_view name) {
+auto isHeading(std::string_view name) -> bool {
   return name == "h1" || name == "h2" || name == "h3" || name == "h4"
          || name == "h5" || name == "h6";
 }
@@ -218,11 +252,11 @@ struct TextStyle {
   bool bold{};
   bool italic{};
   bool underline{};
-  std::string_view foreground{};
+  std::string_view foreground;
 };
 
-void appendStyleTransition(std::string& out, const TextStyle& current,
-                           const TextStyle& next) {
+auto appendStyleTransition(std::string& out, const TextStyle& current,
+                           const TextStyle& next) -> void {
   if (current.bold != next.bold) {
     out += esc + (next.bold ? bold : resetBold);
   }
@@ -233,7 +267,9 @@ void appendStyleTransition(std::string& out, const TextStyle& current,
     out += esc + (next.underline ? underline : resetUnderline);
   }
   if (current.foreground != next.foreground) {
-    if (!current.foreground.empty()) out += esc + resetFG;
+    if (!current.foreground.empty()) {
+      out += esc + resetFG;
+    }
     if (!next.foreground.empty()) {
       out += esc;
       out += next.foreground;
@@ -241,7 +277,7 @@ void appendStyleTransition(std::string& out, const TextStyle& current,
   }
 }
 
-std::string getTableCellSeparator(const TextStyle& style) {
+auto getTableCellSeparator(const TextStyle& style) -> std::string {
   TextStyle separatorStyle{style};
   separatorStyle.bold = false;
   separatorStyle.italic = false;
@@ -255,12 +291,13 @@ std::string getTableCellSeparator(const TextStyle& style) {
   return separator;
 }
 
-void parseContentElemImpl(const XMLElement* parent, std::string& out,
+auto parseContentElemImpl(const XMLElement* parent, std::string& out,
                           const fs::path& chapterAbs,
-                          TextAlignment inheritedAlignment, TextStyle style);
+                          TextAlignment inheritedAlignment, TextStyle style)
+    -> void;
 } // namespace
 
-fs::path getOPFRel(const fs::path& epubRootAbs) {
+auto getOPFRel(const fs::path& epubRootAbs) -> fs::path {
   const fs::path containerAbs{epubRootAbs / "META-INF/container.xml"};
 
   XMLDocument container{};
@@ -276,19 +313,20 @@ fs::path getOPFRel(const fs::path& epubRootAbs) {
       ->Attribute("full-path");
 }
 
-const XMLElement* getMetadata(const XMLDocument& opf) {
+auto getMetadata(const XMLDocument& opf) -> const XMLElement* {
   return opf.FirstChildElement("package")->FirstChildElement("metadata");
 }
 
-std::string getTitle(const XMLElement* metadata) {
+auto getTitle(const XMLElement* metadata) -> std::string {
   return metadata->FirstChildElement("dc:title")->GetText();
 }
 
-std::string getAuthor(const XMLElement* metadata) {
+auto getAuthor(const XMLElement* metadata) -> std::string {
   return metadata->FirstChildElement("dc:creator")->GetText();
 }
 
-const char* getHrefFromID(const XMLElement* manifest, std::string_view id) {
+auto getHrefFromID(const XMLElement* manifest, std::string_view id) -> const
+    char* {
   for (const XMLElement* item{manifest->FirstChildElement("item")};
        item != nullptr; item = item->NextSiblingElement("item")) {
     if (item->Attribute("id") == id) {
@@ -299,7 +337,7 @@ const char* getHrefFromID(const XMLElement* manifest, std::string_view id) {
                            "found in `<manifest>`"};
 }
 
-std::vector<fs::path> getSpine(const XMLDocument& opf) {
+auto getSpine(const XMLDocument& opf) -> std::vector<fs::path> {
   const XMLElement* spine{
       opf.FirstChildElement("package")->FirstChildElement("spine")};
   const XMLElement* manifest{
@@ -329,8 +367,8 @@ std::vector<fs::path> getSpine(const XMLDocument& opf) {
   return result;
 }
 
-void collectNavPoints(const XMLElement* parent, TocData& tocData,
-                      const std::string& prefix) {
+auto collectNavPoints(const XMLElement* parent, TocData& tocData,
+                      const std::string& prefix) -> void {
   for (const XMLElement* navPoint{parent->FirstChildElement("navPoint")};
        navPoint != nullptr;
        navPoint = navPoint->NextSiblingElement("navPoint")) {
@@ -351,7 +389,7 @@ void collectNavPoints(const XMLElement* parent, TocData& tocData,
   }
 }
 
-TocData getTOC(const fs::path& tocAbs) {
+auto getTOC(const fs::path& tocAbs) -> TocData {
   XMLDocument toc{};
   toc.LoadFile(tocAbs.c_str());
 
@@ -369,9 +407,10 @@ TocData getTOC(const fs::path& tocAbs) {
 }
 
 namespace {
-void parseContentElemImpl(const XMLElement* parent, std::string& out,
+auto parseContentElemImpl(const XMLElement* parent, std::string& out,
                           const fs::path& chapterAbs,
-                          TextAlignment inheritedAlignment, TextStyle style) {
+                          TextAlignment inheritedAlignment, TextStyle style)
+    -> void {
   for (const XMLNode* childNode{parent->FirstChild()}; childNode != nullptr;
        childNode = childNode->NextSibling()) {
     if (const XMLText* childText = childNode->ToText()) {
@@ -382,7 +421,9 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
       const TextAlignment childAlignment{
           getElementAlignment(childElem, inheritedAlignment)};
       const bool isBlock{isBlockElement(name)};
-      if (isBlock) out += "\n\n";
+      if (isBlock) {
+        out += "\n\n";
+      }
 
       if (name == "b" || name == "strong") {
         TextStyle childStyle{style};
@@ -439,11 +480,15 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
       else if (name == "p" || name == "li" || name == "div" || name == "pre"
                || name == "table") {
         TextStyle childStyle{style};
-        if (name == "pre") childStyle.foreground = greenFG;
+        if (name == "pre") {
+          childStyle.foreground = greenFG;
+        }
         const bool markAlignment{childAlignment != TextAlignment::left
                                  && hasTextContent(childElem)
                                  && !hasAlignmentBlockDescendant(childElem)};
-        if (markAlignment) appendAlignmentBegin(out, childAlignment);
+        if (markAlignment) {
+          appendAlignmentBegin(out, childAlignment);
+        }
         appendStyleTransition(out, style, childStyle);
         const std::size_t contentBegin{out.size()};
         parseContentElemImpl(childElem, out, chapterAbs, childAlignment,
@@ -461,7 +506,9 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
         else {
           appendStyleTransition(out, childStyle, style);
         }
-        if (markAlignment) appendAlignmentEnd(out, childAlignment);
+        if (markAlignment) {
+          appendAlignmentEnd(out, childAlignment);
+        }
       }
       else if (name == "tr") {
         out += '\n';
@@ -476,7 +523,9 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
       else if (name == "td" || name == "th") {
         if (!childElem->NoChildren()) {
           TextStyle childStyle{style};
-          if (name == "th") childStyle.bold = true;
+          if (name == "th") {
+            childStyle.bold = true;
+          }
           appendStyleTransition(out, style, childStyle);
           parseContentElemImpl(childElem, out, chapterAbs, childAlignment,
                                childStyle);
@@ -521,19 +570,21 @@ void parseContentElemImpl(const XMLElement* parent, std::string& out,
         parseContentElemImpl(childElem, out, chapterAbs, childAlignment, style);
       }
 
-      if (isBlock) out += "\n\n";
+      if (isBlock) {
+        out += "\n\n";
+      }
     }
   }
 }
 } // namespace
 
-void parseContentElem(const XMLElement* parent, std::string& out,
-                      const fs::path& chapterAbs) {
+auto parseContentElem(const XMLElement* parent, std::string& out,
+                      const fs::path& chapterAbs) -> void {
   parseContentElemImpl(parent, out, chapterAbs,
                        getElementAlignment(parent, TextAlignment::left), {});
 }
 
-void parseChapter(const fs::path& chapterAbs, std::string& out) {
+auto parseChapter(const fs::path& chapterAbs, std::string& out) -> void {
   XMLDocument chapter{};
   chapter.LoadFile(chapterAbs.c_str());
 
@@ -590,7 +641,7 @@ void parseChapter(const fs::path& chapterAbs, std::string& out) {
   out += '\n';
 }
 
-void dumpEpub(const fs::path& epubRootAbs, std::string& out) {
+auto dumpEpub(const fs::path& epubRootAbs, std::string& out) -> void {
   const fs::path opfAbs{epubRootAbs / getOPFRel(epubRootAbs)};
   XMLDocument opf{};
   opf.LoadFile(opfAbs.c_str());
@@ -606,7 +657,7 @@ void dumpEpub(const fs::path& epubRootAbs, std::string& out) {
   }
 }
 
-void expandEllipsesAndTabs(std::string& str) {
+auto expandEllipsesAndTabs(std::string& str) -> void {
   findAndReplaceAll(str, "…", "...");
   findAndReplaceAll(str, "\t", "    ");
 }

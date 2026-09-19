@@ -14,17 +14,17 @@ public:
   ~SingleInstanceLock();
 
   SingleInstanceLock(const SingleInstanceLock&) = delete;
-  SingleInstanceLock& operator=(const SingleInstanceLock&) = delete;
+  auto operator=(const SingleInstanceLock&) -> SingleInstanceLock& = delete;
   SingleInstanceLock(SingleInstanceLock&&) = delete;
-  SingleInstanceLock& operator=(SingleInstanceLock&&) = delete;
+  auto operator=(SingleInstanceLock&&) -> SingleInstanceLock& = delete;
 
   // Returns true when this object acquired the lock, meaning no earlier
   // instance currently owns it.
-  [[nodiscard]] bool isFirstInstance() const noexcept;
+  [[nodiscard]] auto isFirstInstance() const noexcept -> bool;
 
 private:
   int lockFd{-1};
 };
 
 // Returns a per-user lock path, preferring the XDG runtime directory.
-[[nodiscard]] std::filesystem::path getInstanceLockPath();
+[[nodiscard]] auto getInstanceLockPath() -> std::filesystem::path;

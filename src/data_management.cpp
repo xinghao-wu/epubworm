@@ -16,12 +16,12 @@
 using namespace tinyxml2;
 namespace fs = std::filesystem;
 
-void unzip(const fs::path& archiveAbs, const fs::path& destinationAbs) {
+auto unzip(const fs::path& archiveAbs, const fs::path& destinationAbs) -> void {
   miniz_cpp::zip_file archive{archiveAbs.string()};
   archive.extractall(destinationAbs.string());
 }
 
-void initConf(const fs::path& configFileAbs) {
+auto initConf(const fs::path& configFileAbs) -> void {
   XMLDocument configDoc{};
   configDoc.InsertFirstChild(configDoc.NewDeclaration());
   configDoc.InsertEndChild(configDoc.NewElement("conf"));
@@ -33,7 +33,7 @@ void initConf(const fs::path& configFileAbs) {
   }
 }
 
-void initLibrary(const fs::path& libraryFileAbs) {
+auto initLibrary(const fs::path& libraryFileAbs) -> void {
   XMLDocument libraryDoc{};
   libraryDoc.InsertFirstChild(libraryDoc.NewDeclaration());
   XMLElement* const libraryRoot{libraryDoc.NewElement("library")};
@@ -50,7 +50,7 @@ void initLibrary(const fs::path& libraryFileAbs) {
   }
 }
 
-ConfOpts readConfig(const fs::path& configFileAbs) {
+auto readConfig(const fs::path& configFileAbs) -> ConfOpts {
   XMLDocument configDoc{};
   configDoc.LoadFile(configFileAbs.c_str());
 
@@ -85,10 +85,10 @@ ConfOpts readConfig(const fs::path& configFileAbs) {
                              + XMLDocument::ErrorIDToName(configDoc.ErrorID())};
   }
 
-  return {chars};
+  return {.lineLength = chars};
 }
 
-void setConfigLineLength(const fs::path& configFileAbs, int chars) {
+auto setConfigLineLength(const fs::path& configFileAbs, int chars) -> void {
   if (chars <= 0) {
     throw std::invalid_argument{"line length must be positive"};
   }
@@ -117,7 +117,7 @@ void setConfigLineLength(const fs::path& configFileAbs, int chars) {
   }
 }
 
-std::string getTruncatedSHA256Sum(const fs::path& fileAbs) {
+auto getTruncatedSHA256Sum(const fs::path& fileAbs) -> std::string {
 #ifdef __APPLE__
   const std::string sha256{execute(
       std::vector<std::string>{"shasum", "-a", "256", fileAbs.string()})};
@@ -128,7 +128,7 @@ std::string getTruncatedSHA256Sum(const fs::path& fileAbs) {
   return sha256.substr(0, 32); // 128 bits = 32 hex chars
 }
 
-EpubInfo getEpubInfo(std::string_view id, const fs::path& shareAbs) {
+auto getEpubInfo(std::string_view id, const fs::path& shareAbs) -> EpubInfo {
   const fs::path epubRootAbs{shareAbs / "epubworm/extracted_epubs" / id};
   const fs::path opfAbs{epubRootAbs / getOPFRel(epubRootAbs)};
   XMLDocument opf{};
@@ -138,10 +138,13 @@ EpubInfo getEpubInfo(std::string_view id, const fs::path& shareAbs) {
   }
 
   const XMLElement* const metadata{getMetadata(opf)};
-  return {std::string{id}, getTitle(metadata), getAuthor(metadata)};
+  return {.id = std::string{id},
+          .title = getTitle(metadata),
+          .author = getAuthor(metadata)};
 }
 
-XMLElement* findEpubById(XMLElement* libraryRoot, std::string_view idPrefix) {
+auto findEpubById(XMLElement* libraryRoot, std::string_view idPrefix)
+    -> XMLElement* {
   XMLElement* match{nullptr};
   for (XMLElement* epub{libraryRoot->FirstChildElement("epub")};
        epub != nullptr; epub = epub->NextSiblingElement("epub")) {
@@ -156,8 +159,8 @@ XMLElement* findEpubById(XMLElement* libraryRoot, std::string_view idPrefix) {
   return match;
 }
 
-std::string_view getUnambiguousEpubIdPrefix(const XMLElement* libraryRoot,
-                                            std::string_view id) {
+auto getUnambiguousEpubIdPrefix(const XMLElement* libraryRoot,
+                                std::string_view id) -> std::string_view {
   std::size_t prefixLength{4};
 
   for (const XMLElement* epub{libraryRoot->FirstChildElement("epub")};
@@ -184,8 +187,8 @@ std::string_view getUnambiguousEpubIdPrefix(const XMLElement* libraryRoot,
   return id.substr(0, prefixLength);
 }
 
-std::pair<std::string, EpubProg> queryEpubElem(const XMLElement* epub,
-                                               const fs::path& shareAbs) {
+auto queryEpubElem(const XMLElement* epub, const fs::path& shareAbs)
+    -> std::pair<std::string, EpubProg> {
   const char* const id{epub->Attribute("id")};
   if (id == nullptr) {
     throw std::runtime_error{"epub entry missing `id` attribute"};
@@ -213,8 +216,8 @@ std::pair<std::string, EpubProg> queryEpubElem(const XMLElement* epub,
   return {id, prog};
 }
 
-void writeProgress(XMLElement* epub, const EpubProg& prog,
-                   const fs::path& shareAbs) {
+auto writeProgress(XMLElement* epub, const EpubProg& prog,
+                   const fs::path& shareAbs) -> void {
   const char* const id{epub->Attribute("id")};
   if (id == nullptr) {
     throw std::runtime_error{"epub entry missing `id` attribute"};
@@ -232,7 +235,7 @@ void writeProgress(XMLElement* epub, const EpubProg& prog,
   epub->SetAttribute("opened-chapter", openedChapter.string().c_str());
 }
 
-void setLastRead(XMLDocument& libraryDoc, std::string_view id) {
+auto setLastRead(XMLDocument& libraryDoc, std::string_view id) -> void {
   XMLElement* const libraryRoot{libraryDoc.FirstChildElement("library")};
   if (libraryRoot == nullptr) {
     throw std::runtime_error{
@@ -245,7 +248,7 @@ void setLastRead(XMLDocument& libraryDoc, std::string_view id) {
   lastRead->SetAttribute("id", std::string{id}.c_str());
 }
 
-std::string getLastRead(const XMLDocument& libraryDoc) {
+auto getLastRead(const XMLDocument& libraryDoc) -> std::string {
   const XMLElement* const libraryRoot{libraryDoc.FirstChildElement("library")};
   if (libraryRoot == nullptr) {
     throw std::runtime_error{
@@ -262,8 +265,8 @@ std::string getLastRead(const XMLDocument& libraryDoc) {
   return id;
 }
 
-std::expected<EpubInfo, LibraryUpdateError>
-addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
+auto addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs)
+    -> std::expected<EpubInfo, LibraryUpdateError> {
   const std::string id{getTruncatedSHA256Sum(zippedEpubAbs)};
 
   const fs::path libraryFileAbs{shareAbs / "epubworm/library.xml"};
@@ -307,8 +310,8 @@ addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs) {
   return info;
 }
 
-std::expected<EpubInfo, LibraryUpdateError>
-deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs) {
+auto deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs)
+    -> std::expected<EpubInfo, LibraryUpdateError> {
   const fs::path libraryFileAbs{shareAbs / "epubworm/library.xml"};
   XMLDocument libraryDoc{};
   if (libraryDoc.LoadFile(libraryFileAbs.c_str()) != XML_SUCCESS) {
@@ -357,8 +360,8 @@ deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs) {
   return info;
 }
 
-bool readEpubInLibrary(std::string_view idPrefix, const fs::path& shareAbs,
-                       int desiredMaxLen) {
+auto readEpubInLibrary(std::string_view idPrefix, const fs::path& shareAbs,
+                       int desiredMaxLen) -> bool {
   const fs::path libraryFileAbs{shareAbs / "epubworm/library.xml"};
   XMLDocument libraryDoc{};
   if (libraryDoc.LoadFile(libraryFileAbs.c_str()) != XML_SUCCESS) {

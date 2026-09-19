@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <system_error>
 
-int main() {
+auto main() -> int {
   try {
     useSystemLocale();
     test::getOPFRel();

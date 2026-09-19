@@ -37,7 +37,7 @@ const fs::path nestedNavigationRootAbs{epubsAbs / "nested_navigation"};
 
 const fs::path testOutputsAbs{projectRootAbs / "test_outputs"};
 
-void singleInstanceLock() {
+auto singleInstanceLock() -> void {
   const fs::path tmpLockAbs{fs::temp_directory_path()
                             / "epubworm_test_singleInstanceLock"};
   fs::remove(tmpLockAbs);
@@ -58,7 +58,7 @@ void singleInstanceLock() {
   fs::remove(tmpLockAbs);
 }
 
-void unzip() {
+auto unzip() -> void {
   const fs::path metadataPathsZippedAbs{epubsAbs / "metadata_paths.epub"};
   const fs::path nonlinearSpineZippedAbs{epubsAbs / "nonlinear_spine.epub"};
   const fs::path imageElementsZippedAbs{epubsAbs / "image_elements.epub"};
@@ -93,7 +93,7 @@ void unzip() {
   resetBoldColorIfTerm(stdout);
 }
 
-void getOPFRel() {
+auto getOPFRel() -> void {
   try {
     (void)::getOPFRel("/bad epub root");
     assert(false);
@@ -111,7 +111,7 @@ void getOPFRel() {
   assert(::getOPFRel(nestedNavigationRootAbs) == "Book/package.opf");
 }
 
-void getMetadata() {
+auto getMetadata() -> void {
   XMLDocument metadataPathsOPF{};
   metadataPathsOPF.LoadFile(
       (metadataPathsRootAbs / ::getOPFRel(metadataPathsRootAbs)).c_str());
@@ -131,7 +131,7 @@ void getMetadata() {
       == "Nested Fixture Press");
 }
 
-void getTitle() {
+auto getTitle() -> void {
   XMLDocument metadataPathsOPF{};
   metadataPathsOPF.LoadFile(
       (metadataPathsRootAbs / ::getOPFRel(metadataPathsRootAbs)).c_str());
@@ -146,7 +146,7 @@ void getTitle() {
   assert(::getTitle(imageElementsMetadata) == "Illustrated Signals");
 }
 
-void getAuthor() {
+auto getAuthor() -> void {
   XMLDocument metadataPathsOPF{};
   metadataPathsOPF.LoadFile(
       (metadataPathsRootAbs / ::getOPFRel(metadataPathsRootAbs)).c_str());
@@ -161,7 +161,7 @@ void getAuthor() {
   assert(::getAuthor(imageElementsMetadata) == "Fixture Workshop");
 }
 
-void findAndReplaceAll() {
+auto findAndReplaceAll() -> void {
 
   std::string hasTarget{"target, target on the wall,"};
   ::findAndReplaceAll(hasTarget, "target", "mirror");
@@ -172,7 +172,7 @@ void findAndReplaceAll() {
   assert(noTarget == "am I the fairest of them all?");
 }
 
-void wrapForTmuxPassthrough() {
+auto wrapForTmuxPassthrough() -> void {
 
   std::string notEmpty{"\033]1337;SetProfile=NewProfileName\007"};
   ::wrapForTmuxPassthrough(notEmpty);
@@ -184,7 +184,7 @@ void wrapForTmuxPassthrough() {
   assert(empty == "\033Ptmux;\033\\");
 }
 
-void wrapLines() {
+auto wrapLines() -> void {
   std::string breakable{"one two three"};
   ::wrapLines(breakable, 7);
   assert(breakable == "one two\nthree");
@@ -212,7 +212,7 @@ void wrapLines() {
   assert(imageLine == originalImageLine);
 }
 
-void imageEscCodes() {
+auto imageEscCodes() -> void {
   std::string compactOutput{};
   ::displayLoadedImg(0x010203, 2, 3, compactOutput, false);
 
@@ -278,7 +278,7 @@ void imageEscCodes() {
                 + "-tty-graphics-protocol"));
 }
 
-void imageChannels() {
+auto imageChannels() -> void {
   constexpr std::array<unsigned char, 4> sourcePixel{17, 34, 51, 68};
   constexpr std::uint32_t firstTestImageID{0xFFFFFFF0};
   constexpr std::array<std::string_view, 4> pngDataEncoded{
@@ -340,7 +340,7 @@ void imageChannels() {
   }
 }
 
-void displayImg() {
+auto displayImg() -> void {
   std::string output{};
 
   try {
@@ -366,7 +366,7 @@ void displayImg() {
   resetBoldColorIfTerm(stdout);
 }
 
-void getSpine() {
+auto getSpine() -> void {
 
   XMLDocument imageElementsOPF{};
   imageElementsOPF.LoadFile(
@@ -390,7 +390,7 @@ void getSpine() {
   assert(nonlinearSpineSpine[3] == "Text/chapter.xhtml");
 }
 
-void getTOC() {
+auto getTOC() -> void {
 
   const TocData metadataPathsTOC{::getTOC(metadataPathsRootAbs / "toc.ncx")};
   assert(metadataPathsTOC.size() == 4);
@@ -418,7 +418,7 @@ void getTOC() {
   assert(nestedNavigationTOC[2].second == "Text/three.xhtml");
 }
 
-void parseChapter() {
+auto parseChapter() -> void {
 
   std::string result{};
   ::parseChapter(imageElementsRootAbs / "Text/svg.xhtml", result);
@@ -432,7 +432,7 @@ void parseChapter() {
   resetBoldColorIfTerm(stdout);
 }
 
-void dumpEpub() {
+auto dumpEpub() -> void {
 
   std::string result{};
   ::dumpEpub(nonlinearSpineRootAbs, result);
@@ -450,7 +450,7 @@ void dumpEpub() {
   resetBoldColorIfTerm(stdout);
 }
 
-void readRawInput() {
+auto readRawInput() -> void {
 
   boldColorIfTerm(stdout, yellowFG);
   std::cout << "`test::readRawInput()` success cases need verification, "
@@ -470,21 +470,21 @@ void readRawInput() {
   }
 }
 
-void utf8ToWide() {
+auto utf8ToWide() -> void {
 
   assert(::utf8ToWide("hallo") == L"hallo");
   assert(::utf8ToWide("Hello, 世界") == L"Hello, 世界");
   assert(::utf8ToWide("Hello, World! 🚀") == L"Hello, World! 🚀");
 }
 
-void wideToUTF8() {
+auto wideToUTF8() -> void {
 
   assert(::wideToUTF8(L"hallo") == "hallo");
   assert(::wideToUTF8(L"Hello, 世界") == "Hello, 世界");
   assert(::wideToUTF8(L"Hello, World! 🚀") == "Hello, World! 🚀");
 }
 
-void collapseConsecutiveNewlines() {
+auto collapseConsecutiveNewlines() -> void {
   std::string unchanged{"zero\none\n\ntwo"};
   ::collapseConsecutiveNewlines(unchanged);
   assert(unchanged == "zero\none\n\ntwo");
@@ -518,14 +518,14 @@ void collapseConsecutiveNewlines() {
   assert(embeddedNonJoiner == expectedEmbeddedNonJoiner);
 }
 
-void findNth() {
+auto findNth() -> void {
 
   static_assert(::findNth("banana", "an", 2) == 3);
   static_assert(::findNth("mirra mirra on ze walle", "mirra", 1, 3) == 6);
   static_assert(::findNth("mirra mirra", "mirra", 3) == std::string_view::npos);
 }
 
-void execute() {
+auto execute() -> void {
   try {
     ::execute(std::vector<std::string>{});
     assert(false);
@@ -566,7 +566,7 @@ void execute() {
   assert(largeOutput == expectedLargeOutput);
 }
 
-void displayChapter() {
+auto displayChapter() -> void {
   ::enableRawMode();
 
   std::cout << esc << clearScreen;
@@ -594,7 +594,7 @@ void displayChapter() {
   std::cout << '\n';
 }
 
-void tocDataToString() {
+auto tocDataToString() -> void {
   const TocData toc{{"Chapter 1", "chapter-1.xhtml"},
                     {"    Section 1", "section-1.xhtml"}};
   std::string str{};
@@ -611,7 +611,7 @@ void tocDataToString() {
   assert(str == expected);
 }
 
-void displayTOC() {
+auto displayTOC() -> void {
   ::enableRawMode();
 
   std::cout << esc << clearScreen;
@@ -634,16 +634,19 @@ void displayTOC() {
   std::cout << "nonlinear spine output: " << nonlinearSpineTOCOutput << '\n';
 }
 
-void displayEpub() {
+auto displayEpub() -> void {
   ::enableRawMode();
 
   const EpubProg metadataPathsIniProg{
-      metadataPathsRootAbs / "chapters/chapter one.xhtml", 0.5};
-  const EpubProg nonlinearSpineIniProg{"", 0};
-  const EpubProg imageElementsIniProg{imageElementsRootAbs / "Text/prose.xhtml",
-                                      0.25};
-  const EpubProg nestedNavigationIniProg{
-      nestedNavigationRootAbs / "Book/Text/two.xhtml", 0.75};
+      .chapterAbs = metadataPathsRootAbs / "chapters/chapter one.xhtml",
+      .chapterProg = 0.5};
+  const EpubProg nonlinearSpineIniProg{.chapterAbs = "", .chapterProg = 0};
+  const EpubProg imageElementsIniProg{.chapterAbs = imageElementsRootAbs
+                                                    / "Text/prose.xhtml",
+                                      .chapterProg = 0.25};
+  const EpubProg nestedNavigationIniProg{.chapterAbs = nestedNavigationRootAbs
+                                                       / "Book/Text/two.xhtml",
+                                         .chapterProg = 0.75};
 
   const EpubProg metadataPathsOut{
       ::displayEpub(metadataPathsIniProg, metadataPathsRootAbs, 50)};
@@ -678,7 +681,7 @@ void displayEpub() {
   std::cout << nestedNavigationOut.chapterProg << '\n';
 }
 
-void styleEachLineIndividually() {
+auto styleEachLineIndividually() -> void {
   std::string str{"\033[1mfirst line\nsec line\033[22mout"};
   ::styleEachLineIndividually(str, "\033[1m", "\033[22m");
   assert(str == "\033[1mfirst line\033[22m\n\033[1msec line\033[22mout");
@@ -702,7 +705,7 @@ void styleEachLineIndividually() {
                              + '\n' + esc + underline));
 }
 
-void headingColors() {
+auto headingColors() -> void {
   XMLDocument chapter{};
   assert(chapter.Parse("<body><h1>H1</h1><h2>H2</h2><h3>H3</h3>"
                        "<h4>H4</h4><h5>H5</h5><h6>H6</h6></body>")
@@ -719,16 +722,28 @@ void headingColors() {
                                              false, false, false};
   for (std::size_t level{0}; level < colors.size(); ++level) {
     std::string expected{centerAlignBegin};
-    if (boldLevels.at(level)) expected += esc + bold;
-    if (italicLevels.at(level)) expected += esc + italic;
-    if (underlinedLevels.at(level)) expected += esc + underline;
+    if (boldLevels.at(level)) {
+      expected += esc + bold;
+    }
+    if (italicLevels.at(level)) {
+      expected += esc + italic;
+    }
+    if (underlinedLevels.at(level)) {
+      expected += esc + underline;
+    }
     expected += esc;
     expected += colors.at(level);
     expected += 'H';
     expected += std::to_string(level + 1);
-    if (boldLevels.at(level)) expected += esc + resetBold;
-    if (italicLevels.at(level)) expected += esc + resetItalic;
-    if (underlinedLevels.at(level)) expected += esc + resetUnderline;
+    if (boldLevels.at(level)) {
+      expected += esc + resetBold;
+    }
+    if (italicLevels.at(level)) {
+      expected += esc + resetItalic;
+    }
+    if (underlinedLevels.at(level)) {
+      expected += esc + resetUnderline;
+    }
     expected += esc;
     expected += resetFG;
     expected += centerAlignEnd;
@@ -792,7 +807,7 @@ void headingColors() {
          == 3);
 }
 
-void contentAlignment() {
+auto contentAlignment() -> void {
   XMLDocument chapter{};
   assert(
       chapter.Parse("<body><p class='centerp section-marking'>center</p>"
@@ -825,12 +840,12 @@ void contentAlignment() {
   ::parseContentElem(chapter.FirstChildElement("body"), parsed, {});
 
   std::string expected{};
-  const auto appendBlockBoundary = [&expected]() {
+  const auto appendBlockBoundary = [&expected]() -> void {
     expected += "\n\n";
   };
   const auto appendParagraph = [&expected](std::string_view begin,
                                            std::string_view text,
-                                           std::string_view end) {
+                                           std::string_view end) -> void {
     expected += "\n\n";
     expected += begin;
     expected += text;
@@ -941,8 +956,22 @@ void contentAlignment() {
   std::string tableProcessed{tableParsed};
   ::processContentText(tableProcessed, 55);
   assert(!tableProcessed.contains("\n\n\n"));
-  assert(tableProcessed.contains("body two\nfoot one"));
-  assert(tableProcessed.contains("caption\n\n" + esc + bold + "head one"));
+  const auto assertLineBoundary = [&tableProcessed](std::string_view before,
+                                                    std::string_view after,
+                                                    int newlineCount) -> void {
+    const std::size_t beforeBegin{tableProcessed.find(before)};
+    assert(beforeBegin != std::string_view::npos);
+    const std::size_t beforeEnd{beforeBegin + before.size()};
+    const std::size_t afterBegin{tableProcessed.find(after, beforeEnd)};
+    assert(afterBegin != std::string_view::npos);
+    const std::string_view boundary{tableProcessed.data() + beforeEnd,
+                                    afterBegin - beforeEnd};
+    assert(boundary.starts_with('\n'));
+    assert(getOccurrences<std::string_view>(boundary, "\n") == newlineCount);
+    assert(boundary.find_first_not_of("\n ") == std::string_view::npos);
+  };
+  assertLineBoundary("body two", "foot one", 1);
+  assertLineBoundary("caption", esc + bold + "head one", 2);
 
   XMLDocument styledTable{};
   assert(styledTable.Parse(
@@ -1055,7 +1084,7 @@ void contentAlignment() {
       processedView.substr(firstNewline + 1, secondNewline - firstNewline - 1)};
   const std::string_view colorLine{processedView.substr(
       secondNewline + 1, thirdNewline - secondNewline - 1)};
-  const auto leadingSpaces = [](std::string_view line) {
+  const auto leadingSpaces = [](std::string_view line) -> std::size_t {
     return line.find_first_not_of(' ');
   };
   assert(leadingSpaces(centerLine) == leadingSpaces(colorLine) + 1);
@@ -1079,7 +1108,7 @@ void contentAlignment() {
   assert(fixture.ends_with(terminator));
 }
 
-void initConf() {
+auto initConf() -> void {
   const fs::path tmpConfigAbs{fs::temp_directory_path()
                               / "epubworm_test_initConf"};
   fs::remove_all(tmpConfigAbs);
@@ -1098,7 +1127,7 @@ void initConf() {
   fs::remove_all(tmpConfigAbs);
 }
 
-void initLibrary() {
+auto initLibrary() -> void {
   const fs::path tmpShareAbs{fs::temp_directory_path()
                              / "epubworm_test_initLibrary"};
   fs::remove_all(tmpShareAbs);
@@ -1123,7 +1152,7 @@ void initLibrary() {
   fs::remove_all(tmpShareAbs);
 }
 
-void readConfig() {
+auto readConfig() -> void {
   const fs::path tmpConfigAbs{fs::temp_directory_path()
                               / "epubworm_test_readConfig"};
   fs::remove_all(tmpConfigAbs);
@@ -1136,7 +1165,7 @@ void readConfig() {
   fs::remove_all(tmpConfigAbs);
 }
 
-void getTruncatedSHA256Sum() {
+auto getTruncatedSHA256Sum() -> void {
 
   assert(::getTruncatedSHA256Sum(epubsAbs / "metadata_paths.epub")
          == "ded2eb033d88f30e1f790619f514e305");
@@ -1148,7 +1177,7 @@ void getTruncatedSHA256Sum() {
          == "18c3f848ec2b8ca63ff8d57c88f0269c");
 }
 
-void findEpubById() {
+auto findEpubById() -> void {
   // Three ids: the first two share the `aaaa` prefix, the third does not.
   constexpr std::string_view idA{"aaaa1111111111111111111111111111"};
   constexpr std::string_view idB{"aaaa2222222222222222222222222222"};
@@ -1192,7 +1221,7 @@ void findEpubById() {
   assert(::findEpubById(libraryRoot, "cccc") == nullptr);
 }
 
-void getUnambiguousEpubIdPrefix() {
+auto getUnambiguousEpubIdPrefix() -> void {
   constexpr std::string_view idA{"01234567a11111111111111111111111"};
   constexpr std::string_view idB{"01234567b22222222222222222222222"};
   constexpr std::string_view idC{"fedcba98333333333333333333333333"};
@@ -1214,7 +1243,7 @@ void getUnambiguousEpubIdPrefix() {
   assert(::getUnambiguousEpubIdPrefix(libraryRoot, idC) == "fedc");
 }
 
-void addToLibrary() {
+auto addToLibrary() -> void {
   const fs::path tmpShareAbs{fs::temp_directory_path()
                              / "epubworm_test_addToLibrary"};
   fs::remove_all(tmpShareAbs);
@@ -1266,7 +1295,7 @@ void addToLibrary() {
   fs::remove_all(tmpShareAbs);
 }
 
-void queryEpubElem() {
+auto queryEpubElem() -> void {
   const fs::path phonyShareAbs{"/phony_share"};
   const std::string_view idA{"11111111111111111111111111111111"};
   const std::string_view idB{"22222222222222222222222222222222"};
@@ -1368,7 +1397,7 @@ void queryEpubElem() {
   }
 }
 
-void writeProgress() {
+auto writeProgress() -> void {
   const fs::path phonyShareAbs{"/phony_share"};
   const std::string_view id{"11111111111111111111111111111111"};
 
@@ -1385,9 +1414,9 @@ void writeProgress() {
   assert(epub != nullptr);
 
   // Success case A: non-empty chapterAbs, non-zero progress.
-  const EpubProg prog{phonyShareAbs / "epubworm/extracted_epubs" / id
-                          / "chapters/chapter one.xhtml",
-                      0.5};
+  const EpubProg prog{.chapterAbs = phonyShareAbs / "epubworm/extracted_epubs"
+                                    / id / "chapters/chapter one.xhtml",
+                      .chapterProg = 0.5};
   ::writeProgress(epub, prog, phonyShareAbs);
   assert(std::string_view{epub->Attribute("opened-chapter")}
          == "chapters/chapter one.xhtml");
@@ -1425,7 +1454,7 @@ void writeProgress() {
   }
 }
 
-void deleteFromLibrary() {
+auto deleteFromLibrary() -> void {
   const fs::path tmpShareAbs{fs::temp_directory_path()
                              / "epubworm_test_deleteFromLibrary"};
   fs::remove_all(tmpShareAbs);
@@ -1472,7 +1501,7 @@ void deleteFromLibrary() {
   fs::remove_all(tmpShareAbs);
 }
 
-void readEpubInLibrary() {
+auto readEpubInLibrary() -> void {
   const fs::path tmpShareAbs{fs::temp_directory_path()
                              / "epubworm_test_readEpubInLibrary"};
   fs::remove_all(tmpShareAbs);
@@ -1519,7 +1548,7 @@ void readEpubInLibrary() {
   fs::remove_all(tmpShareAbs);
 }
 
-void getLastRead() {
+auto getLastRead() -> void {
   XMLDocument library{};
   library.Parse("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                 "<library>"

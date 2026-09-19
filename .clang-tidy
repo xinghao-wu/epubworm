@@ -10,6 +10,7 @@ Checks: >
   -zircon-*,
   -misc-no-recursion,
   -misc-include-cleaner,
+  -readability-identifier-length,
   -readability-simplify-subscript-expr,
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -bugprone-easily-swappable-parameters,
