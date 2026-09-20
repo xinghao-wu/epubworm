@@ -1,5 +1,5 @@
 ![Epubworm mascot and banner](assets/mascot_and_banner.png)
-An image-capable, minimalistic TUI EPUB reader written in C++.
+A fast, image-capable terminal EPUB reader written in C++
 
 # Overview
 https://github.com/user-attachments/assets/76c2db37-3419-4fe6-8e85-54b3e5678cf4
@@ -12,8 +12,8 @@ https://github.com/user-attachments/assets/76c2db37-3419-4fe6-8e85-54b3e5678cf4
 - Configurable text width
 - Responsive to window resize
 - Persistent reading progress and last-read book
-- Being really, really fast in loading and rendering content
-- Uses your terminal's colorscheme
+- Fast content loading and rendering
+- Uses the terminal's colorscheme
 
 ## Known Limitations
 - No search (yet)
