@@ -26,13 +26,13 @@ https://github.com/user-attachments/assets/76c2db37-3419-4fe6-8e85-54b3e5678cf4
 - No in-app dictionary
 - No text-to-speech
 
-Epubworm uses the relatively simple [TinyXML-2](https://github.com/leethomason/tinyxml2) for parsing, and as such is not very tolerant of malformed EPUB files. If a book crashes the application, converting the EPUB file to AZW3 and back to EPUB is an easy fix (this can be done via [Calibre](https://calibre-ebook.com/)'s [ebook-convert](https://manual.calibre-ebook.com/generated/en/ebook-convert.html) or its online hosted version at [cloudconvert](https://cloudconvert.com/)).
+Epubworm uses the relatively simple [TinyXML-2](https://github.com/leethomason/tinyxml2) for parsing, and as such is not very tolerant of malformed EPUB files. If a book crashes the application, converting the EPUB file to AZW3 and back to EPUB is an easy fix (this can be done via Calibre's [ebook-convert](https://manual.calibre-ebook.com/generated/en/ebook-convert.html) or its online hosted version at [CloudConvert](https://cloudconvert.com/)).
 
 # Install
 Epubworm supports Linux and macOS.
 
 ## Fedora COPR
-```bash
+```
 sudo dnf copr enable xinghao-wu/epubworm
 sudo dnf install epubworm
 ```
@@ -75,7 +75,7 @@ make install-user
 When on macOS and installing for only the current user, ensure `~/.local/bin` is in `$PATH` and `~/.local/share/zsh/site-functions` is in Zsh's `$fpath`.
 
 # Quickstart
-```bash
+```
 epubworm -h
 epubworm add <file>...
 epubworm open <id hash>
@@ -83,7 +83,7 @@ epubworm open <id hash>
 
 Tip: Since `epubworm add` accepts multiple arguments, file globbing can be used to quickly add all your books to Epubworm's library.
 ```bash
-shopt -s globstar # Enables globbing on bash, not necessary if you're using zsh or fish
+shopt -s globstar   # Enables globbing on bash, not necessary if you're using zsh or fish
 epubworm add books_parent_dir/**/*.epub
 ```
 
