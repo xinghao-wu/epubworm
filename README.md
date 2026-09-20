@@ -68,6 +68,12 @@ make install-user
 ```
 When on macOS and installing for only the current user, ensure `~/.local/bin` is in `$PATH` and `~/.local/share/zsh/site-functions` is in Zsh's `$fpath`.
 
+## Fedora COPR
+```bash
+sudo dnf copr enable xinghao-wu/epubworm
+sudo dnf install epubworm
+```
+
 # Quickstart
 ```bash
 epubworm -h
