@@ -31,6 +31,12 @@ Epubworm uses the relatively simple [TinyXML-2](https://github.com/leethomason/t
 # Install
 Epubworm supports Linux and macOS.
 
+## Fedora COPR
+```bash
+sudo dnf copr enable xinghao-wu/epubworm
+sudo dnf install epubworm
+```
+
 ## Build From Source
 First, clone the repo and `cd` into it:
 ```bash
@@ -67,12 +73,6 @@ Or, install for only the current user:
 make install-user
 ```
 When on macOS and installing for only the current user, ensure `~/.local/bin` is in `$PATH` and `~/.local/share/zsh/site-functions` is in Zsh's `$fpath`.
-
-## Fedora COPR
-```bash
-sudo dnf copr enable xinghao-wu/epubworm
-sudo dnf install epubworm
-```
 
 # Quickstart
 ```bash
