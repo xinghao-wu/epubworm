@@ -393,11 +393,13 @@ auto getSpine() -> void {
 auto getTOC() -> void {
 
   const TocData metadataPathsTOC{::getTOC(metadataPathsRootAbs / "toc.ncx")};
-  assert(metadataPathsTOC.size() == 4);
+  assert(metadataPathsTOC.size() == 3);
   assert(metadataPathsTOC[0].first == "Garden Gate");
   assert(metadataPathsTOC[0].second == "titlepage.xhtml");
-  assert(metadataPathsTOC[2].first == "    Brass Seeds");
-  assert(metadataPathsTOC[2].second == "chapters/chapter one.xhtml");
+  assert(metadataPathsTOC[1].first == "Chapter One");
+  assert(metadataPathsTOC[1].second == "chapters/chapter one.xhtml");
+  assert(metadataPathsTOC[2].first == "Afterword");
+  assert(metadataPathsTOC[2].second == "chapters/afterword.xhtml");
 
   const TocData nonlinearSpineTOC{
       ::getTOC(nonlinearSpineRootAbs / "OEBPS/toc.ncx")};

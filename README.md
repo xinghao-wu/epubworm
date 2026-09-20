@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/76c2db37-3419-4fe6-8e85-54b3e5678cf4
 - No whole book reading progress percentage
 - No CSS resolver: a rare minority of EPUB files' text styling and formatting will not be rendered
 - No MathML support: equations not stored as images will be displayed incorrectly
-- No TOC fragment id support: some TOC entries will point to the same place (the start of the chapter file)
+- No TOC fragment id support: some TOC entries will be missing
 - No in-app dictionary
 - No text-to-speech
 

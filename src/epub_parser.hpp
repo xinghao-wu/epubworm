@@ -57,6 +57,8 @@ auto collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
 // Order of nav point pairs in vector is the same as their order in the TOC.
 // First element of pair is the nav point's name,
 // second element is its file's path relative to `toc.ncx`'s parent directory.
+// Fragment identifiers are removed, and only the first navigation point for
+// each file is included.
 // Nested nav points' names prefixed with four spaces for each level of
 // nesting. Throws `std::runtime_error` if unable to load `tocAbs`.
 [[nodiscard]] auto getTOC(const std::filesystem::path& tocAbs) -> TocData;

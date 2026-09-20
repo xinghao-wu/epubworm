@@ -384,7 +384,13 @@ auto collectNavPoints(const XMLElement* parent, TocData& tocData,
       srcFilePathRel.resize(srcFilePathRel.find('#'));
     }
 
-    tocData.emplace_back(prefix + name, srcFilePathRel);
+    const fs::path srcPathRel{srcFilePathRel};
+    if (std::ranges::none_of(tocData,
+                             [&srcPathRel](const auto& navPointData) -> bool {
+                               return navPointData.second == srcPathRel;
+                             })) {
+      tocData.emplace_back(prefix + name, srcPathRel);
+    }
     collectNavPoints(navPoint, tocData, prefix + "    ");
   }
 }
