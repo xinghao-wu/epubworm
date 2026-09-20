@@ -12,6 +12,7 @@ VCS:            {{{ git_dir_vcs }}}
 Source:         {{{ git_dir_pack }}}
 
 BuildRequires:  gcc-c++
+BuildRequires:  libasan
 BuildRequires:  make
 
 Provides:       bundled(base64)
