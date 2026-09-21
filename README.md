@@ -1,5 +1,5 @@
 ![Epubworm mascot and banner](assets/mascot_and_banner.png)
-A fast, image-capable terminal EPUB reader written in C++
+<div align="center">A fast, image-capable terminal EPUB reader written in C++</div>
 
 # Overview
 https://github.com/user-attachments/assets/76c2db37-3419-4fe6-8e85-54b3e5678cf4
