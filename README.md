@@ -31,14 +31,14 @@ Epubworm uses the relatively simple [TinyXML-2](https://github.com/leethomason/t
 # Install
 Epubworm supports Linux and macOS.
 
-## Release Binaries
-Prebuilt binaries for x86-64 and ARM64 are available from the [latest release](https://github.com/xinghao-wu/epubworm/releases/latest). The Linux binaries require glibc 2.28 or newer and do not support musl-based distributions such as Alpine Linux. The macOS binaries require macOS 13 or newer.
-
 ## Fedora COPR
 ```
 sudo dnf copr enable xinghao-wu/epubworm
 sudo dnf install epubworm
 ```
+
+## Prebuilt Binaries
+Download from the [latest release](https://github.com/xinghao-wu/epubworm/releases/latest). The Linux binaries do not support musl-based distributions such as Alpine Linux.
 
 ## Build From Source
 First, clone the repo and `cd` into it:
