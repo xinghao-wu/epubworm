@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   quality:
@@ -52,8 +52,16 @@ jobs:
         include:
           - os: ubuntu-24.04
             compiler: g++
+            asset: epubworm-linux-x86_64
+          - os: ubuntu-24.04-arm
+            compiler: g++
+            asset: epubworm-linux-arm64
+          - os: macos-15-intel
+            compiler: clang++
+            asset: epubworm-macos-x86_64
           - os: macos-15
             compiler: clang++
+            asset: epubworm-macos-arm64
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -65,3 +73,84 @@ jobs:
 
       - name: Build release binary
         run: make CXX=${{ matrix.compiler }}
+
+      - name: Package release archive
+        run: |
+          package="${{ matrix.asset }}"
+          mkdir -p "dist/$package/completions/bash" \
+            "dist/$package/completions/zsh" \
+            "dist/$package/completions/fish"
+          install -m 755 build/epubworm "dist/$package/epubworm"
+          install -m 644 LICENSE THIRD_PARTY_LICENSES "dist/$package"
+          install -m 644 completions/bash/epubworm "dist/$package/completions/bash/epubworm"
+          install -m 644 completions/zsh/_epubworm "dist/$package/completions/zsh/_epubworm"
+          install -m 644 completions/fish/epubworm.fish "dist/$package/completions/fish/epubworm.fish"
+          tar -czf "dist/$package.tar.gz" -C dist "$package"
+
+      - name: Upload release archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.asset }}
+          path: dist/${{ matrix.asset }}.tar.gz
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs:
+      - quality
+      - build-and-test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download release archives
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          path: release
+          merge-multiple: true
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          short_sha="${GITHUB_SHA::7}"
+          tag="main-${GITHUB_RUN_NUMBER}-${short_sha}"
+          title="Main build $short_sha"
+
+          {
+            printf 'Automated build of [`%s`](%s/%s/commit/%s).\n\n' \
+              "$short_sha" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA"
+            git log -1 --format='%B'
+          } > release-notes.md
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" release/*.tar.gz --clobber
+            gh release edit "$tag" --title "$title" --notes-file release-notes.md
+          else
+            gh release create "$tag" release/*.tar.gz \
+              --target "$GITHUB_SHA" \
+              --title "$title" \
+              --notes-file release-notes.md \
+              --latest=false
+          fi
+
+          newest_run=0
+          newest_tag=""
+          while IFS= read -r release_tag; do
+            if [[ "$release_tag" =~ ^main-([0-9]+)-[0-9a-f]+$ ]] &&
+              ((BASH_REMATCH[1] > newest_run)); then
+              newest_run="${BASH_REMATCH[1]}"
+              newest_tag="$release_tag"
+            fi
+          done < <(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq '.[].tag_name')
+
+          if [[ -n "$newest_tag" ]]; then
+            gh release edit "$newest_tag" --latest
+          fi
