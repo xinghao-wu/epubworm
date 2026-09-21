@@ -1,6 +1,6 @@
 <div align="center">
-![Epubworm mascot and banner](assets/mascot_and_banner.png)
-A fast, image-capable terminal EPUB reader written in C++
+  <img src="assets/mascot_and_banner.png" alt="Epubworm mascot and banner">
+  A fast, image-capable terminal EPUB reader written in C++
 </div>
 
 # Overview
