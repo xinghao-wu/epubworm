@@ -31,13 +31,6 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Unlink preinstalled LLVM
-        if: runner.os == 'macOS'
-        run: |
-          if brew list --versions llvm@18 >/dev/null; then
-            brew unlink llvm@18
-          fi
-
       - name: Set up LLVM 22
         uses: ZhongRuoyu/setup-llvm@eea6238baf53d41c1615923680d7a738da584318 # v0
         with:
