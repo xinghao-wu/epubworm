@@ -31,6 +31,13 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Unlink preinstalled LLVM
+        if: runner.os == 'macOS'
+        run: |
+          if brew list --versions llvm@18 >/dev/null; then
+            brew unlink llvm@18
+          fi
+
       - name: Set up LLVM 22
         uses: ZhongRuoyu/setup-llvm@eea6238baf53d41c1615923680d7a738da584318 # v0
         with:
@@ -88,7 +95,7 @@ jobs:
           tar -czf "dist/$package.tar.gz" -C dist "$package"
 
       - name: Upload release archive
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-${{ matrix.asset }}
           path: dist/${{ matrix.asset }}.tar.gz
@@ -110,7 +117,7 @@ jobs:
           persist-credentials: false
 
       - name: Download release archives
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           pattern: release-*
           path: release
