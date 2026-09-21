@@ -53,15 +53,25 @@ jobs:
           - os: ubuntu-24.04
             compiler: g++
             asset: epubworm-linux-x86_64
+            platform: linux
+            binary_arch: x86-64
+            release_container: quay.io/pypa/manylinux_2_28_x86_64@sha256:53390351aeb4688114b02c36a23b3e6ce1166ee9b7afc5df1a4f776354fc764c
           - os: ubuntu-24.04-arm
             compiler: g++
             asset: epubworm-linux-arm64
+            platform: linux
+            binary_arch: ARM aarch64
+            release_container: quay.io/pypa/manylinux_2_28_aarch64@sha256:ad74e53b713f3b07d8c889c526dc0c6500da9827b45e38739570875fef52e28f
           - os: macos-15-intel
             compiler: clang++
             asset: epubworm-macos-x86_64
+            platform: macos
+            binary_arch: x86_64
           - os: macos-15
             compiler: clang++
             asset: epubworm-macos-arm64
+            platform: macos
+            binary_arch: arm64
     steps:
       - name: Check out repository
         uses: actions/checkout@v7
@@ -71,8 +81,64 @@ jobs:
       - name: Run tests
         run: make test CXX=${{ matrix.compiler }}
 
-      - name: Build release binary
+      - name: Build portable Linux release binary
+        if: matrix.platform == 'linux'
+        env:
+          RELEASE_CONTAINER: ${{ matrix.release_container }}
+        run: |
+          docker run --rm \
+            --user "$(id -u):$(id -g)" \
+            --volume "$PWD:/project" \
+            --workdir /project \
+            "$RELEASE_CONTAINER" \
+            bash -c "make CXX=g++ RELEASE_CXXFLAGS='-O2 -fPIE' LDFLAGS='-pie -Wl,-z,relro,-z,now -static-libstdc++ -static-libgcc'"
+
+      - name: Verify Linux release compatibility
+        if: matrix.platform == 'linux'
+        env:
+          EXPECTED_ARCH: ${{ matrix.binary_arch }}
+        run: |
+          file build/epubworm | grep -F "$EXPECTED_ARCH"
+          if [[ "$(readelf --file-header build/epubworm | awk '$1 == "Type:" { print $2 }')" != DYN ]]; then
+            printf 'The Linux release must be a position-independent executable.\n' >&2
+            exit 1
+          fi
+
+          max_glibc="$({ readelf --version-info build/epubworm | grep -oE 'GLIBC_[0-9.]+' || true; } | sort -V | tail -n 1)"
+          if [[ -z "$max_glibc" ]] || [[ "$(printf '%s\n' "$max_glibc" GLIBC_2.28 | sort -V | tail -n 1)" != GLIBC_2.28 ]]; then
+            printf 'Expected a maximum glibc requirement of 2.28, found %s\n' "${max_glibc:-none}" >&2
+            exit 1
+          fi
+
+          if readelf --dynamic build/epubworm | grep -Eq 'libstdc\+\+\.so|libgcc_s\.so'; then
+            printf 'The Linux release must link libstdc++ and libgcc statically.\n' >&2
+            exit 1
+          fi
+
+      - name: Build portable macOS release binary
+        if: matrix.platform == 'macos'
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '13.0'
         run: make CXX=${{ matrix.compiler }}
+
+      - name: Verify macOS release compatibility
+        if: matrix.platform == 'macos'
+        env:
+          EXPECTED_ARCH: ${{ matrix.binary_arch }}
+        run: |
+          file build/epubworm | grep -F "$EXPECTED_ARCH"
+
+          min_macos="$(otool -l build/epubworm | awk '$1 == "minos" { print $2; exit }')"
+          if [[ "$min_macos" != 13.0 ]]; then
+            printf 'Expected a macOS 13.0 deployment target, found %s\n' "${min_macos:-none}" >&2
+            exit 1
+          fi
+
+          unexpected_dylibs="$(otool -L build/epubworm | tail -n +2 | awk '{ print $1 }' | grep -Ev '^/usr/lib/(libiconv\.2\.dylib|libc\+\+\.1\.dylib|libSystem\.B\.dylib)$' || true)"
+          if [[ -n "$unexpected_dylibs" ]]; then
+            printf 'Unexpected dynamic dependencies:\n%s\n' "$unexpected_dylibs" >&2
+            exit 1
+          fi
 
       - name: Package release archive
         run: |
