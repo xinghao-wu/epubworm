@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   quality:
@@ -182,41 +182,22 @@ jobs:
           path: release
           merge-multiple: true
 
-      - name: Create GitHub release
+      - name: Publish rolling release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          short_sha="${GITHUB_SHA::7}"
-          tag="main-${GITHUB_RUN_NUMBER}-${short_sha}"
-          title="Main build $short_sha"
-
-          {
-            printf 'Automated build of [`%s`](%s/%s/commit/%s).\n\n' \
-              "$short_sha" "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_SHA"
-            git log -1 --format='%B'
-          } > release-notes.md
+          tag="rolling"
 
           if gh release view "$tag" >/dev/null 2>&1; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/git/refs/tags/$tag" \
+              -f sha="$GITHUB_SHA" \
+              -F force=true
             gh release upload "$tag" release/*.tar.gz --clobber
-            gh release edit "$tag" --title "$title" --notes-file release-notes.md
+            gh release edit "$tag" --latest
           else
             gh release create "$tag" release/*.tar.gz \
               --target "$GITHUB_SHA" \
-              --title "$title" \
-              --notes-file release-notes.md \
-              --latest=false
-          fi
-
-          newest_run=0
-          newest_tag=""
-          while IFS= read -r release_tag; do
-            if [[ "$release_tag" =~ ^main-([0-9]+)-[0-9a-f]+$ ]] &&
-              ((BASH_REMATCH[1] > newest_run)); then
-              newest_run="${BASH_REMATCH[1]}"
-              newest_tag="$release_tag"
-            fi
-          done < <(gh api --paginate "repos/$GITHUB_REPOSITORY/releases" --jq '.[].tag_name')
-
-          if [[ -n "$newest_tag" ]]; then
-            gh release edit "$newest_tag" --latest
+              --title "Rolling release" \
+              --notes "" \
+              --latest
           fi
