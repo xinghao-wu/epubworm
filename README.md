@@ -39,7 +39,7 @@ sudo dnf copr enable xinghao-wu/epubworm
 sudo dnf install epubworm
 ```
 
-## Curl
+## CURL
 ```bash
 curl -fsSL https://github.com/xinghao-wu/epubworm/raw/main/install.sh | sh
 ```
