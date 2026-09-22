@@ -24,6 +24,7 @@ auto main() -> int {
     test::collapseConsecutiveNewlines();
     test::findNth();
     test::execute();
+    test::getChapterProgressIndicator();
     test::tocDataToString();
     test::styleEachLineIndividually();
     test::headingColors();

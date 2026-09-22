@@ -475,7 +475,7 @@ auto parseContentElemImpl(const XMLElement* parent, std::string& out,
         childStyle.bold = name == "h1" || name == "h2";
         childStyle.italic = name == "h3" || name == "h4";
         childStyle.underline = name == "h1" || name == "h3";
-        childStyle.foreground = yellowFG;
+        childStyle.foreground = magentaFG;
         out += centerAlignBegin;
         appendStyleTransition(out, style, childStyle);
         parseContentElemImpl(childElem, out, chapterAbs, TextAlignment::center,

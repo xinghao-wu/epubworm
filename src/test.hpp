@@ -56,6 +56,8 @@ auto findNth() -> void;
 
 auto execute() -> void;
 
+auto getChapterProgressIndicator() -> void;
+
 // non-self-validating
 // Also exercises `setUpDisplayChapter()`,
 // `snapTopLineToBound()`, `snapBotLineToBound()`,

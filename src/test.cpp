@@ -568,14 +568,97 @@ auto execute() -> void {
   assert(largeOutput == expectedLargeOutput);
 }
 
+auto getChapterProgressIndicator() -> void {
+  const auto assertStats = [](std::string_view chapter, int words,
+                              int cjkCharacters) -> void {
+    const ChapterReadingStats stats{::getChapterReadingStats(chapter)};
+    assert(stats.words == words);
+    assert(stats.cjkCharacters == cjkCharacters);
+  };
+  assertStats("one  \n two", 2, 0);
+  assertStats(esc + yellowFG + "styled words" + esc + resetFG, 2, 0);
+  assertStats("don't well-being", 2, 0);
+  assertStats("abc" + imgCellPlaceholder + "def", 2, 0);
+  assertStats("你好世界", 0, 4);
+  assertStats("日本語を読む", 0, 6);
+  assertStats("hello 世界 and 日本語", 2, 5);
+  assertStats("cafe\u0301 noir", 2, 0);
+  assertStats("は\u3099", 0, 1);
+  assertStats(esc + yellowFG + "styled 世界" + esc + resetFG, 1, 2);
+
+  const ChapterReadingStats englishStats{.words = 1000};
+
+  const auto expected = [](int percent, int minMinutes, int maxMinutes,
+                           int cols) -> std::string {
+    const std::string left{"─ Test Title "};
+    const std::string progress{std::to_string(percent) + "% chapter progress"};
+    const std::string time{std::to_string(minMinutes) + '-'
+                           + std::to_string(maxMinutes) + " min left"};
+    const std::string right{progress + " · " + time + " ─"};
+    std::string separator{};
+    const int contentCols{::getVisualLen(::utf8ToWide(left + ' ' + right))};
+    for (int col{contentCols}; col < cols; ++col) {
+      separator += "\u2500";
+    }
+    return esc + resetFG + "─ " + esc + yellowFG + "Test Title" + esc + resetFG
+           + ' ' + separator + ' ' + esc + greenFG + progress + esc + resetFG
+           + " · " + esc + blueFG + time + esc + resetFG + " ─";
+  };
+
+  assert(
+      ::getChapterProgressIndicator(1, 10, 100, 10, englishStats, "Test Title")
+      == expected(100, 4, 6, 100));
+  assert(
+      ::getChapterProgressIndicator(1, 10, 100, 110, englishStats, "Test Title")
+      == expected(0, 4, 6, 100));
+  assert(::getChapterProgressIndicator(10, 10, 100, 110, englishStats,
+                                       "Test Title")
+         == expected(9, 3, 6, 100));
+  assert(::getChapterProgressIndicator(96, 10, 100, 110, englishStats,
+                                       "Test Title")
+         == expected(95, 1, 1, 100));
+  assert(::getChapterProgressIndicator(101, 10, 100, 110, englishStats,
+                                       "Test Title")
+         == expected(100, 1, 1, 100));
+  assert(
+      ::getChapterProgressIndicator(4, 10, 100, 210, englishStats, "Test Title")
+      == expected(2, 4, 6, 100));
+  assert(::getChapterProgressIndicator(-10, 10, 100, 110, englishStats,
+                                       "Test Title")
+         == expected(0, 4, 6, 100));
+  assert(::getChapterProgressIndicator(200, 10, 100, 110, englishStats,
+                                       "Test Title")
+         == expected(100, 0, 0, 100));
+  assert(
+      ::getChapterProgressIndicator(1, 10, 5, 110, englishStats, "Test Title")
+      == esc + resetFG + "─ " + esc + blueFG + 't' + esc + resetFG + " ─");
+  const std::string noTitleStatus{::getChapterProgressIndicator(
+      1, 10, 34, 110, englishStats, "Test Title")};
+  assert(::getVisualLen(::utf8ToWide(noTitleStatus)) == 34);
+  assert(noTitleStatus.starts_with(esc + resetFG + "─ " + esc + greenFG));
+  assert(noTitleStatus.ends_with(" ─"));
+  const std::string truncatedTitleStatus{::getChapterProgressIndicator(
+      1, 10, 43, 110, englishStats, "Test Title")};
+  assert(::getVisualLen(::utf8ToWide(truncatedTitleStatus)) == 43);
+  assert(truncatedTitleStatus.contains(esc + yellowFG + "…" + esc + resetFG));
+
+  const ChapterReadingStats mixedStats{.words = 320, .cjkCharacters = 700};
+  assert(
+      ::getChapterProgressIndicator(1, 10, 100, 110, mixedStats, "Test Title")
+      == expected(0, 2, 5, 100));
+
+  assert(::calcBotLineFromTopLine(1, 9) == 9);
+  assert(::calcTopLineFromBotLine(110, 9) == 102);
+}
+
 auto displayChapter() -> void {
   ::enableRawMode();
 
   std::cout << esc << clearScreen;
-  const std::pair imgChapterOutput{
-      ::displayChapter(imageElementsRootAbs / "Text/html-image.xhtml", 0, 55)};
-  const std::pair textChapterOutput{
-      ::displayChapter(imageElementsRootAbs / "Text/prose.xhtml", 0.5, 55)};
+  const std::pair imgChapterOutput{::displayChapter(
+      imageElementsRootAbs / "Text/html-image.xhtml", "Test Title", 0, 55)};
+  const std::pair textChapterOutput{::displayChapter(
+      imageElementsRootAbs / "Text/prose.xhtml", "Test Title", 0.5, 55)};
   eraseScreen();
 
   boldColorIfTerm(stdout, yellowFG);
@@ -600,17 +683,28 @@ auto tocDataToString() -> void {
   const TocData toc{{"Chapter 1", "chapter-1.xhtml"},
                     {"    Section 1", "section-1.xhtml"}};
   std::string str{};
-  ::tocDataToString(toc, "Test Title", "Test Author", str);
+  ::tocDataToString(toc, str);
 
-  const std::string expected{
-      centerAlignBegin + esc + cyanFG + esc + bold + esc + underline
-      + "Test Title" + esc + resetFG + esc + resetBold + esc + resetUnderline
-      + centerAlignEnd + '\n' + centerAlignBegin + esc + blueFG + esc + bold
-      + "Test Author" + esc + resetFG + esc + resetBold + centerAlignEnd
-      + "\n\nChapter 1\n\n    Section 1\n" + centerAlignBegin + esc + redFG
-      + esc + bold + "---" + esc + resetFG + esc + resetBold + centerAlignEnd
-      + '\n'};
+  const std::string expected{"Chapter 1\n\n    Section 1\n" + centerAlignBegin
+                             + esc + redFG + esc + bold + "---" + esc + resetFG
+                             + esc + resetBold + centerAlignEnd + '\n'};
   assert(str == expected);
+
+  const std::string tocStatus{::getTOCStatusLine(50, "Test Title")};
+  const std::string expectedStatus{
+      esc + resetFG + "─ " + esc + yellowFG + "Test Title" + esc + resetFG
+      + " ───────────────── " + esc + magentaFG + "Table of Contents" + esc
+      + resetFG + " ─"};
+  assert(tocStatus == expectedStatus);
+  const std::string narrowTOCStatus{::getTOCStatusLine(22, "Test Title")};
+  assert(::getVisualLen(::utf8ToWide(narrowTOCStatus)) == 22);
+  assert(narrowTOCStatus.starts_with(esc + resetFG + "─ " + esc + magentaFG));
+  assert(narrowTOCStatus.ends_with(" ──"));
+  const std::string truncatedTitleTOCStatus{
+      ::getTOCStatusLine(26, "Test Title")};
+  assert(::getVisualLen(::utf8ToWide(truncatedTitleTOCStatus)) == 26);
+  assert(
+      truncatedTitleTOCStatus.contains(esc + yellowFG + "…" + esc + resetFG));
 }
 
 auto displayTOC() -> void {
@@ -619,10 +713,10 @@ auto displayTOC() -> void {
   std::cout << esc << clearScreen;
   const fs::path metadataPathsTOCOutput{
       ::displayTOC(::getTOC(metadataPathsRootAbs / "toc.ncx"),
-                   "The Clockwork Garden", "Epubworm Project", 55, 1)};
+                   "The Clockwork Garden", 55, 1)};
   const fs::path nonlinearSpineTOCOutput{
       ::displayTOC(::getTOC(nonlinearSpineRootAbs / "OEBPS/toc.ncx"),
-                   "Rooms Within Rooms", "Epubworm Project", 55, 0)};
+                   "Rooms Within Rooms", 55, 0)};
   eraseScreen();
 
   boldColorIfTerm(stdout, yellowFG);
@@ -728,8 +822,8 @@ auto headingColors() -> void {
 
   std::string parsed{};
   ::parseContentElem(chapter.FirstChildElement("body"), parsed, {});
-  const std::array<std::string_view, 6> colors{yellowFG, yellowFG, yellowFG,
-                                               yellowFG, yellowFG, yellowFG};
+  const std::array<std::string_view, 6> colors{magentaFG, magentaFG, magentaFG,
+                                               magentaFG, magentaFG, magentaFG};
   const std::array<bool, 6> boldLevels{true, true, false, false, false, false};
   const std::array<bool, 6> italicLevels{false, false, true,
                                          true,  false, false};
@@ -774,8 +868,8 @@ auto headingColors() -> void {
   ::parseContentElem(nestedHeading.FirstChildElement("body"),
                      nestedHeadingParsed, {});
   const std::string expectedNestedHeading{
-      "\n\n" + centerAlignBegin + esc + bold + esc + yellowFG + "before " + esc
-      + resetFG + esc + greenFG + "code" + esc + resetFG + esc + yellowFG
+      "\n\n" + centerAlignBegin + esc + bold + esc + magentaFG + "before " + esc
+      + resetFG + esc + greenFG + "code" + esc + resetFG + esc + magentaFG
       + " after bold" + esc + resetBold + esc + resetFG + centerAlignEnd
       + "\n\n"};
   assert(nestedHeadingParsed == expectedNestedHeading);
@@ -820,7 +914,7 @@ auto headingColors() -> void {
   assert(getOccurrences<std::string_view>(nestedHeadingParsed, esc + greenFG)
          == 1);
   assert(nestedHeadingParsed.contains(esc + greenFG + "code" + esc + resetFG
-                                      + esc + yellowFG));
+                                      + esc + magentaFG));
   assert(getOccurrences<std::string_view>(nestedHeadingParsed, esc + bold)
          == 3);
 }
@@ -925,7 +1019,7 @@ auto contentAlignment() -> void {
   expected += esc;
   expected += bold;
   expected += esc;
-  expected += yellowFG;
+  expected += magentaFG;
   expected += "heading";
   expected += esc;
   expected += resetBold;
@@ -1035,7 +1129,7 @@ auto contentAlignment() -> void {
   std::string nestedParsed{};
   ::parseContentElem(nestedChapter.FirstChildElement("body"), nestedParsed, {});
   assert(!nestedParsed.contains(rightAlignBegin));
-  assert(nestedParsed.contains(centerAlignBegin + esc + bold + esc + yellowFG
+  assert(nestedParsed.contains(centerAlignBegin + esc + bold + esc + magentaFG
                                + "Nested heading"));
 
   XMLDocument blockChapter{};

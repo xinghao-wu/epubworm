@@ -16,6 +16,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cwchar>
+#include <cwctype>
 #include <filesystem>
 #include <fstream>
 #include <iconv.h>
@@ -64,6 +65,50 @@ volatile std::sig_atomic_t g_winResize{0};
 
 constexpr int wheelScrollLines{3};
 constexpr int horizontalMarginChars{1};
+constexpr int slowReadingWordsPerMinute{175};
+constexpr int fastReadingWordsPerMinute{320};
+constexpr int slowReadingCJKCharactersPerMinute{300};
+constexpr int fastReadingCJKCharactersPerMinute{700};
+
+namespace {
+constexpr auto isInRange(std::uint32_t codePoint, std::uint32_t first,
+                         std::uint32_t last) -> bool {
+  return codePoint >= first && codePoint <= last;
+}
+
+constexpr auto isCombiningMark(std::uint32_t codePoint) -> bool {
+  return isInRange(codePoint, 0x0300, 0x036F)
+         || isInRange(codePoint, 0x1AB0, 0x1AFF)
+         || isInRange(codePoint, 0x1DC0, 0x1DFF)
+         || isInRange(codePoint, 0x20D0, 0x20FF)
+         || isInRange(codePoint, 0xFE20, 0xFE2F)
+         || isInRange(codePoint, 0x3099, 0x309A);
+}
+
+constexpr auto isVariationSelector(std::uint32_t codePoint) -> bool {
+  return isInRange(codePoint, 0xFE00, 0xFE0F)
+         || isInRange(codePoint, 0xE0100, 0xE01EF);
+}
+
+constexpr auto isCJKReadingCharacter(std::uint32_t codePoint) -> bool {
+  const bool isHan{isInRange(codePoint, 0x3400, 0x4DBF)
+                   || isInRange(codePoint, 0x4E00, 0x9FFF)
+                   || isInRange(codePoint, 0xF900, 0xFAFF)
+                   || isInRange(codePoint, 0x20000, 0x2EE5F)
+                   || isInRange(codePoint, 0x2F800, 0x2FA1F)
+                   || isInRange(codePoint, 0x30000, 0x323AF)};
+  const bool isKana{
+      isInRange(codePoint, 0x3041, 0x3096)
+      || isInRange(codePoint, 0x309D, 0x309F)
+      || (isInRange(codePoint, 0x30A1, 0x30FF) && codePoint != 0x30FB)
+      || isInRange(codePoint, 0x31F0, 0x31FF)
+      || isInRange(codePoint, 0x1B100, 0x1B16F)
+      || isInRange(codePoint, 0xFF66, 0xFF9D)};
+  const bool isIterationMark{isInRange(codePoint, 0x3005, 0x3007)
+                             || codePoint == 0x303B};
+  return isHan || isKana || isIterationMark;
+}
+} // namespace
 
 auto loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols)
     -> void {
@@ -174,7 +219,7 @@ auto displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols)
 
       const int rowsDesired{(imgYPix / cellYPix) + 1};
       const int colsDesired{(imgXPix / cellXPix) + 1};
-      const int maxRows{winInfo.ws_row - 1};
+      const int maxRows{std::max(static_cast<int>(winInfo.ws_row) - 2, 1)};
       const int maxCols{winInfo.ws_col - (horizontalMarginChars * 2)};
       const double rowShrinkMultiplier{maxRows
                                        / static_cast<double>(rowsDesired)};
@@ -841,15 +886,200 @@ auto processContentText(std::string& str, int maxLen) -> void {
   styleEachLineIndividually(str, esc + lightGrayFG, esc + resetFG);
 }
 
-auto displayChapter(const fs::path& chapterAbs, double iniProg,
-                    int desiredMaxLen) -> std::pair<ChapterExit, double> {
+auto getChapterReadingStats(std::string_view chapter) -> ChapterReadingStats {
+  const std::wstring wideChapter{utf8ToWide(chapter)};
+  ChapterReadingStats stats{};
+  bool inWord{false};
+  for (std::size_t i{}; i < wideChapter.size();) {
+    if (wideChapter[i] == L'\033') {
+      if (i + 1 < wideChapter.size() && wideChapter[i + 1] == L'[') {
+        i += 2;
+        while (i < wideChapter.size()
+               && (wideChapter[i] < L'@' || wideChapter[i] > L'~')) {
+          ++i;
+        }
+        i += static_cast<std::size_t>(i < wideChapter.size());
+      }
+      else {
+        ++i;
+        while (i + 1 < wideChapter.size()
+               && (wideChapter[i] != L'\033' || wideChapter[i + 1] != L'\\')) {
+          ++i;
+        }
+        i = std::min(i + 2, wideChapter.size());
+      }
+      continue;
+    }
+
+    const wchar_t ch{wideChapter[i]};
+    const auto codePoint{static_cast<std::uint32_t>(ch)};
+    if (isCombiningMark(codePoint) || isVariationSelector(codePoint)) {
+      ++i;
+      continue;
+    }
+    if (isCJKReadingCharacter(codePoint)) {
+      ++stats.cjkCharacters;
+      inWord = false;
+      ++i;
+      continue;
+    }
+
+    const bool isAlphanumeric{std::iswalnum(static_cast<std::wint_t>(ch)) != 0};
+    if (isAlphanumeric && !inWord) {
+      ++stats.words;
+    }
+    inWord = isAlphanumeric
+             || (inWord
+                 && (ch == L'\'' || ch == L'’' || ch == L'-' || ch == L'‐'
+                     || ch == L'‑'));
+    ++i;
+  }
+  return stats;
+}
+
+auto getChapterProgressIndicator(int screenTopLine, int screenRows,
+                                 int screenCols, int chapterLines,
+                                 const ChapterReadingStats& chapterReadingStats,
+                                 std::string_view title) -> std::string {
+  double progress{1};
+  if (chapterLines > screenRows) {
+    const int scrollableLines{chapterLines - screenRows};
+    progress = std::clamp(
+        static_cast<double>(screenTopLine - 1) / scrollableLines, 0.0, 1.0);
+  }
+  const int percent{static_cast<int>(std::lround(progress * 100))};
+  const int remainingLines{
+      std::clamp(chapterLines - screenTopLine + 1, 0, chapterLines)};
+  const double remainingFraction{
+      chapterLines == 0 ? 0
+                        : static_cast<double>(remainingLines) / chapterLines};
+  const double remainingWords{chapterReadingStats.words * remainingFraction};
+  const double remainingCJKCharacters{chapterReadingStats.cjkCharacters
+                                      * remainingFraction};
+  const int minMinutesLeft{static_cast<int>(std::ceil(
+      (remainingWords / fastReadingWordsPerMinute)
+      + (remainingCJKCharacters / fastReadingCJKCharactersPerMinute)))};
+  const int maxMinutesLeft{static_cast<int>(std::ceil(
+      (remainingWords / slowReadingWordsPerMinute)
+      + (remainingCJKCharacters / slowReadingCJKCharactersPerMinute)))};
+
+  const std::wstring wideTitle{utf8ToWide(title)};
+  const std::wstring progressText{std::to_wstring(percent)
+                                  + L"% chapter progress"};
+  const std::wstring timeText{std::to_wstring(minMinutesLeft) + L"-"
+                              + std::to_wstring(maxMinutesLeft) + L" min left"};
+  const std::wstring fullRight{progressText + L" · " + timeText + L" ─"};
+  std::wstring right{fullRight};
+
+  const int availableCols{std::max(screenCols, 0)};
+  constexpr int leftPrefixCols{2};
+  const int contentAvailableCols{std::max(availableCols - leftPrefixCols, 0)};
+  int rightCols{getVisualLen(right)};
+  const bool showTitle{!wideTitle.empty()
+                       && contentAvailableCols >= rightCols + 5};
+  if (!showTitle && rightCols > contentAvailableCols) {
+    std::wstring fittedRight{};
+    rightCols = 0;
+    for (auto it{right.rbegin()}; it != right.rend(); ++it) {
+      const int chCols{std::max(wcwidth(*it), 0)};
+      if (rightCols + chCols > contentAvailableCols) {
+        break;
+      }
+      fittedRight.insert(fittedRight.begin(), *it);
+      rightCols += chCols;
+    }
+    right = std::move(fittedRight);
+  }
+
+  std::wstring fittedTitle{};
+  int titleCols{};
+  int middleRuleCols{};
+  if (showTitle) {
+    const int titleAvailableCols{contentAvailableCols - rightCols - 4};
+    const bool titleTruncated{getVisualLen(wideTitle) > titleAvailableCols};
+    const int titleTextAvailableCols{titleAvailableCols
+                                     - static_cast<int>(titleTruncated)};
+    for (const wchar_t ch : wideTitle) {
+      const int chCols{std::max(wcwidth(ch), 0)};
+      if (titleCols + chCols > titleTextAvailableCols) {
+        break;
+      }
+      fittedTitle += ch;
+      titleCols += chCols;
+    }
+    if (titleTruncated) {
+      fittedTitle += L'…';
+      ++titleCols;
+    }
+    middleRuleCols = contentAvailableCols - titleCols - rightCols - 2;
+  }
+
+  std::wstring styledLeft{L"─ "};
+  if (!fittedTitle.empty()) {
+    styledLeft += L"\033[33m";
+    styledLeft += fittedTitle;
+    styledLeft += L"\033[39m";
+    styledLeft += L' ';
+    styledLeft.append(static_cast<std::size_t>(middleRuleCols), L'─');
+    styledLeft += L' ';
+  }
+
+  const std::size_t progressEnd{progressText.size()};
+  const std::size_t timeBegin{progressEnd + 3};
+  const std::size_t timeEnd{timeBegin + timeText.size()};
+  const std::size_t rightOffset{fullRight.size() - right.size()};
+  std::wstring styledRight{};
+  int activeStyle{};
+  for (std::size_t i{}; i < right.size(); ++i) {
+    const std::size_t originalIndex{rightOffset + i};
+    int style{};
+    if (originalIndex < progressEnd) {
+      style = 1;
+    }
+    else if (originalIndex >= timeBegin && originalIndex < timeEnd) {
+      style = 2;
+    }
+    if (style != activeStyle) {
+      if (activeStyle != 0) {
+        styledRight += L"\033[39m";
+      }
+      if (style == 1) {
+        styledRight += L"\033[32m";
+      }
+      else if (style == 2) {
+        styledRight += L"\033[34m";
+      }
+      activeStyle = style;
+    }
+    styledRight += right[i];
+  }
+  if (activeStyle != 0) {
+    styledRight += L"\033[39m";
+  }
+  if (fittedTitle.empty()) {
+    styledRight.append(
+        static_cast<std::size_t>(std::max(contentAvailableCols - rightCols, 0)),
+        L'─');
+  }
+
+  const std::wstring status{styledLeft + styledRight};
+
+  return esc + resetFG + wideToUTF8(status);
+}
+
+auto displayChapter(const fs::path& chapterAbs, std::string_view title,
+                    double iniProg, int desiredMaxLen)
+    -> std::pair<ChapterExit, double> {
   winsize winInfo{};
   std::string chapter{};
   int chapterLines{};
+  int screenRows{};
   int screenTopLine{};
   int screenBotLine{};
   setUpDisplayChapter(chapterAbs, iniProg, desiredMaxLen, winInfo, chapter,
-                      chapterLines, screenTopLine, screenBotLine);
+                      chapterLines, screenRows, screenTopLine, screenBotLine);
+  const ChapterReadingStats chapterReadingStats{
+      getChapterReadingStats(chapter)};
 
   while (true) {
     std::size_t dispBeginIndex{};
@@ -864,7 +1094,12 @@ auto displayChapter(const fs::path& chapterAbs, double iniProg,
         dispBeginIndex, dispEndIndex - dispBeginIndex + 1)};
 
     eraseScreen();
-    std::cout << dispView << std::flush;
+    std::cout << dispView << esc << '[' << winInfo.ws_row << ";1H"
+              << getChapterProgressIndicator(screenTopLine, screenRows,
+                                             static_cast<int>(winInfo.ws_col),
+                                             chapterLines, chapterReadingStats,
+                                             title)
+              << std::flush;
     // Sometimes, images on right-side tmux panes are broken until redraw.
     if (inTmuxSession()) {
       execute(std::vector<std::string>{"tmux", "refresh-client"});
@@ -899,9 +1134,9 @@ auto displayChapter(const fs::path& chapterAbs, double iniProg,
         if (screenTopLine == 1) {
           return {ChapterExit::prev, prog};
         }
-        screenTopLine -= winInfo.ws_row;
+        screenTopLine -= screenRows;
         snapTopLineToBound(screenTopLine);
-        screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
+        screenBotLine = calcBotLineFromTopLine(screenTopLine, screenRows);
         snapBotLineToBound(screenBotLine, chapterLines);
         goto redraw_screen;
       case 'l':
@@ -913,9 +1148,9 @@ auto displayChapter(const fs::path& chapterAbs, double iniProg,
         if (screenBotLine == chapterLines) {
           return {ChapterExit::next, prog};
         }
-        screenBotLine += winInfo.ws_row;
+        screenBotLine += screenRows;
         snapBotLineToBound(screenBotLine, chapterLines);
-        screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
+        screenTopLine = calcTopLineFromBotLine(screenBotLine, screenRows);
         snapTopLineToBound(screenTopLine);
         goto redraw_screen;
       case 'u':
@@ -923,9 +1158,9 @@ auto displayChapter(const fs::path& chapterAbs, double iniProg,
         if (screenTopLine == 1) {
           return {ChapterExit::prev, prog};
         }
-        screenTopLine -= winInfo.ws_row / 2;
+        screenTopLine -= screenRows / 2;
         snapTopLineToBound(screenTopLine);
-        screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
+        screenBotLine = calcBotLineFromTopLine(screenTopLine, screenRows);
         snapBotLineToBound(screenBotLine, chapterLines);
         goto redraw_screen;
       case 'd':
@@ -933,9 +1168,9 @@ auto displayChapter(const fs::path& chapterAbs, double iniProg,
         if (screenBotLine == chapterLines) {
           return {ChapterExit::next, prog};
         }
-        screenBotLine += winInfo.ws_row / 2;
+        screenBotLine += screenRows / 2;
         snapBotLineToBound(screenBotLine, chapterLines);
-        screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
+        screenTopLine = calcTopLineFromBotLine(screenBotLine, screenRows);
         snapTopLineToBound(screenTopLine);
         goto redraw_screen;
       case 'k':
@@ -960,7 +1195,7 @@ auto displayChapter(const fs::path& chapterAbs, double iniProg,
         }
         screenTopLine -= wheelScrollLines;
         snapTopLineToBound(screenTopLine);
-        screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
+        screenBotLine = calcBotLineFromTopLine(screenTopLine, screenRows);
         snapBotLineToBound(screenBotLine, chapterLines);
         goto redraw_screen;
       case specKey::wheelDown:
@@ -969,14 +1204,14 @@ auto displayChapter(const fs::path& chapterAbs, double iniProg,
         }
         screenBotLine += wheelScrollLines;
         snapBotLineToBound(screenBotLine, chapterLines);
-        screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
+        screenTopLine = calcTopLineFromBotLine(screenBotLine, screenRows);
         snapTopLineToBound(screenTopLine);
         goto redraw_screen;
       case 'g':
       case specKey::home:
         if (screenTopLine != 1) {
           screenTopLine = 1;
-          screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
+          screenBotLine = calcBotLineFromTopLine(screenTopLine, screenRows);
           snapBotLineToBound(screenBotLine, chapterLines);
           goto redraw_screen;
         }
@@ -985,14 +1220,15 @@ auto displayChapter(const fs::path& chapterAbs, double iniProg,
       case specKey::end:
         if (screenBotLine != chapterLines) {
           screenBotLine = chapterLines;
-          screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
+          screenTopLine = calcTopLineFromBotLine(screenBotLine, screenRows);
           snapTopLineToBound(screenTopLine);
           goto redraw_screen;
         }
         break;
       case specKey::winResize:
         setUpDisplayChapter(chapterAbs, prog, desiredMaxLen, winInfo, chapter,
-                            chapterLines, screenTopLine, screenBotLine);
+                            chapterLines, screenRows, screenTopLine,
+                            screenBotLine);
         goto redraw_screen;
       default:
         break;
@@ -1005,9 +1241,11 @@ redraw_screen:
 auto setUpDisplayChapter(const fs::path& chapterAbs, double prog,
                          int desiredMaxLen, winsize& winInfo,
                          std::string& chapter, int& chapterLines,
-                         int& screenTopLine, int& screenBotLine) -> void {
+                         int& screenRows, int& screenTopLine,
+                         int& screenBotLine) -> void {
 
   ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
+  screenRows = std::max(static_cast<int>(winInfo.ws_row) - 1, 1);
 
   chapter.clear();
   parseChapter(chapterAbs, chapter);
@@ -1021,9 +1259,9 @@ auto setUpDisplayChapter(const fs::path& chapterAbs, double prog,
   screenTopLine = static_cast<int>(std::lround(prog * chapterLines));
   snapTopLineToBound(screenTopLine);
 
-  screenBotLine = calcBotLineFromTopLine(screenTopLine, winInfo);
+  screenBotLine = calcBotLineFromTopLine(screenTopLine, screenRows);
   snapBotLineToBound(screenBotLine, chapterLines);
-  screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
+  screenTopLine = calcTopLineFromBotLine(screenBotLine, screenRows);
   snapTopLineToBound(screenTopLine);
 }
 
@@ -1035,12 +1273,12 @@ auto snapBotLineToBound(int& screenBotLine, int chapterLines) -> void {
   screenBotLine = std::min(screenBotLine, chapterLines);
 }
 
-auto calcBotLineFromTopLine(int screenTopLine, const winsize& winInfo) -> int {
-  return screenTopLine + winInfo.ws_row - 1;
+auto calcBotLineFromTopLine(int screenTopLine, int screenRows) -> int {
+  return screenTopLine + screenRows - 1;
 }
 
-auto calcTopLineFromBotLine(int screenBotLine, const winsize& winInfo) -> int {
-  return screenBotLine - winInfo.ws_row + 1;
+auto calcTopLineFromBotLine(int screenBotLine, int screenRows) -> int {
+  return screenBotLine - screenRows + 1;
 }
 
 auto execute(const std::vector<std::string>& argV) -> std::string {
@@ -1165,28 +1403,7 @@ auto registerSigwinchHandler() -> void {
   }
 }
 
-auto tocDataToString(const TocData& data, std::string_view title,
-                     std::string_view author, std::string& str) -> void {
-  str += centerAlignBegin;
-  str += esc + cyanFG;
-  str += esc + bold;
-  str += esc + underline;
-  str += title;
-  str += esc + resetFG;
-  str += esc + resetBold;
-  str += esc + resetUnderline;
-  str += centerAlignEnd;
-  str += '\n';
-
-  str += centerAlignBegin;
-  str += esc + blueFG;
-  str += esc + bold;
-  str += author;
-  str += esc + resetFG;
-  str += esc + resetBold;
-  str += centerAlignEnd;
-  str += "\n\n";
-
+auto tocDataToString(const TocData& data, std::string& str) -> void {
   for (const auto& navPoint : data) {
     str += navPoint.first + "\n\n";
   }
@@ -1200,6 +1417,85 @@ auto tocDataToString(const TocData& data, std::string_view title,
   str += esc + resetBold;
   str += centerAlignEnd;
   str += '\n';
+}
+
+auto getTOCStatusLine(int screenCols, std::string_view title) -> std::string {
+  const std::wstring wideTitle{utf8ToWide(title)};
+  const std::wstring fullRight{L"Table of Contents ─"};
+  std::wstring right{fullRight};
+
+  const int availableCols{std::max(screenCols, 0)};
+  constexpr int leftPrefixCols{2};
+  const int contentAvailableCols{std::max(availableCols - leftPrefixCols, 0)};
+  int rightCols{getVisualLen(right)};
+  const bool showTitle{!wideTitle.empty()
+                       && contentAvailableCols >= rightCols + 5};
+  if (!showTitle && rightCols > contentAvailableCols) {
+    std::wstring fittedRight{};
+    rightCols = 0;
+    for (auto it{right.rbegin()}; it != right.rend(); ++it) {
+      const int chCols{std::max(wcwidth(*it), 0)};
+      if (rightCols + chCols > contentAvailableCols) {
+        break;
+      }
+      fittedRight.insert(fittedRight.begin(), *it);
+      rightCols += chCols;
+    }
+    right = std::move(fittedRight);
+  }
+
+  std::wstring fittedTitle{};
+  int titleCols{};
+  int middleRuleCols{};
+  if (showTitle) {
+    const int titleAvailableCols{contentAvailableCols - rightCols - 4};
+    const bool titleTruncated{getVisualLen(wideTitle) > titleAvailableCols};
+    const int titleTextAvailableCols{titleAvailableCols
+                                     - static_cast<int>(titleTruncated)};
+    for (const wchar_t ch : wideTitle) {
+      const int chCols{std::max(wcwidth(ch), 0)};
+      if (titleCols + chCols > titleTextAvailableCols) {
+        break;
+      }
+      fittedTitle += ch;
+      titleCols += chCols;
+    }
+    if (titleTruncated) {
+      fittedTitle += L'…';
+      ++titleCols;
+    }
+    middleRuleCols = contentAvailableCols - titleCols - rightCols - 2;
+  }
+
+  std::wstring status{L"─ "};
+  if (!fittedTitle.empty()) {
+    status += L"\033[33m";
+    status += fittedTitle;
+    status += L"\033[39m ";
+    status.append(static_cast<std::size_t>(middleRuleCols), L'─');
+    status += L' ';
+  }
+
+  const std::size_t rightOffset{fullRight.size() - right.size()};
+  const std::size_t textEnd{fullRight.size() - 2};
+  if (rightOffset < textEnd) {
+    const std::size_t visibleTextChars{
+        std::min(right.size(), textEnd - rightOffset)};
+    status += L"\033[35m";
+    status += right.substr(0, visibleTextChars);
+    status += L"\033[39m";
+    status += right.substr(visibleTextChars);
+  }
+  else {
+    status += right;
+  }
+  if (fittedTitle.empty()) {
+    status.append(
+        static_cast<std::size_t>(std::max(contentAvailableCols - rightCols, 0)),
+        L'─');
+  }
+
+  return esc + resetFG + wideToUTF8(status);
 }
 
 auto inTmuxSession() -> bool {
@@ -1229,28 +1525,30 @@ auto inITerm2Session() -> bool {
 }
 
 auto displayTOC(const TocData& tocData, std::string_view title,
-                std::string_view author, int desiredMaxLen,
-                int selectedNavPointIndex) -> fs::path {
+                int desiredMaxLen, int selectedNavPointIndex) -> fs::path {
   winsize winInfo{};
   std::string tocStr{};
   int tocLines{};
-  setUpDisplayTOC(tocData, title, author, desiredMaxLen, winInfo, tocStr,
-                  tocLines);
+  int screenRows{};
+  setUpDisplayTOC(tocData, desiredMaxLen, winInfo, tocStr, tocLines,
+                  screenRows);
 
   while (true) {
     if (!(selectedNavPointIndex < std::ssize(tocData))) {
       throw std::logic_error{"selected nav point out of bounds"};
     }
 
-    const std::size_t selectionBeginIndex{
-        findNth(tocStr, "\n\n", selectedNavPointIndex + 1) + 2};
+    std::size_t selectionBeginIndex{};
+    if (selectedNavPointIndex != 0) {
+      selectionBeginIndex = findNth(tocStr, "\n\n", selectedNavPointIndex) + 2;
+    }
     std::size_t selectionEndIndex{};
     if (selectedNavPointIndex == std::ssize(tocData) - 1) {
       selectionEndIndex = tocStr.rfind('\n', tocStr.rfind('\n') - 1) - 1;
     }
     else {
       selectionEndIndex =
-          findNth(tocStr, "\n\n", selectedNavPointIndex + 2) - 1;
+          findNth(tocStr, "\n\n", selectedNavPointIndex + 1) - 1;
     }
     const int selectionBeginLine{
         getOccurrences<std::string_view>(
@@ -1261,13 +1559,13 @@ auto displayTOC(const TocData& tocData, std::string_view title,
             std::string_view{tocStr}.substr(0, selectionEndIndex + 1), "\n")
         + 1};
     const int selectionLines{selectionEndLine - selectionBeginLine + 1};
-    const int nonSelectionLines{winInfo.ws_row - selectionLines};
+    const int nonSelectionLines{screenRows - selectionLines};
 
     int screenTopLine{selectionBeginLine - (nonSelectionLines / 2)};
     snapTopLineToBound(screenTopLine);
-    int screenBotLine{calcBotLineFromTopLine(screenTopLine, winInfo)};
+    int screenBotLine{calcBotLineFromTopLine(screenTopLine, screenRows)};
     snapBotLineToBound(screenBotLine, tocLines);
-    screenTopLine = calcTopLineFromBotLine(screenBotLine, winInfo);
+    screenTopLine = calcTopLineFromBotLine(screenBotLine, screenRows);
     snapTopLineToBound(screenTopLine);
 
     std::size_t dispBeginIndex{};
@@ -1288,12 +1586,14 @@ auto displayTOC(const TocData& tocData, std::string_view title,
 
     eraseScreen();
     std::cout << dispBeforeSelection;
-    std::cout << esc << magentaFG;
+    std::cout << esc << cyanFG;
     std::cout << esc << bold;
     std::cout << dispSelection;
     std::cout << esc << resetFG;
     std::cout << esc << resetBold;
     std::cout << dispAfterSelection;
+    std::cout << esc << '[' << winInfo.ws_row << ";1H"
+              << getTOCStatusLine(static_cast<int>(winInfo.ws_col), title);
     std::cout << std::flush;
 
     while (true) {
@@ -1313,7 +1613,7 @@ auto displayTOC(const TocData& tocData, std::string_view title,
       case specKey::arrowLeft:
       case specKey::pgUp:
         if (selectedNavPointIndex != 0) {
-          selectedNavPointIndex -= winInfo.ws_row / 2;
+          selectedNavPointIndex -= screenRows / 2;
           selectedNavPointIndex = std::max(selectedNavPointIndex, 0);
           goto redraw_screen;
         }
@@ -1325,7 +1625,7 @@ auto displayTOC(const TocData& tocData, std::string_view title,
       case specKey::arrowRight:
       case specKey::pgDown:
         if (selectedNavPointIndex != std::ssize(tocData) - 1) {
-          selectedNavPointIndex += winInfo.ws_row / 2;
+          selectedNavPointIndex += screenRows / 2;
           selectedNavPointIndex = std::min(
               selectedNavPointIndex, static_cast<int>(tocData.size()) - 1);
           goto redraw_screen;
@@ -1334,7 +1634,7 @@ auto displayTOC(const TocData& tocData, std::string_view title,
       case 'u':
       case ctrlU:
         if (selectedNavPointIndex != 0) {
-          selectedNavPointIndex -= winInfo.ws_row / 4;
+          selectedNavPointIndex -= screenRows / 4;
           selectedNavPointIndex = std::max(selectedNavPointIndex, 0);
           goto redraw_screen;
         }
@@ -1342,7 +1642,7 @@ auto displayTOC(const TocData& tocData, std::string_view title,
       case 'd':
       case ctrlD:
         if (selectedNavPointIndex != std::ssize(tocData) - 1) {
-          selectedNavPointIndex += winInfo.ws_row / 4;
+          selectedNavPointIndex += screenRows / 4;
           selectedNavPointIndex = std::min(
               selectedNavPointIndex, static_cast<int>(tocData.size()) - 1);
           goto redraw_screen;
@@ -1379,8 +1679,8 @@ auto displayTOC(const TocData& tocData, std::string_view title,
         }
         break;
       case specKey::winResize:
-        setUpDisplayTOC(tocData, title, author, desiredMaxLen, winInfo, tocStr,
-                        tocLines);
+        setUpDisplayTOC(tocData, desiredMaxLen, winInfo, tocStr, tocLines,
+                        screenRows);
         goto redraw_screen;
       default:
         break;
@@ -1390,14 +1690,14 @@ redraw_screen:
   }
 }
 
-auto setUpDisplayTOC(const TocData& tocData, std::string_view title,
-                     std::string_view author, int desiredMaxLen,
-                     winsize& winInfo, std::string& tocStr, int& tocLines)
-    -> void {
+auto setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
+                     winsize& winInfo, std::string& tocStr, int& tocLines,
+                     int& screenRows) -> void {
   ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
+  screenRows = std::max(static_cast<int>(winInfo.ws_row) - 1, 1);
 
   tocStr.clear();
-  tocDataToString(tocData, title, author, tocStr);
+  tocDataToString(tocData, tocStr);
   const int maxLen{std::min(desiredMaxLen, static_cast<int>(winInfo.ws_col)
                                                - horizontalMarginChars * 2)};
   processContentText(tocStr, maxLen);
@@ -1415,7 +1715,6 @@ auto displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
   }
   const XMLElement* const metadata{getMetadata(opf)};
   const std::string title{getTitle(metadata)};
-  const std::string author{getAuthor(metadata)};
 
   std::vector spineWithAbs{getSpine(opf)};
   for (auto& rel : spineWithAbs) {
@@ -1452,8 +1751,8 @@ auto displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
   std::cout << esc << clearScreen;
 
   while (true) {
-    const std::pair chapterOut{
-        displayChapter(spineWithAbs[spineIndex], chapterProg, desiredMaxLen)};
+    const std::pair chapterOut{displayChapter(spineWithAbs[spineIndex], title,
+                                              chapterProg, desiredMaxLen)};
     switch (chapterOut.first) {
     case ChapterExit::prev:
       if (spineIndex != 1) {
@@ -1485,8 +1784,8 @@ auto displayEpub(const EpubProg& iniProg, const fs::path& epubRootAbs,
         }
       }
 exit_nested_loops:
-      const fs::path tocOut{displayTOC(tocDataWithAbs, title, author,
-                                       desiredMaxLen, iniNavPointIndex)};
+      const fs::path tocOut{
+          displayTOC(tocDataWithAbs, title, desiredMaxLen, iniNavPointIndex)};
       bool found{false};
       for (int i{1}; i < std::ssize(spineWithAbs); ++i) {
         if (spineWithAbs.data()[i].lexically_normal()

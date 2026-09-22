@@ -51,6 +51,11 @@ struct EpubProg {
   double chapterProg{};
 };
 
+struct ChapterReadingStats {
+  int words{};
+  int cjkCharacters{};
+};
+
 inline constexpr Key ctrlB{2};
 inline constexpr Key ctrlF{6};
 inline constexpr Key ctrlU{21};
@@ -287,18 +292,32 @@ auto styleEachLineIndividually(std::string& str, std::string_view style,
 // display.
 auto processContentText(std::string& str, int maxLen) -> void;
 
+// Count words and CJK characters in processed chapter text, ignoring terminal
+// escapes and combining marks.
+[[nodiscard]] auto getChapterReadingStats(std::string_view chapter)
+    -> ChapterReadingStats;
+
+// Build a full-width status line for the chapter's current viewport.
+[[nodiscard]] auto
+getChapterProgressIndicator(int screenTopLine, int screenRows, int screenCols,
+                            int chapterLines,
+                            const ChapterReadingStats& chapterReadingStats,
+                            std::string_view title) -> std::string;
+
 // In raw mode, create a tui interface to view `chapterAbs`.
 // Chapter displayed starting from `iniProg`, lines wrapped at `desiredMaxLen`.
 // Returns reason for exit and progress at exit.
 [[nodiscard]] auto displayChapter(const std::filesystem::path& chapterAbs,
-                                  double iniProg, int desiredMaxLen)
+                                  std::string_view title, double iniProg,
+                                  int desiredMaxLen)
     -> std::pair<ChapterExit, double>;
 
 // Helper for `displayChapter()`.
 auto setUpDisplayChapter(const std::filesystem::path& chapterAbs, double prog,
                          int desiredMaxLen, winsize& winInfo,
                          std::string& chapter, int& chapterLines,
-                         int& screenTopLine, int& screenBotLine) -> void;
+                         int& screenRows, int& screenTopLine,
+                         int& screenBotLine) -> void;
 
 // Helper for `displayChapter()`.
 auto snapTopLineToBound(int& screenTopLine) -> void;
@@ -307,12 +326,12 @@ auto snapTopLineToBound(int& screenTopLine) -> void;
 auto snapBotLineToBound(int& screenBotLine, int chapterLines) -> void;
 
 // Helper for `displayChapter()`.
-[[nodiscard]] auto calcBotLineFromTopLine(int screenTopLine,
-                                          const winsize& winInfo) -> int;
+[[nodiscard]] auto calcBotLineFromTopLine(int screenTopLine, int screenRows)
+    -> int;
 
 // Helper for `displayChapter()`.
-[[nodiscard]] auto calcTopLineFromBotLine(int screenBotLine,
-                                          const winsize& winInfo) -> int;
+[[nodiscard]] auto calcTopLineFromBotLine(int screenBotLine, int screenRows)
+    -> int;
 
 // Execute a command using `posix_spawnp()`, waiting until the command exits.
 // `argV` first element should be the command binary name,
@@ -332,11 +351,13 @@ extern "C" auto handleSigwinch([[maybe_unused]] int signal) -> void;
 // `sigaction()`.
 auto registerSigwinchHandler() -> void;
 
-// Translate `data`, `title`, and `author` into a chapter-like string suitable
-// for display.
+// Translate `data` into a chapter-like string suitable for display.
 // Output is appended to `str`.
-auto tocDataToString(const TocData& data, std::string_view title,
-                     std::string_view author, std::string& str) -> void;
+auto tocDataToString(const TocData& data, std::string& str) -> void;
+
+// Build a full-width table of contents status line.
+[[nodiscard]] auto getTOCStatusLine(int screenCols, std::string_view title)
+    -> std::string;
 
 // Checks `TMUX`, falling back to `TERM_PROGRAM`, for whether or not running in
 // a tmux session.
@@ -346,23 +367,20 @@ auto tocDataToString(const TocData& data, std::string_view title,
 // whether or not running in iTerm2.
 [[nodiscard]] auto inITerm2Session() -> bool;
 
-// In raw mode, create a tui interface to view `tocData` with the epub's title
-// and author in the header.
+// In raw mode, create a tui interface to view `tocData`.
 // Lines wrapped at `desiredMaxLen`.
 // Provide initial selected chapter through `selectedNavPointIndex`.
 // Returns relative path found in `tocData` of selected chapter,
 // or an empty path if user exited without selecting one.
 // Throws `std::logic_error` if provided nav point index is out of bounds.
 [[nodiscard]] auto displayTOC(const TocData& tocData, std::string_view title,
-                              std::string_view author, int desiredMaxLen,
-                              int selectedNavPointIndex)
+                              int desiredMaxLen, int selectedNavPointIndex)
     -> std::filesystem::path;
 
 // Helper for `displayTOC()`.
-auto setUpDisplayTOC(const TocData& tocData, std::string_view title,
-                     std::string_view author, int desiredMaxLen,
-                     winsize& winInfo, std::string& tocStr, int& tocLines)
-    -> void;
+auto setUpDisplayTOC(const TocData& tocData, int desiredMaxLen,
+                     winsize& winInfo, std::string& tocStr, int& tocLines,
+                     int& screenRows) -> void;
 
 // Highest level function for creating the core TUI interface.
 // Once in raw mode, with locale set, display an epub book.

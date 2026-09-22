@@ -69,9 +69,9 @@ auto printEpubInfo(const EpubInfo& info, const XMLElement* libraryRoot)
   };
 
   printField(info.title, yellowFG);
-  printField(" | ", cyanFG);
+  std::cout << " · ";
   printField(info.author, blueFG);
-  printField(" | ", cyanFG);
+  std::cout << " · ";
   printField(getUnambiguousEpubIdPrefix(libraryRoot, info.id), magentaFG);
 }
 
