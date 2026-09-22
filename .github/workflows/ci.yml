@@ -153,6 +153,19 @@ jobs:
           install -m 644 completions/fish/epubworm.fish "dist/$package/completions/fish/epubworm.fish"
           tar -czf "dist/$package.tar.gz" -C dist "$package"
 
+      - name: Test curl installer
+        env:
+          EPUBWORM_PREFIX: ${{ runner.temp }}/epubworm-install
+        run: |
+          sh install.sh
+          test -x "$EPUBWORM_PREFIX/bin/epubworm"
+          test -f "$EPUBWORM_PREFIX/share/doc/epubworm/LICENSE"
+          test -f "$EPUBWORM_PREFIX/share/doc/epubworm/THIRD_PARTY_LICENSES"
+          test -f "$EPUBWORM_PREFIX/share/bash-completion/completions/epubworm"
+          test -f "$EPUBWORM_PREFIX/share/zsh/site-functions/_epubworm"
+          test -f "$EPUBWORM_PREFIX/share/fish/vendor_completions.d/epubworm.fish"
+          "$EPUBWORM_PREFIX/bin/epubworm" --help >/dev/null
+
       - name: Upload release archive
         uses: actions/upload-artifact@v7
         with:
