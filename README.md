@@ -28,7 +28,7 @@ https://github.com/user-attachments/assets/76c2db37-3419-4fe6-8e85-54b3e5678cf4
 - No in-app dictionary
 - No text-to-speech
 
-Epubworm uses the relatively simple [TinyXML-2](https://github.com/leethomason/tinyxml2) for parsing, and as such is not very tolerant of malformed EPUB files. If a book crashes the application, converting the EPUB file to AZW3 and back to EPUB is an easy fix (this can be done via Calibre's [ebook-convert](https://manual.calibre-ebook.com/generated/en/ebook-convert.html) or its online hosted version at [CloudConvert](https://cloudconvert.com/)).
+Epubworm uses the simple TinyXML-2 to parse EPUBs, and as such is not very tolerant of malformed EPUB files. If a book crashes the application, converting the EPUB file to AZW3 and back to EPUB is an easy fix (this can be done via Calibre's [ebook-convert](https://manual.calibre-ebook.com/generated/en/ebook-convert.html) or its online hosted version at [CloudConvert](https://cloudconvert.com/)).
 
 # Install
 Epubworm supports Linux and macOS.
