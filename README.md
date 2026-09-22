@@ -40,7 +40,7 @@ sudo dnf install epubworm
 ```
 
 ## Prebuilt Binaries
-Download from the [latest release](https://github.com/xinghao-wu/epubworm/releases/latest). The Linux binaries do not support musl-based distributions such as Alpine Linux.
+Download from the [rolling latest release](https://github.com/xinghao-wu/epubworm/releases/latest).
 
 ## Build From Source
 First, clone the repo and `cd` into it:
