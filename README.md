@@ -40,19 +40,23 @@ sudo dnf install epubworm
 ```
 
 ## CURL
+Install Epubworm under `~/.local`:
 ```bash
 curl -fsSL https://github.com/xinghao-wu/epubworm/raw/main/install.sh | sh
 ```
-This installs Epubworm under `~/.local`.
 
 To install under a different location, set `EPUBWORM_PREFIX`:
 ```bash
 curl -fsSL https://github.com/xinghao-wu/epubworm/raw/main/install.sh | EPUBWORM_PREFIX=/path/to/prefix sh
 ```
 
-The prebuilt binaries can also be manually downloaded from the [latest rolling release](https://github.com/xinghao-wu/epubworm/releases/latest).
+Run the command again to update.
+
+The prebuilt binaries and accompanying files which cURL installs can also be manually downloaded from the [latest rolling release](https://github.com/xinghao-wu/epubworm/releases/latest).
 
 ## Build From Source
+<details><summary>Click to expand</summary>
+
 First, clone the repo and `cd` into it:
 ```bash
 git clone https://github.com/xinghao-wu/epubworm ~/Downloads/epubworm
@@ -72,6 +76,8 @@ Or, install for only the current user:
 make install-user
 ```
 
+To update, `git pull` any changes and run the install command again.
+
 ### macOS
 macOS builds require the Xcode Command Line Tools:
 ```bash
@@ -89,6 +95,9 @@ make install-user
 ```
 When on macOS and installing for only the current user, ensure `~/.local/bin` is in `$PATH` and `~/.local/share/zsh/site-functions` is in Zsh's `$fpath`.
 
+To update, `git pull` any changes and run the install command again.
+</details>
+
 # Quickstart
 ```
 epubworm -h
@@ -103,19 +112,20 @@ epubworm add books_parent_dir/**/*.epub
 ```
 
 # Image Support
-Epubworm uses the unicode placeholders feature of the [Kitty Graphics Protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/) to display images. This requires a terminal with Kitty Graphics Protocol unicode placeholders support, and (if you use a multiplexer) a multiplexer with escape sequence passthrough support. Epubworm doesn't display images in terminals and multiplexers without these features.
-
 ## Terminals
-Unicode placeholder graphics are supported by:
+Epubworm's image display requires a terminal supporting Kitty Graphics Protocol unicode placeholders. The following terminals have been tested to work:
 - [Kitty](https://sw.kovidgoyal.net/kitty/)
 - [Ghostty](https://ghostty.org/)
 - [iTerm2](https://iterm2.com/)
 - [st-graphics](https://github.com/sergei-grechanik/st-graphics)
 
-Unicode placeholder graphics could be implemented in the near future by:
-- WezTerm: [PR](https://github.com/wezterm/wezterm/pull/7924)
+Unsupporting terminals will work without images displayed.
 
 ## Multiplexers
+<details><summary>Click to expand</summary>
+
+Epubworm can display images in tmux and Byobu's tmux backend. GNU Screen support is coming soon.
+
 ### tmux
 Make sure your `~/.tmux.conf` contains the following:
 ```
@@ -135,10 +145,7 @@ set -g default-terminal "tmux-256color"
 # Allows escape sequences to pass through Byobu to the terminal emulator
 set -g allow-passthrough on
 ```
-
-### Unsupported
-- Zellij does not support passthrough, and [doesn't support unicode placeholder graphics yet](https://github.com/zellij-org/zellij/pull/5428#issue-5031592643).
-- Images don't currently work in GNU Screen and Byubu's Screen backend due to their true color limitations. A workaround is planned.
+</details>
 
 # Inspiration
 [epy](https://github.com/wustho/epy)
