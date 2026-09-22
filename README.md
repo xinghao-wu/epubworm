@@ -40,21 +40,17 @@ sudo dnf install epubworm
 ```
 
 ## Curl
-Install the latest rolling release for the current user:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xinghao-wu/epubworm/main/install.sh | sh
+curl -fsSL https://github.com/xinghao-wu/epubworm/raw/main/install.sh | sh
 ```
-This installs Epubworm under `~/.local`. On macOS, ensure `~/.local/bin` is in `PATH` and `~/.local/share/zsh/site-functions` is in Zsh's `fpath`.
+This installs Epubworm under `~/.local`.
 
-Prebuilt binaries require glibc 2.28 or newer on Linux and do not support musl-based distributions. On a supported operating system without a compatible prebuilt binary, [build Epubworm from source](#build-from-source).
-
-To install under a different prefix, set `EPUBWORM_PREFIX` to an absolute path:
+To install under a different location, set `EPUBWORM_PREFIX`:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/xinghao-wu/epubworm/main/install.sh | EPUBWORM_PREFIX=/path/to/prefix sh
+curl -fsSL https://github.com/xinghao-wu/epubworm/raw/main/install.sh | EPUBWORM_PREFIX=/path/to/prefix sh
 ```
 
-## Prebuilt Binaries
-Download from the [rolling latest release](https://github.com/xinghao-wu/epubworm/releases/latest).
+The prebuilt binaries can also be manually downloaded from the [latest rolling release](https://github.com/xinghao-wu/epubworm/releases/latest).
 
 ## Build From Source
 First, clone the repo and `cd` into it:
