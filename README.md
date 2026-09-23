@@ -38,6 +38,18 @@ sudo dnf copr enable xinghao-wu/epubworm
 sudo dnf install epubworm
 ```
 
+## Homebrew
+Tap this repository and install the latest source build:
+```bash
+brew tap xinghao-wu/epubworm https://github.com/xinghao-wu/epubworm
+brew install --HEAD xinghao-wu/epubworm/epubworm
+```
+
+To update to the latest commit:
+```bash
+brew upgrade --fetch-HEAD xinghao-wu/epubworm/epubworm
+```
+
 ## Nix
 <details><summary>Click to expand</summary>
 
