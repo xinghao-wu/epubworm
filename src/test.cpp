@@ -986,8 +986,14 @@ auto styleEachLineIndividually() -> void {
 
 auto headingColors() -> void {
   XMLDocument chapter{};
-  assert(chapter.Parse("<body><h1>H1</h1><h2>H2</h2><h3>H3</h3>"
-                       "<h4>H4</h4><h5>H5</h5><h6>H6</h6></body>")
+  assert(chapter.Parse("<body>"
+                       "<h1><strong><em><code>H1</code></em></strong></h1>"
+                       "<h2><strong><em><code>H2</code></em></strong></h2>"
+                       "<h3><strong><em><code>H3</code></em></strong></h3>"
+                       "<h4><strong><em><code>H4</code></em></strong></h4>"
+                       "<h5><strong><em><code>H5</code></em></strong></h5>"
+                       "<h6><strong><em><code>H6</code></em></strong></h6>"
+                       "</body>")
          == XML_SUCCESS);
 
   std::string parsed{};
@@ -1038,10 +1044,9 @@ auto headingColors() -> void {
   ::parseContentElem(nestedHeading.FirstChildElement("body"),
                      nestedHeadingParsed, {});
   const std::string expectedNestedHeading{
-      "\n\n" + centerAlignBegin + esc + bold + esc + magentaFG + "before " + esc
-      + resetFG + esc + greenFG + "code" + esc + resetFG + esc + magentaFG
-      + " after bold" + esc + resetBold + esc + resetFG + centerAlignEnd
-      + "\n\n"};
+      "\n\n" + centerAlignBegin + esc + bold + esc + magentaFG
+      + "before code after bold" + esc + resetBold + esc + resetFG
+      + centerAlignEnd + "\n\n"};
   assert(nestedHeadingParsed == expectedNestedHeading);
 
   XMLDocument nestedStyles{};
@@ -1082,9 +1087,7 @@ auto headingColors() -> void {
 
   ::processContentText(nestedHeadingParsed, 10);
   assert(getOccurrences<std::string_view>(nestedHeadingParsed, esc + greenFG)
-         == 1);
-  assert(nestedHeadingParsed.contains(esc + greenFG + "code" + esc + resetFG
-                                      + esc + magentaFG));
+         == 0);
   assert(getOccurrences<std::string_view>(nestedHeadingParsed, esc + bold)
          == 3);
 }

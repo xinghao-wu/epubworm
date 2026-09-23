@@ -253,10 +253,14 @@ struct TextStyle {
   bool italic{};
   bool underline{};
   std::string_view foreground{};
+  bool lockDescendantStyles{};
 };
 
 auto appendStyleTransition(std::string& out, const TextStyle& current,
                            const TextStyle& next) -> void {
+  if (current.lockDescendantStyles && next.lockDescendantStyles) {
+    return;
+  }
   if (current.bold != next.bold) {
     out += esc + (next.bold ? bold : resetBold);
   }
@@ -476,6 +480,7 @@ auto parseContentElemImpl(const XMLElement* parent, std::string& out,
         childStyle.italic = name == "h3" || name == "h4";
         childStyle.underline = name == "h1" || name == "h3";
         childStyle.foreground = magentaFG;
+        childStyle.lockDescendantStyles = true;
         out += centerAlignBegin;
         appendStyleTransition(out, style, childStyle);
         parseContentElemImpl(childElem, out, chapterAbs, TextAlignment::center,
