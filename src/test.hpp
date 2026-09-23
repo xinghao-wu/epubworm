@@ -58,6 +58,8 @@ auto execute() -> void;
 
 auto getChapterProgressIndicator() -> void;
 
+auto chapterSearch() -> void;
+
 // non-self-validating
 // Also exercises `setUpDisplayChapter()`,
 // `snapTopLineToBound()`, `snapBotLineToBound()`,

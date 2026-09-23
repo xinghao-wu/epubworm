@@ -193,6 +193,11 @@ auto wrapLines() -> void {
   ::wrapLines(unbreakable, 4);
   assert(unbreakable == "abcd\nefgh\nij");
 
+  std::string markedUnbreakable{"abcdefghij"};
+  ::wrapLines(markedUnbreakable, 4, true);
+  assert(markedUnbreakable
+         == "abcd" + forcedWrapMarker + "\nefgh" + forcedWrapMarker + "\nij");
+
   std::string longFirstWord{"abcdefgh ij"};
   ::wrapLines(longFirstWord, 4);
   assert(longFirstWord == "abcd\nefgh\nij");
@@ -578,6 +583,10 @@ auto getChapterProgressIndicator() -> void {
   assertStats("one  \n two", 2, 0);
   assertStats(esc + yellowFG + "styled words" + esc + resetFG, 2, 0);
   assertStats("don't well-being", 2, 0);
+  assertStats("super" + forcedWrapMarker + "\ncalifragilistic", 1, 0);
+  assertStats("super" + forcedWrapMarker + esc + resetBold + "\n" + esc + bold
+                  + "califragilistic",
+              1, 0);
   assertStats("abc" + imgCellPlaceholder + "def", 2, 0);
   assertStats("你好世界", 0, 4);
   assertStats("日本語を読む", 0, 6);
@@ -642,6 +651,25 @@ auto getChapterProgressIndicator() -> void {
   assert(::getVisualLen(::utf8ToWide(truncatedTitleStatus)) == 43);
   assert(truncatedTitleStatus.contains(esc + yellowFG + "…" + esc + resetFG));
 
+  const std::string searchStatus{::getChapterProgressIndicator(
+      1, 10, 100, 110, englishStats, "Test Title", "needle", "[2/4]")};
+  assert(searchStatus.contains(esc + yellowFG + "/needle" + esc + resetFG
+                               + " · " + esc + redFG + "[2/4]" + esc
+                               + resetFG));
+  assert(searchStatus.contains(esc + greenFG + "0% chapter progress"));
+  const std::string pendingSearchStatus{::getChapterProgressIndicator(
+      1, 10, 140, 110, englishStats, "Test Title", "needle", "3 matches")};
+  assert(
+      pendingSearchStatus.contains(esc + redFG + "3 matches" + esc + resetFG));
+  int narrowSearchCursorCol{};
+  const std::string narrowSearchStatus{::getChapterProgressIndicator(
+      1, 10, 34, 110, englishStats, "Test Title", "needle", "3 matches",
+      &narrowSearchCursorCol)};
+  assert(narrowSearchStatus.contains(esc + yellowFG + "/ne…"));
+  assert(narrowSearchStatus.contains(esc + redFG + "3 matches"));
+  assert(::getVisualLen(::utf8ToWide(narrowSearchStatus)) == 34);
+  assert(narrowSearchCursorCol == 7);
+
   const ChapterReadingStats mixedStats{.words = 320, .cjkCharacters = 700};
   assert(
       ::getChapterProgressIndicator(1, 10, 100, 110, mixedStats, "Test Title")
@@ -649,6 +677,148 @@ auto getChapterProgressIndicator() -> void {
 
   assert(::calcBotLineFromTopLine(1, 9) == 9);
   assert(::calcTopLineFromBotLine(110, 9) == 102);
+}
+
+auto chapterSearch() -> void {
+  const std::string chapter{"  Hello " + esc + bold + "World" + esc + resetBold
+                            + "\n  next line\n\n  ---\n"};
+  const ChapterSearchIndex index{::buildChapterSearchIndex(chapter)};
+  assert(index.text == "hello world next line");
+  assert(index.source.size() == index.text.size());
+
+  const std::vector<ChapterSearchMatch> caseInsensitive{
+      ::findChapterSearchMatches(index, "HELLO WORLD")};
+  assert(caseInsensitive.size() == 1);
+  assert(caseInsensitive.front().line == 1);
+  assert(::findChapterSearchMatches(index, "world next").size() == 1);
+  assert(::findChapterSearchMatches(index, "missing").empty());
+  assert(::findChapterSearchMatches(index, "  \n ").empty());
+  assert(::findChapterSearchMatches(index, "---").empty());
+
+  const std::string forcedWrapChapter{"  supercali" + forcedWrapMarker
+                                      + "\n  fragilistic\n---\n"};
+  const ChapterSearchIndex forcedWrapIndex{
+      ::buildChapterSearchIndex(forcedWrapChapter)};
+  assert(forcedWrapIndex.text == "supercalifragilistic");
+  assert(
+      ::findChapterSearchMatches(forcedWrapIndex, "supercalifragilistic").size()
+      == 1);
+
+  const std::string highlighted{::highlightSearchMatches(
+      chapter, index, caseInsensitive, 0, chapter.size())};
+  assert(highlighted.contains(esc + grayBG + "Hello"));
+  assert(highlighted.contains("World" + esc + resetBG));
+  const std::optional cursorPos{::getSearchMatchCursorPosition(
+      chapter, index, caseInsensitive.front(), 1, 2)};
+  assert((cursorPos == std::pair{1, 3}));
+
+  const std::string wideCursorChapter{"  世" + esc + bold + "界 target" + esc
+                                      + resetBold + "\n---\n"};
+  const ChapterSearchIndex wideCursorIndex{
+      ::buildChapterSearchIndex(wideCursorChapter)};
+  const std::vector<ChapterSearchMatch> wideCursorMatches{
+      ::findChapterSearchMatches(wideCursorIndex, "target")};
+  assert(wideCursorMatches.size() == 1);
+  assert((::getSearchMatchCursorPosition(wideCursorChapter, wideCursorIndex,
+                                         wideCursorMatches.front(), 1, 1)
+          == std::pair{1, 8}));
+  assert(!::getSearchMatchCursorPosition(wideCursorChapter, wideCursorIndex,
+                                         wideCursorMatches.front(), 2, 2));
+
+  const std::vector<ChapterSearchMatch> multiLine{
+      ::findChapterSearchMatches(index, "world next")};
+  const std::string multiLineHighlighted{
+      ::highlightSearchMatches(chapter, index, multiLine, 0, chapter.size())};
+  assert(::getOccurrences<std::string_view>(multiLineHighlighted, esc + grayBG)
+         == 2);
+  assert(::getOccurrences<std::string_view>(multiLineHighlighted, esc + resetBG)
+         == 2);
+
+  const std::string repeated{"Banana banana\n---\n"};
+  const ChapterSearchIndex repeatedIndex{::buildChapterSearchIndex(repeated)};
+  const std::vector<ChapterSearchMatch> repeatedMatches{
+      ::findChapterSearchMatches(repeatedIndex, "ana")};
+  assert(repeatedMatches.size() == 2);
+  const std::string allRepeatedHighlighted{::highlightSearchMatches(
+      repeated, repeatedIndex, repeatedMatches, 0, repeated.size())};
+  assert(
+      ::getOccurrences<std::string_view>(allRepeatedHighlighted, esc + grayBG)
+      == 2);
+  const std::string unicode{"CAFÉ café\n---\n"};
+  const ChapterSearchIndex unicodeIndex{::buildChapterSearchIndex(unicode)};
+  assert(::findChapterSearchMatches(unicodeIndex, "CAFÉ").size() == 1);
+  assert(::findChapterSearchMatches(unicodeIndex, "café").size() == 1);
+
+  const std::string punctuation{"'single' \"double\" plain-word\n"
+                                "‘single’ “double” plain‑word — dash\n---\n"};
+  const ChapterSearchIndex punctuationIndex{
+      ::buildChapterSearchIndex(punctuation)};
+  assert(::findChapterSearchMatches(punctuationIndex, "'single'").size() == 2);
+  assert(::findChapterSearchMatches(punctuationIndex, "‘single’").size() == 2);
+  assert(::findChapterSearchMatches(punctuationIndex, "\"double\"").size()
+         == 2);
+  assert(::findChapterSearchMatches(punctuationIndex, "plain-word").size()
+         == 2);
+  assert(::findChapterSearchMatches(punctuationIndex, "- dash").size() == 1);
+
+  const std::string nonBreakingSpaces{"first second narrow space\n---\n"};
+  const ChapterSearchIndex nonBreakingSpaceIndex{
+      ::buildChapterSearchIndex(nonBreakingSpaces)};
+  assert(
+      ::findChapterSearchMatches(nonBreakingSpaceIndex, "first second").size()
+      == 1);
+  assert(
+      ::findChapterSearchMatches(nonBreakingSpaceIndex, "narrow space").size()
+      == 1);
+
+  const std::string imageChapter{"before\n" + esc + greenFG + imgCellPlaceholder
+                                 + esc + resetFG + "\nafter\n---\n"};
+  const ChapterSearchIndex imageIndex{::buildChapterSearchIndex(imageChapter)};
+  assert(!imageIndex.text.contains(imgCellPlaceholder));
+  assert(::findChapterSearchMatches(imageIndex, "before after").size() == 1);
+
+  std::string utf8Query{"café"};
+  ::popLastUTF8CodePoint(utf8Query);
+  assert(utf8Query == "caf");
+  ::popLastUTF8CodePoint(utf8Query);
+  assert(utf8Query == "ca");
+  std::string empty{};
+  ::popLastUTF8CodePoint(empty);
+  assert(empty.empty());
+
+  std::string words{"find café noir  "};
+  ::popLastSearchWord(words);
+  assert(words == "find café ");
+  ::popLastSearchWord(words);
+  assert(words == "find ");
+  ::popLastSearchWord(words);
+  assert(words.empty());
+  std::string nonBreakingWords{"first second"};
+  ::popLastSearchWord(nonBreakingWords);
+  assert(nonBreakingWords == "first ");
+  ::popLastSearchWord(words);
+  assert(words.empty());
+
+  std::string inputQuery{};
+  std::string pendingInput{};
+  assert(!::appendSearchInputByte(inputQuery, pendingInput, 0xC3U));
+  assert(inputQuery.empty());
+  assert(::appendSearchInputByte(inputQuery, pendingInput, 0xA9U));
+  assert(inputQuery == "é");
+  assert(pendingInput.empty());
+  assert(!::appendSearchInputByte(inputQuery, pendingInput, '\t'));
+  assert(!::appendSearchInputByte(inputQuery, pendingInput, ctrlF));
+  assert(!::appendSearchInputByte(inputQuery, pendingInput, 0xFFU));
+  assert(inputQuery == "é");
+  assert(!::appendSearchInputByte(inputQuery, pendingInput, 0xE0U));
+  assert(!::appendSearchInputByte(inputQuery, pendingInput, 0x80U));
+  assert(!::appendSearchInputByte(inputQuery, pendingInput, 0x80U));
+  assert(inputQuery == "é");
+  assert(pendingInput.empty());
+  assert(!::appendSearchInputByte(inputQuery, pendingInput, 0xC2U));
+  assert(!::appendSearchInputByte(inputQuery, pendingInput, 0x9BU));
+  assert(inputQuery == "é");
+  assert(pendingInput.empty());
 }
 
 auto displayChapter() -> void {

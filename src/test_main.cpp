@@ -25,6 +25,7 @@ auto main() -> int {
     test::findNth();
     test::execute();
     test::getChapterProgressIndicator();
+    test::chapterSearch();
     test::tocDataToString();
     test::styleEachLineIndividually();
     test::headingColors();

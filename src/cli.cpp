@@ -344,7 +344,7 @@ auto displayHelp() -> void {
   std::cout << "TUI Keyboard & Mouse Controls:\n";
   resetBoldColorIfTerm(stdout);
   printAligned("  q", "Quit");
-  printAligned("  t, <Tab>, <Esc>", "Toggle table of contents");
+  printAligned("  t, <Tab>", "Toggle table of contents");
   printAligned("  <Enter>, <Left Click>",
                "Open selected table of contents entry");
   printAligned("  h, b, <PgUp>, <Left Arrow>", "Page up");
@@ -356,6 +356,11 @@ auto displayHelp() -> void {
   printAligned("  j, <Down Arrow>", "One line down");
   printAligned("  g, <Home>", "Jump to chapter beginning");
   printAligned("  G, <End>", "Jump to chapter end");
+  printAligned("  /", "Search current chapter");
+  printAligned("  n", "Jump to next search match");
+  printAligned("  N", "Jump to previous search match");
+  printAligned("  <Enter>", "Accept search input");
+  printAligned("  <Esc>", "Dismiss accepted search");
   printAligned("  <Left Click>", "Page up/down based on cursor position");
   printAligned("  <Wheel Up>", "Scroll up");
   printAligned("  <Wheel Down>", "Scroll down");

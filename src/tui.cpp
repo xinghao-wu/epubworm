@@ -23,6 +23,7 @@
 #include <iostream>
 #include <limits>
 #include <locale>
+#include <optional>
 #include <random>
 // POSIX signal APIs expose declarations not guaranteed by <csignal>.
 // NOLINTNEXTLINE(hicpp-deprecated-headers,modernize-deprecated-headers)
@@ -444,6 +445,8 @@ auto getInvisEscSeqLen(std::wstring_view str) -> int {
   totalLen += getOccurrences<std::wstring_view>(str, L"\033[36m") * 4;
   totalLen += getOccurrences<std::wstring_view>(str, L"\033[37m") * 4;
   totalLen += getOccurrences<std::wstring_view>(str, L"\033[39m") * 4;
+  totalLen += getOccurrences<std::wstring_view>(str, L"\033[100m") * 5;
+  totalLen += getOccurrences<std::wstring_view>(str, L"\033[49m") * 4;
   return totalLen;
 }
 
@@ -513,7 +516,7 @@ auto collapseConsecutiveNewlines(std::string& str) -> void {
   str.resize(outputIndex);
 }
 
-auto wrapLines(std::string& str, int maxLen) -> void {
+auto wrapLines(std::string& str, int maxLen, bool markForcedWraps) -> void {
   for (std::size_t lineBeginIndex{0}, lineEndIndex{str.find('\n')};
        lineBeginIndex < str.size();
        lineBeginIndex = lineEndIndex + 1,
@@ -600,7 +603,13 @@ auto wrapLines(std::string& str, int maxLen) -> void {
       const std::string beginToLineBreak{wideToUTF8(
           std::wstring_view{wideLine}.substr(0, hardBreakWideIndex))};
       lineBreakIndex = lineBeginIndex + beginToLineBreak.size();
-      str.insert(lineBreakIndex, 1, '\n');
+      if (markForcedWraps) {
+        str.insert(lineBreakIndex, forcedWrapMarker + '\n');
+        lineBreakIndex += forcedWrapMarker.size();
+      }
+      else {
+        str.insert(lineBreakIndex, 1, '\n');
+      }
     }
     else {
       const std::string beginToLineBreak{wideToUTF8(
@@ -863,9 +872,10 @@ auto styleEachLineIndividually(std::string& str, std::string_view style,
   }
 }
 
-auto processContentText(std::string& str, int maxLen) -> void {
+auto processContentText(std::string& str, int maxLen, bool markForcedWraps)
+    -> void {
   expandEllipsesAndTabs(str);
-  wrapLines(str, maxLen);
+  wrapLines(str, maxLen, markForcedWraps);
   centerJustify(centerAlignBegin, centerAlignEnd, str, maxLen);
   rightJustify(rightAlignBegin, rightAlignEnd, str, maxLen);
   findAndReplaceAll(str, centerAlignBegin, "");
@@ -886,10 +896,450 @@ auto processContentText(std::string& str, int maxLen) -> void {
   styleEachLineIndividually(str, esc + lightGrayFG, esc + resetFG);
 }
 
+namespace {
+auto skipEscapeSequence(std::string_view text, std::size_t pos) -> std::size_t {
+  if (pos + 1 < text.size() && text[pos + 1] == '[') {
+    pos += 2;
+    while (pos < text.size() && (text[pos] < '@' || text[pos] > '~')) {
+      ++pos;
+    }
+    return std::min(pos + 1, text.size());
+  }
+
+  ++pos;
+  while (pos + 1 < text.size()
+         && (text[pos] != '\033' || text[pos + 1] != '\\')) {
+    ++pos;
+  }
+  return std::min(pos + 2, text.size());
+}
+
+auto foldASCII(char ch) -> char {
+  if (ch >= 'A' && ch <= 'Z') {
+    return static_cast<char>(ch + ('a' - 'A'));
+  }
+  return ch;
+}
+
+auto canonicalSearchPunctuation(std::string_view text, std::size_t pos)
+    -> std::optional<std::pair<char, std::size_t>> {
+  constexpr std::array<std::pair<std::string_view, char>, 20> punctuation{
+      {{"\u2018", '\''}, {"\u2019", '\''}, {"\u201a", '\''}, {"\u201b", '\''},
+       {"\u02bc", '\''}, {"\uff07", '\''}, {"\u201c", '"'},  {"\u201d", '"'},
+       {"\u201e", '"'},  {"\u201f", '"'},  {"\uff02", '"'},  {"\u2010", '-'},
+       {"\u2011", '-'},  {"\u2012", '-'},  {"\u2013", '-'},  {"\u2014", '-'},
+       {"\u2015", '-'},  {"\u2212", '-'},  {"\ufe63", '-'},  {"\uff0d", '-'}}};
+  for (const auto& [unicode, ascii] : punctuation) {
+    if (text.substr(pos).starts_with(unicode)) {
+      return std::pair{ascii, unicode.size()};
+    }
+  }
+  return std::nullopt;
+}
+
+auto searchWhitespaceLen(std::string_view text, std::size_t pos)
+    -> std::size_t {
+  const char ch{text[pos]};
+  if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
+    return 1;
+  }
+  constexpr std::array<std::string_view, 2> unicodeSpaces{"\u00a0", "\u202f"};
+  for (const std::string_view space : unicodeSpaces) {
+    if (text.substr(pos).starts_with(space)) {
+      return space.size();
+    }
+  }
+  return 0;
+}
+
+auto normalizeSearchQuery(std::string_view query) -> std::string {
+  std::string normalized{};
+  bool pendingSpace{false};
+  for (std::size_t pos{}; pos < query.size();) {
+    const char ch{query[pos]};
+    const std::size_t whitespaceLen{searchWhitespaceLen(query, pos)};
+    if (whitespaceLen != 0) {
+      pendingSpace = !normalized.empty();
+      pos += whitespaceLen;
+      continue;
+    }
+    if (pendingSpace) {
+      normalized += ' ';
+      pendingSpace = false;
+    }
+    if (const auto punctuation{canonicalSearchPunctuation(query, pos)}) {
+      normalized += punctuation->first;
+      pos += punctuation->second;
+      continue;
+    }
+    normalized += foldASCII(ch);
+    ++pos;
+  }
+  return normalized;
+}
+
+template <typename TRedraw>
+auto readSearchQuery(std::string_view previousQuery, winsize& winInfo,
+                     TRedraw& redraw) -> std::optional<std::string> {
+  std::string query{previousQuery};
+  std::string pendingInput{};
+  const auto redrawPrompt = [&](bool wasResized) -> void {
+    std::cout << esc << hideCursor;
+    int queryCol{};
+    try {
+      queryCol = redraw(query, wasResized);
+    }
+    catch (const std::system_error&) {
+      return;
+    }
+    if (queryCol > 0) {
+      std::cout << esc << '[' << winInfo.ws_row << ';' << queryCol << 'H' << esc
+                << showCursor;
+    }
+    std::cout << std::flush;
+  };
+
+  redrawPrompt(false);
+  while (true) {
+    const Key key{std::get<0>(readRawInput())};
+    if (key == '\n' || key == '\r') {
+      pendingInput.clear();
+      std::cout << esc << hideCursor << std::flush;
+      return query;
+    }
+    if (key == '\033') {
+      std::cout << esc << hideCursor << std::flush;
+      return std::nullopt;
+    }
+    if (key == specKey::winResize) {
+      ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
+      redrawPrompt(true);
+      continue;
+    }
+    if (key == 8 || key == 127) {
+      if (pendingInput.empty()) {
+        popLastUTF8CodePoint(query);
+      }
+      else {
+        pendingInput.clear();
+      }
+      redrawPrompt(false);
+      continue;
+    }
+    if (key == ctrlU) {
+      query.clear();
+      pendingInput.clear();
+      redrawPrompt(false);
+      continue;
+    }
+    if (key == ctrlW) {
+      pendingInput.clear();
+      popLastSearchWord(query);
+      redrawPrompt(false);
+      continue;
+    }
+    if (key >= std::numeric_limits<signed char>::min() && key <= 255
+        && key != 0) {
+      if (appendSearchInputByte(query, pendingInput,
+                                static_cast<unsigned char>(key))) {
+        redrawPrompt(false);
+      }
+    }
+  }
+}
+} // namespace
+
+auto buildChapterSearchIndex(std::string_view chapter) -> ChapterSearchIndex {
+  ChapterSearchIndex index{};
+  bool pendingSpace{false};
+  SearchTextSource pendingSource{};
+  int line{1};
+
+  for (std::size_t lineBegin{}; lineBegin < chapter.size();) {
+    const std::size_t newline{chapter.find('\n', lineBegin)};
+    const std::size_t lineEnd{newline == std::string_view::npos ? chapter.size()
+                                                                : newline};
+    const std::string_view renderedLine{
+        chapter.substr(lineBegin, lineEnd - lineBegin)};
+    const bool imageLine{renderedLine.contains(imgCellPlaceholder)};
+    const bool forcedWrap{renderedLine.contains(forcedWrapMarker)};
+
+    if (!imageLine) {
+      bool lineHasSearchText{false};
+      for (std::size_t pos{lineBegin}; pos < lineEnd;) {
+        if (chapter[pos] == forcedWrapMarker.front()) {
+          ++pos;
+          continue;
+        }
+        if (chapter[pos] == '\033') {
+          pos = skipEscapeSequence(chapter, pos);
+          continue;
+        }
+        const char ch{chapter[pos]};
+        const std::size_t whitespaceLen{searchWhitespaceLen(chapter, pos)};
+        if (whitespaceLen != 0) {
+          if (lineHasSearchText) {
+            if (!pendingSpace) {
+              pendingSource = {
+                  .begin = pos, .end = pos + whitespaceLen, .line = line};
+            }
+            else {
+              pendingSource.end = pos + whitespaceLen;
+            }
+            pendingSpace = true;
+          }
+          pos += whitespaceLen;
+          continue;
+        }
+        if (pendingSpace) {
+          index.text += ' ';
+          index.source.push_back(pendingSource);
+          pendingSpace = false;
+        }
+        if (const auto punctuation{canonicalSearchPunctuation(chapter, pos)}) {
+          index.text += punctuation->first;
+          index.source.push_back(
+              {.begin = pos, .end = pos + punctuation->second, .line = line});
+          pos += punctuation->second;
+          lineHasSearchText = true;
+          continue;
+        }
+        index.text += foldASCII(ch);
+        index.source.push_back({.begin = pos, .end = pos + 1, .line = line});
+        lineHasSearchText = true;
+        ++pos;
+      }
+    }
+
+    if (!index.text.empty() && !forcedWrap) {
+      if (!pendingSpace) {
+        pendingSource = {.begin = lineEnd,
+                         .end = std::min(lineEnd + 1, chapter.size()),
+                         .line = line};
+      }
+      else {
+        pendingSource.end = std::min(lineEnd + 1, chapter.size());
+      }
+      pendingSpace = true;
+    }
+    if (newline == std::string_view::npos) {
+      break;
+    }
+    lineBegin = newline + 1;
+    ++line;
+  }
+
+  if (index.text == "---") {
+    index.text.clear();
+    index.source.clear();
+  }
+  else if (index.text.ends_with(" ---")) {
+    index.text.resize(index.text.size() - 4);
+    index.source.resize(index.source.size() - 4);
+  }
+  return index;
+}
+
+auto findChapterSearchMatches(const ChapterSearchIndex& index,
+                              std::string_view query)
+    -> std::vector<ChapterSearchMatch> {
+  const std::string normalizedQuery{normalizeSearchQuery(query)};
+  std::vector<ChapterSearchMatch> matches{};
+  if (normalizedQuery.empty()) {
+    return matches;
+  }
+
+  std::size_t pos{};
+  while ((pos = index.text.find(normalizedQuery, pos)) != std::string::npos) {
+    const std::size_t end{pos + normalizedQuery.size()};
+    matches.push_back(
+        {.begin = pos, .end = end, .line = index.source.at(pos).line});
+    pos = end;
+  }
+  return matches;
+}
+
+auto highlightSearchMatches(std::string_view chapter,
+                            const ChapterSearchIndex& index,
+                            const std::vector<ChapterSearchMatch>& matches,
+                            std::size_t displayBegin, std::size_t displayEnd)
+    -> std::string {
+  displayBegin = std::min(displayBegin, chapter.size());
+  displayEnd = std::min(displayEnd, chapter.size());
+  if (displayEnd < displayBegin) {
+    return {};
+  }
+  std::string result{chapter.substr(displayBegin, displayEnd - displayBegin)};
+
+  struct Segment {
+    std::size_t begin{};
+    std::size_t end{};
+    int line{};
+  };
+  std::vector<Segment> segments{};
+  for (const ChapterSearchMatch& match : matches) {
+    if (match.end > index.source.size()) {
+      continue;
+    }
+    bool startedSegment{false};
+    for (std::size_t pos{match.begin}; pos < match.end; ++pos) {
+      if (index.text[pos] == ' ') {
+        continue;
+      }
+      const SearchTextSource& source{index.source[pos]};
+      if (!startedSegment || segments.back().line != source.line) {
+        segments.push_back(
+            {.begin = source.begin, .end = source.end, .line = source.line});
+        startedSegment = true;
+      }
+      else {
+        segments.back().end = source.end;
+      }
+    }
+  }
+
+  std::string resetHighlight{esc};
+  resetHighlight += resetBG;
+  for (auto it{segments.rbegin()}; it != segments.rend(); ++it) {
+    const std::size_t begin{std::max(it->begin, displayBegin)};
+    const std::size_t end{std::min(it->end, displayEnd)};
+    if (begin >= end) {
+      continue;
+    }
+    std::string beginHighlight{esc};
+    beginHighlight += grayBG;
+    result.insert(end - displayBegin, resetHighlight);
+    result.insert(begin - displayBegin, beginHighlight);
+  }
+  return result;
+}
+
+auto getSearchMatchCursorPosition(std::string_view chapter,
+                                  const ChapterSearchIndex& index,
+                                  const ChapterSearchMatch& match,
+                                  int screenTopLine, int screenBotLine)
+    -> std::optional<std::pair<int, int>> {
+  if (match.line < screenTopLine || match.line > screenBotLine
+      || match.begin >= index.source.size()) {
+    return std::nullopt;
+  }
+  const std::size_t sourceBegin{index.source[match.begin].begin};
+  const std::size_t lineBegin{
+      match.line == 1 ? 0 : findNth(chapter, "\n", match.line - 1) + 1};
+  const int row{match.line - screenTopLine + 1};
+  const int col{getVisualLen(utf8ToWide(
+                    chapter.substr(lineBegin, sourceBegin - lineBegin)))
+                + 1};
+  return std::pair{row, col};
+}
+
+auto popLastUTF8CodePoint(std::string& str) -> void {
+  if (str.empty()) {
+    return;
+  }
+  std::size_t begin{str.size() - 1};
+  while (begin > 0
+         && (static_cast<unsigned char>(str[begin]) & 0xC0U) == 0x80U) {
+    --begin;
+  }
+  str.erase(begin);
+}
+
+auto popLastSearchWord(std::string& str) -> void {
+  const auto lastCodePointBegin = [](std::string_view text) -> std::size_t {
+    std::size_t begin{text.size() - 1};
+    while (begin > 0
+           && (static_cast<unsigned char>(text[begin]) & 0xC0U) == 0x80U) {
+      --begin;
+    }
+    return begin;
+  };
+  const auto trailingWhitespaceLen = [&](std::string_view text) -> std::size_t {
+    if (text.empty()) {
+      return 0;
+    }
+    const std::size_t begin{lastCodePointBegin(text)};
+    const std::size_t len{searchWhitespaceLen(text, begin)};
+    return len == text.size() - begin ? len : 0;
+  };
+  while (!str.empty()) {
+    const std::size_t whitespaceLen{trailingWhitespaceLen(str)};
+    if (whitespaceLen == 0) {
+      break;
+    }
+    str.resize(str.size() - whitespaceLen);
+  }
+  while (!str.empty() && trailingWhitespaceLen(str) == 0) {
+    popLastUTF8CodePoint(str);
+  }
+}
+
+auto appendSearchInputByte(std::string& query, std::string& pending,
+                           unsigned char byte) -> bool {
+  if (byte < 0x80U) {
+    pending.clear();
+    if (byte < 0x20U || byte == 0x7FU) {
+      return false;
+    }
+    query += static_cast<char>(byte);
+    return true;
+  }
+
+  if (pending.empty()) {
+    if ((byte >= 0xC2U && byte <= 0xDFU) || (byte >= 0xE0U && byte <= 0xEFU)
+        || (byte >= 0xF0U && byte <= 0xF4U)) {
+      pending += static_cast<char>(byte);
+    }
+    return false;
+  }
+
+  if (byte < 0x80U || byte > 0xBFU) {
+    pending.clear();
+    return appendSearchInputByte(query, pending, byte);
+  }
+  pending += static_cast<char>(byte);
+
+  const unsigned char first{static_cast<unsigned char>(pending.front())};
+  std::size_t expectedLen{4};
+  if (first <= 0xDFU) {
+    expectedLen = 2;
+  }
+  else if (first <= 0xEFU) {
+    expectedLen = 3;
+  }
+  if (pending.size() < expectedLen) {
+    return false;
+  }
+  if (pending.size() > expectedLen) {
+    pending.clear();
+    return false;
+  }
+
+  try {
+    const std::wstring wideInput{utf8ToWide(pending)};
+    if (std::ranges::any_of(wideInput, [](wchar_t ch) -> bool {
+          const auto codePoint{static_cast<std::uint32_t>(ch)};
+          return codePoint <= 0x1FU
+                 || (codePoint >= 0x7FU && codePoint <= 0x9FU);
+        })) {
+      pending.clear();
+      return false;
+    }
+  }
+  catch (const std::system_error&) {
+    pending.clear();
+    return false;
+  }
+  query += pending;
+  pending.clear();
+  return true;
+}
+
 auto getChapterReadingStats(std::string_view chapter) -> ChapterReadingStats {
   const std::wstring wideChapter{utf8ToWide(chapter)};
   ChapterReadingStats stats{};
   bool inWord{false};
+  bool joiningForcedWrap{false};
   for (std::size_t i{}; i < wideChapter.size();) {
     if (wideChapter[i] == L'\033') {
       if (i + 1 < wideChapter.size() && wideChapter[i + 1] == L'[') {
@@ -912,6 +1362,16 @@ auto getChapterReadingStats(std::string_view chapter) -> ChapterReadingStats {
     }
 
     const wchar_t ch{wideChapter[i]};
+    if (ch == static_cast<wchar_t>(forcedWrapMarker.front())) {
+      joiningForcedWrap = true;
+      ++i;
+      continue;
+    }
+    if (joiningForcedWrap && ch == L'\n') {
+      joiningForcedWrap = false;
+      ++i;
+      continue;
+    }
     const auto codePoint{static_cast<std::uint32_t>(ch)};
     if (isCombiningMark(codePoint) || isVariationSelector(codePoint)) {
       ++i;
@@ -940,7 +1400,10 @@ auto getChapterReadingStats(std::string_view chapter) -> ChapterReadingStats {
 auto getChapterProgressIndicator(int screenTopLine, int screenRows,
                                  int screenCols, int chapterLines,
                                  const ChapterReadingStats& chapterReadingStats,
-                                 std::string_view title) -> std::string {
+                                 std::string_view title,
+                                 std::string_view searchQuery,
+                                 std::string_view searchMatchInfo,
+                                 int* searchCursorCol) -> std::string {
   double progress{1};
   if (chapterLines > screenRows) {
     const int scrollableLines{chapterLines - screenRows};
@@ -963,7 +1426,13 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
       (remainingWords / slowReadingWordsPerMinute)
       + (remainingCJKCharacters / slowReadingCJKCharactersPerMinute)))};
 
-  const std::wstring wideTitle{utf8ToWide(title)};
+  const bool searchActive{!searchMatchInfo.empty()};
+  const std::wstring wideQuery{utf8ToWide(searchQuery)};
+  const std::wstring wideTitle{searchActive ? L"/" + wideQuery + L" · "
+                                                  + utf8ToWide(searchMatchInfo)
+                                            : utf8ToWide(title)};
+  const std::size_t queryEnd{1 + wideQuery.size()};
+  const std::size_t matchInfoBegin{queryEnd + 3};
   const std::wstring progressText{std::to_wstring(percent)
                                   + L"% chapter progress"};
   const std::wstring timeText{std::to_wstring(minMinutesLeft) + L"-"
@@ -975,49 +1444,118 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
   constexpr int leftPrefixCols{2};
   const int contentAvailableCols{std::max(availableCols - leftPrefixCols, 0)};
   int rightCols{getVisualLen(right)};
-  const bool showTitle{!wideTitle.empty()
-                       && contentAvailableCols >= rightCols + 5};
-  if (!showTitle && rightCols > contentAvailableCols) {
+  const auto fitRight = [&](int maxCols) -> void {
+    if (rightCols <= maxCols) {
+      return;
+    }
     std::wstring fittedRight{};
     rightCols = 0;
     for (auto it{right.rbegin()}; it != right.rend(); ++it) {
       const int chCols{std::max(wcwidth(*it), 0)};
-      if (rightCols + chCols > contentAvailableCols) {
+      if (rightCols + chCols > maxCols) {
         break;
       }
       fittedRight.insert(fittedRight.begin(), *it);
       rightCols += chCols;
     }
     right = std::move(fittedRight);
+  };
+
+  bool showTitle{!wideTitle.empty() && contentAvailableCols >= rightCols + 5};
+  if (searchActive && !wideTitle.empty() && contentAvailableCols >= 5) {
+    const int titleReservation{std::min(getVisualLen(wideTitle),
+                                        std::max(contentAvailableCols / 2, 1))};
+    fitRight(std::max(contentAvailableCols - titleReservation - 4, 0));
+    showTitle = true;
+  }
+  else if (!showTitle) {
+    fitRight(contentAvailableCols);
   }
 
   std::wstring fittedTitle{};
   int titleCols{};
   int middleRuleCols{};
+  std::size_t fittedQueryEnd{};
+  std::size_t fittedMatchInfoBegin{};
+  const auto fitText = [](std::wstring_view text, int maxCols) -> std::wstring {
+    if (maxCols <= 0) {
+      return {};
+    }
+    if (getVisualLen(text) <= maxCols) {
+      return std::wstring{text};
+    }
+    std::wstring fitted{};
+    int fittedCols{};
+    const int textCols{maxCols - 1};
+    for (const wchar_t ch : text) {
+      const int chCols{std::max(wcwidth(ch), 0)};
+      if (fittedCols + chCols > textCols) {
+        break;
+      }
+      fitted += ch;
+      fittedCols += chCols;
+    }
+    fitted += L'…';
+    return fitted;
+  };
   if (showTitle) {
     const int titleAvailableCols{contentAvailableCols - rightCols - 4};
     const bool titleTruncated{getVisualLen(wideTitle) > titleAvailableCols};
-    const int titleTextAvailableCols{titleAvailableCols
-                                     - static_cast<int>(titleTruncated)};
-    for (const wchar_t ch : wideTitle) {
-      const int chCols{std::max(wcwidth(ch), 0)};
-      if (titleCols + chCols > titleTextAvailableCols) {
-        break;
+    if (searchActive && titleTruncated) {
+      const std::wstring wideMatchInfo{utf8ToWide(searchMatchInfo)};
+      const int matchInfoCols{getVisualLen(wideMatchInfo)};
+      constexpr int separatorCols{3};
+      if (matchInfoCols + separatorCols + 1 <= titleAvailableCols) {
+        const int queryCols{titleAvailableCols - matchInfoCols - separatorCols};
+        fittedTitle = L"/";
+        fittedTitle += fitText(wideQuery, queryCols - 1);
+        fittedQueryEnd = fittedTitle.size();
+        fittedTitle += L" · ";
+        fittedMatchInfoBegin = fittedTitle.size();
+        fittedTitle += wideMatchInfo;
       }
-      fittedTitle += ch;
-      titleCols += chCols;
+      else {
+        fittedTitle = fitText(wideMatchInfo, titleAvailableCols);
+        fittedMatchInfoBegin = 0;
+      }
     }
-    if (titleTruncated) {
-      fittedTitle += L'…';
-      ++titleCols;
+    else {
+      fittedTitle = fitText(wideTitle, titleAvailableCols);
+      fittedQueryEnd = std::min(queryEnd, fittedTitle.size());
+      fittedMatchInfoBegin = std::min(matchInfoBegin, fittedTitle.size());
     }
+    titleCols = getVisualLen(fittedTitle);
     middleRuleCols = contentAvailableCols - titleCols - rightCols - 2;
+  }
+
+  if (searchCursorCol != nullptr) {
+    *searchCursorCol = 0;
+    if (searchActive && fittedQueryEnd != 0) {
+      *searchCursorCol =
+          std::min(leftPrefixCols + 1
+                       + getVisualLen(std::wstring_view{fittedTitle}.substr(
+                           0, fittedQueryEnd)),
+                   availableCols);
+    }
   }
 
   std::wstring styledLeft{L"─ "};
   if (!fittedTitle.empty()) {
-    styledLeft += L"\033[33m";
-    styledLeft += fittedTitle;
+    if (searchActive) {
+      styledLeft += L"\033[33m";
+      styledLeft += fittedTitle.substr(0, fittedQueryEnd);
+      styledLeft += L"\033[39m";
+      styledLeft += fittedTitle.substr(fittedQueryEnd,
+                                       fittedMatchInfoBegin - fittedQueryEnd);
+      if (fittedMatchInfoBegin < fittedTitle.size()) {
+        styledLeft += L"\033[31m";
+        styledLeft += fittedTitle.substr(fittedMatchInfoBegin);
+      }
+    }
+    else {
+      styledLeft += L"\033[33m";
+      styledLeft += fittedTitle;
+    }
     styledLeft += L"\033[39m";
     styledLeft += L' ';
     styledLeft.append(static_cast<std::size_t>(middleRuleCols), L'─');
@@ -1080,8 +1618,40 @@ auto displayChapter(const fs::path& chapterAbs, std::string_view title,
                       chapterLines, screenRows, screenTopLine, screenBotLine);
   const ChapterReadingStats chapterReadingStats{
       getChapterReadingStats(chapter)};
+  ChapterSearchIndex searchIndex{buildChapterSearchIndex(chapter)};
+  std::string searchQuery{};
+  std::vector<ChapterSearchMatch> searchMatches{};
+  std::optional<std::size_t> selectedMatch{};
+  std::string searchMatchInfo{};
 
-  while (true) {
+  const auto showSelectedMatch = [&]() -> void {
+    if (!selectedMatch || searchMatches.empty()) {
+      return;
+    }
+    screenTopLine = searchMatches[*selectedMatch].line - (screenRows / 2);
+    snapTopLineToBound(screenTopLine);
+    screenBotLine = calcBotLineFromTopLine(screenTopLine, screenRows);
+    snapBotLineToBound(screenBotLine, chapterLines);
+    screenTopLine = calcTopLineFromBotLine(screenBotLine, screenRows);
+    snapTopLineToBound(screenTopLine);
+    searchMatchInfo = '[' + std::to_string(*selectedMatch + 1) + '/'
+                      + std::to_string(searchMatches.size()) + ']';
+  };
+  const auto showSelectedMatchIfOffscreen = [&]() -> void {
+    if (!selectedMatch || searchMatches.empty()) {
+      return;
+    }
+    const int matchLine{searchMatches[*selectedMatch].line};
+    if (matchLine < screenTopLine || matchLine > screenBotLine) {
+      showSelectedMatch();
+    }
+    else {
+      searchMatchInfo = '[' + std::to_string(*selectedMatch + 1) + '/'
+                        + std::to_string(searchMatches.size()) + ']';
+    }
+  };
+
+  const auto redrawScreen = [&](int* searchCursorCol = nullptr) -> void {
     std::size_t dispBeginIndex{};
     if (screenTopLine == 1) {
       dispBeginIndex = 0;
@@ -1090,21 +1660,43 @@ auto displayChapter(const fs::path& chapterAbs, std::string_view title,
       dispBeginIndex = findNth(chapter, "\n", screenTopLine - 1) + 1;
     }
     const std::size_t dispEndIndex{findNth(chapter, "\n", screenBotLine) - 1};
-    const std::string_view dispView{std::string_view{chapter}.substr(
-        dispBeginIndex, dispEndIndex - dispBeginIndex + 1)};
+    std::string dispView{};
+    if (!searchMatches.empty()) {
+      dispView = highlightSearchMatches(chapter, searchIndex, searchMatches,
+                                        dispBeginIndex, dispEndIndex + 1);
+    }
+    else {
+      dispView = std::string_view{chapter}.substr(
+          dispBeginIndex, dispEndIndex - dispBeginIndex + 1);
+    }
+    findAndReplaceAll(dispView, forcedWrapMarker, "");
 
+    std::cout << esc << hideCursor;
     eraseScreen();
     std::cout << dispView << esc << '[' << winInfo.ws_row << ";1H"
               << getChapterProgressIndicator(screenTopLine, screenRows,
                                              static_cast<int>(winInfo.ws_col),
                                              chapterLines, chapterReadingStats,
-                                             title)
-              << std::flush;
+                                             title, searchQuery,
+                                             searchMatchInfo, searchCursorCol);
+    if (selectedMatch) {
+      const std::optional cursorPos{getSearchMatchCursorPosition(
+          chapter, searchIndex, searchMatches[*selectedMatch], screenTopLine,
+          screenBotLine)};
+      if (cursorPos) {
+        std::cout << esc << '[' << cursorPos->first << ';' << cursorPos->second
+                  << 'H' << esc << showCursor;
+      }
+    }
+    std::cout << std::flush;
     // Sometimes, images on right-side tmux panes are broken until redraw.
     if (inTmuxSession()) {
       execute(std::vector<std::string>{"tmux", "refresh-client"});
     }
+  };
 
+  while (true) {
+    redrawScreen();
     const double prog{static_cast<double>(screenTopLine) / chapterLines};
 
     while (true) {
@@ -1120,10 +1712,112 @@ auto displayChapter(const fs::path& chapterAbs, std::string_view title,
       }
 
       switch (translatedInputKey) {
+      case '/': {
+        int restoreTopLine{screenTopLine};
+        int restoreBotLine{screenBotLine};
+        const auto firstMatchFromRestorePosition = [&]() -> std::size_t {
+          const auto match{std::ranges::find_if(
+              searchMatches, [&](const ChapterSearchMatch& candidate) -> bool {
+                return candidate.line >= restoreTopLine;
+              })};
+          return match == searchMatches.end()
+                     ? 0
+                     : static_cast<std::size_t>(match - searchMatches.begin());
+        };
+        const auto selectPendingMatch = [&](bool keepSelected) -> void {
+          selectedMatch = firstMatchFromRestorePosition();
+          showSelectedMatchIfOffscreen();
+          if (!keepSelected) {
+            selectedMatch.reset();
+          }
+        };
+        const auto pendingMatchInfo =
+            [](std::size_t matchCount) -> std::string {
+          return std::to_string(matchCount)
+                 + (matchCount == 1 ? " match" : " matches");
+        };
+        const auto redrawLiveSearch = [&](std::string_view query,
+                                          bool wasResized) -> int {
+          if (wasResized) {
+            setUpDisplayChapter(chapterAbs, prog, desiredMaxLen, winInfo,
+                                chapter, chapterLines, screenRows,
+                                screenTopLine, screenBotLine);
+            searchIndex = buildChapterSearchIndex(chapter);
+            restoreTopLine = screenTopLine;
+            restoreBotLine = screenBotLine;
+          }
+          searchQuery = query;
+          searchMatches = findChapterSearchMatches(searchIndex, searchQuery);
+          if (normalizeSearchQuery(searchQuery).empty()) {
+            searchMatches.clear();
+            selectedMatch.reset();
+            searchMatchInfo = pendingMatchInfo(0);
+            screenTopLine = restoreTopLine;
+            screenBotLine = restoreBotLine;
+          }
+          else if (searchMatches.empty()) {
+            selectedMatch.reset();
+            searchMatchInfo = pendingMatchInfo(0);
+            screenTopLine = restoreTopLine;
+            screenBotLine = restoreBotLine;
+          }
+          else {
+            selectPendingMatch(false);
+            searchMatchInfo = pendingMatchInfo(searchMatches.size());
+          }
+          int searchCursorCol{};
+          redrawScreen(&searchCursorCol);
+          return searchCursorCol;
+        };
+        const std::optional<std::string> query{
+            readSearchQuery("", winInfo, redrawLiveSearch)};
+        if (!query || normalizeSearchQuery(*query).empty()) {
+          searchQuery.clear();
+          searchMatches.clear();
+          selectedMatch.reset();
+          searchMatchInfo.clear();
+          screenTopLine = restoreTopLine;
+          screenBotLine = restoreBotLine;
+          goto redraw_screen;
+        }
+        if (searchMatches.empty()) {
+          selectedMatch.reset();
+          searchMatchInfo = "[0/0]";
+        }
+        else {
+          selectPendingMatch(true);
+        }
+        goto redraw_screen;
+      }
+      case 'n':
+        if (searchMatches.empty()) {
+          break;
+        }
+        selectedMatch =
+            selectedMatch ? (*selectedMatch + 1) % searchMatches.size() : 0;
+        showSelectedMatchIfOffscreen();
+        goto redraw_screen;
+      case 'N':
+        if (searchMatches.empty()) {
+          break;
+        }
+        selectedMatch = selectedMatch && *selectedMatch > 0
+                            ? *selectedMatch - 1
+                            : searchMatches.size() - 1;
+        showSelectedMatchIfOffscreen();
+        goto redraw_screen;
       case 't':
       case '\t':
-      case '\033':
         return {ChapterExit::toc, prog};
+      case '\033':
+        if (!searchQuery.empty()) {
+          searchQuery.clear();
+          searchMatches.clear();
+          selectedMatch.reset();
+          searchMatchInfo.clear();
+          goto redraw_screen;
+        }
+        break;
       case 'q':
         return {ChapterExit::quit, prog};
       case 'h':
@@ -1229,6 +1923,19 @@ auto displayChapter(const fs::path& chapterAbs, std::string_view title,
         setUpDisplayChapter(chapterAbs, prog, desiredMaxLen, winInfo, chapter,
                             chapterLines, screenRows, screenTopLine,
                             screenBotLine);
+        searchIndex = buildChapterSearchIndex(chapter);
+        if (!searchQuery.empty()) {
+          const std::size_t previousMatch{selectedMatch.value_or(0)};
+          searchMatches = findChapterSearchMatches(searchIndex, searchQuery);
+          if (searchMatches.empty()) {
+            selectedMatch.reset();
+            searchMatchInfo = "[0/0]";
+          }
+          else {
+            selectedMatch = std::min(previousMatch, searchMatches.size() - 1);
+            showSelectedMatch();
+          }
+        }
         goto redraw_screen;
       default:
         break;
@@ -1252,7 +1959,7 @@ auto setUpDisplayChapter(const fs::path& chapterAbs, double prog,
   const int maxLen{
       std::min(desiredMaxLen,
                static_cast<int>(winInfo.ws_col - (horizontalMarginChars * 2)))};
-  processContentText(chapter, maxLen);
+  processContentText(chapter, maxLen, true);
 
   chapterLines = getOccurrences<std::string_view>(chapter, "\n");
 
@@ -1526,6 +2233,7 @@ auto inITerm2Session() -> bool {
 
 auto displayTOC(const TocData& tocData, std::string_view title,
                 int desiredMaxLen, int selectedNavPointIndex) -> fs::path {
+  std::cout << esc << hideCursor << std::flush;
   winsize winInfo{};
   std::string tocStr{};
   int tocLines{};

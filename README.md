@@ -8,23 +8,22 @@ https://github.com/user-attachments/assets/76c2db37-3419-4fe6-8e85-54b3e5678cf4
 
 ## Notable Features
 - Inline image display with multiplexer support via Kitty Graphics Protocol
-- Compliant text styling and formatting: *italic*, **bold**, centered, and right aligned text
+- Incremental chapter search
+- Chapter progress percentage and estimated time left
 - Wide character (e.g. emojis and Japanese text) support
+- Colorful, using the terminal's existing colorscheme
+- Basic HTML text styling and formatting: *italic*, **bold**, centered, and right aligned text
 - Mouse support + vim-like keybinds
-- Configurable text width
 - Responsive to window resize
 - Persistent reading progress and last-read book
 - Fast content loading and rendering
-- Uses the terminal's colorscheme
 
 ## Known Limitations
-- No search (yet)
 - No annotations or bookmarks
 - No hyperlink support
-- No whole book reading progress percentage
-- No CSS resolver: a rare minority of EPUB files' text styling and formatting will not be rendered
-- No MathML support: equations not stored as images will be displayed incorrectly
-- No TOC fragment id support: some TOC entries will be missing
+- No CSS resolver
+- No MathML support
+- No TOC fragment id support
 - No in-app dictionary
 - No text-to-speech
 

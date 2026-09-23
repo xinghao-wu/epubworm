@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <string_view>
 #include <sys/ioctl.h>
@@ -56,10 +57,28 @@ struct ChapterReadingStats {
   int cjkCharacters{};
 };
 
+struct SearchTextSource {
+  std::size_t begin{};
+  std::size_t end{};
+  int line{};
+};
+
+struct ChapterSearchIndex {
+  std::string text{};
+  std::vector<SearchTextSource> source{};
+};
+
+struct ChapterSearchMatch {
+  std::size_t begin{};
+  std::size_t end{};
+  int line{};
+};
+
 inline constexpr Key ctrlB{2};
 inline constexpr Key ctrlF{6};
 inline constexpr Key ctrlU{21};
 inline constexpr Key ctrlD{4};
+inline constexpr Key ctrlW{23};
 inline const std::string esc{'\033'};
 inline const std::string imgCellPlaceholder{"\U0010EEEE"};
 // Internal layout markers. These must be removed before terminal output.
@@ -67,6 +86,7 @@ inline const std::string centerAlignBegin{'\x1C'};
 inline const std::string centerAlignEnd{'\x1D'};
 inline const std::string rightAlignBegin{'\x1E'};
 inline const std::string rightAlignEnd{'\x1F'};
+inline const std::string forcedWrapMarker{'\x1A'};
 // Don't forget to modify `getInvisEscSeqLen()` when you change constants
 // below.
 inline const std::string escEnd{esc + '\\'};
@@ -93,6 +113,8 @@ inline const std::string magentaFG{"[35m"};
 inline const std::string cyanFG{"[36m"};
 inline const std::string lightGrayFG{"[37m"};
 inline const std::string resetFG{"[39m"};
+inline const std::string grayBG{"[100m"};
+inline const std::string resetBG{"[49m"};
 
 // Load an image to the terminal (create a virtual placement)
 // to be displayed later using special unicode characters.
@@ -198,7 +220,8 @@ auto collapseConsecutiveNewlines(std::string& str) -> void;
 // Image lines are left as is to support images wider than `maxLen`.
 // This should be the first text content manipulation function called,
 // as most others depend on a correct `maxLen`.
-auto wrapLines(std::string& str, int maxLen) -> void;
+auto wrapLines(std::string& str, int maxLen, bool markForcedWraps = false)
+    -> void;
 
 // Based on screen width, center text using `maxLen`, images using image width.
 // Note this will create lines longer than `maxLen`,
@@ -290,7 +313,47 @@ auto styleEachLineIndividually(std::string& str, std::string_view style,
 
 // Process content text of epubs extracted from chapter xhtml files for
 // display.
-auto processContentText(std::string& str, int maxLen) -> void;
+auto processContentText(std::string& str, int maxLen,
+                        bool markForcedWraps = false) -> void;
+
+// Build normalized, ASCII-case-folded visible text and retain its mapping to
+// the rendered chapter. ANSI escapes, images, and artificial whitespace are
+// not searchable.
+[[nodiscard]] auto buildChapterSearchIndex(std::string_view chapter)
+    -> ChapterSearchIndex;
+
+// Find non-overlapping occurrences of `query` in a chapter search index.
+[[nodiscard]] auto findChapterSearchMatches(const ChapterSearchIndex& index,
+                                            std::string_view query)
+    -> std::vector<ChapterSearchMatch>;
+
+// Return the displayed chapter slice with all matches highlighted in gray.
+[[nodiscard]] auto highlightSearchMatches(
+    std::string_view chapter, const ChapterSearchIndex& index,
+    const std::vector<ChapterSearchMatch>& matches, std::size_t displayBegin,
+    std::size_t displayEnd) -> std::string;
+
+// Return the one-based terminal row and column for a visible match's first
+// character, accounting for ANSI escapes and wide characters.
+[[nodiscard]] auto getSearchMatchCursorPosition(std::string_view chapter,
+                                                const ChapterSearchIndex& index,
+                                                const ChapterSearchMatch& match,
+                                                int screenTopLine,
+                                                int screenBotLine)
+    -> std::optional<std::pair<int, int>>;
+
+// Remove the final UTF-8 code point, including any trailing continuation
+// bytes. Invalid trailing bytes are removed one at a time.
+auto popLastUTF8CodePoint(std::string& str) -> void;
+
+// Remove trailing whitespace and the final whitespace-delimited word.
+auto popLastSearchWord(std::string& str) -> void;
+
+// Append a complete printable UTF-8 input character to `query`. Incomplete
+// multibyte input is retained in `pending`; controls and malformed input are
+// rejected. Returns whether `query` changed.
+auto appendSearchInputByte(std::string& query, std::string& pending,
+                           unsigned char byte) -> bool;
 
 // Count words and CJK characters in processed chapter text, ignoring terminal
 // escapes and combining marks.
@@ -298,11 +361,11 @@ auto processContentText(std::string& str, int maxLen) -> void;
     -> ChapterReadingStats;
 
 // Build a full-width status line for the chapter's current viewport.
-[[nodiscard]] auto
-getChapterProgressIndicator(int screenTopLine, int screenRows, int screenCols,
-                            int chapterLines,
-                            const ChapterReadingStats& chapterReadingStats,
-                            std::string_view title) -> std::string;
+[[nodiscard]] auto getChapterProgressIndicator(
+    int screenTopLine, int screenRows, int screenCols, int chapterLines,
+    const ChapterReadingStats& chapterReadingStats, std::string_view title,
+    std::string_view searchQuery = {}, std::string_view searchMatchInfo = {},
+    int* searchCursorCol = nullptr) -> std::string;
 
 // In raw mode, create a tui interface to view `chapterAbs`.
 // Chapter displayed starting from `iniProg`, lines wrapped at `desiredMaxLen`.
