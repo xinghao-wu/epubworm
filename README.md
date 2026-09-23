@@ -53,6 +53,69 @@ Run the command again to update.
 
 The prebuilt binaries and accompanying files which cURL installs can also be manually downloaded from the [latest rolling release](https://github.com/xinghao-wu/epubworm/releases/latest).
 
+## Nix
+Run Epubworm without installing it:
+```bash
+nix run github:xinghao-wu/epubworm
+```
+
+Or install it into your user profile:
+```bash
+nix profile install github:xinghao-wu/epubworm
+```
+
+### NixOS with flakes
+<details><summary>Click to expand</summary>
+
+Add Epubworm to your existing flake inputs:
+```nix
+inputs.epubworm.url = "github:xinghao-wu/epubworm";
+```
+
+Then add its package to your NixOS module. Here, `epubworm` is the input bound
+in your flake's `outputs` arguments:
+```nix
+environment.systemPackages = [
+  epubworm.packages.${pkgs.system}.default
+];
+```
+
+Rebuild with your usual `nixos-rebuild switch --flake` command.
+</details>
+
+### NixOS without flakes
+<details><summary>Click to expand</summary>
+
+First choose a commit to pin and calculate its source hash:
+```bash
+commit=<commit-hash>
+nix-prefetch-url --unpack "https://github.com/xinghao-wu/epubworm/archive/$commit.tar.gz"
+```
+
+Then add the package to `/etc/nixos/configuration.nix`, replacing the commit
+and hash with the values above:
+```nix
+{ pkgs, ... }:
+
+let
+  epubwormSource = builtins.fetchTarball {
+    url = "https://github.com/xinghao-wu/epubworm/archive/<commit-hash>.tar.gz";
+    sha256 = "<source-hash>";
+  };
+in
+{
+  environment.systemPackages = [
+    (pkgs.callPackage "${epubwormSource}/nix/package.nix" { })
+  ];
+}
+```
+
+Apply the configuration with:
+```bash
+sudo nixos-rebuild switch
+```
+</details>
+
 ## Build From Source
 <details><summary>Click to expand</summary>
 
