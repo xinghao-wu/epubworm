@@ -38,22 +38,9 @@ sudo dnf copr enable xinghao-wu/epubworm
 sudo dnf install epubworm
 ```
 
-## CURL
-Install Epubworm under `~/.local`:
-```bash
-curl -fsSL https://github.com/xinghao-wu/epubworm/raw/main/install.sh | sh
-```
-
-To install under a different location, set `EPUBWORM_PREFIX`:
-```bash
-curl -fsSL https://github.com/xinghao-wu/epubworm/raw/main/install.sh | EPUBWORM_PREFIX=/path/to/prefix sh
-```
-
-Run the command again to update.
-
-The prebuilt binaries and accompanying files which cURL installs can also be manually downloaded from the [latest rolling release](https://github.com/xinghao-wu/epubworm/releases/latest).
-
 ## Nix
+<details><summary>Click to expand</summary>
+
 Run Epubworm without installing it:
 ```bash
 nix run github:xinghao-wu/epubworm
@@ -65,8 +52,6 @@ nix profile install github:xinghao-wu/epubworm
 ```
 
 ### NixOS with flakes
-<details><summary>Click to expand</summary>
-
 Add Epubworm to your existing flake inputs:
 ```nix
 inputs.epubworm.url = "github:xinghao-wu/epubworm";
@@ -81,11 +66,8 @@ environment.systemPackages = [
 ```
 
 Rebuild with your usual `nixos-rebuild switch --flake` command.
-</details>
 
 ### NixOS without flakes
-<details><summary>Click to expand</summary>
-
 First choose a commit to pin and calculate its source hash:
 ```bash
 commit=<commit-hash>
@@ -115,6 +97,21 @@ Apply the configuration with:
 sudo nixos-rebuild switch
 ```
 </details>
+
+## CURL
+Install Epubworm under `~/.local`:
+```bash
+curl -fsSL https://github.com/xinghao-wu/epubworm/raw/main/install.sh | sh
+```
+
+To install under a different location, set `EPUBWORM_PREFIX`:
+```bash
+curl -fsSL https://github.com/xinghao-wu/epubworm/raw/main/install.sh | EPUBWORM_PREFIX=/path/to/prefix sh
+```
+
+Run the command again to update.
+
+The prebuilt binaries and accompanying files which cURL installs can also be manually downloaded from the [latest rolling release](https://github.com/xinghao-wu/epubworm/releases/latest).
 
 ## Build From Source
 <details><summary>Click to expand</summary>
