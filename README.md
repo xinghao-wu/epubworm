@@ -1,6 +1,6 @@
 <div align="center">
   <img src="assets/mascot_and_banner.png" alt="Epubworm mascot and banner">
-  A fast, image-capable terminal EPUB reader written in C++
+  An image-capable terminal EPUB reader written in C++
 </div>
 
 # Overview
@@ -14,24 +14,23 @@ https://github.com/user-attachments/assets/27b8c6be-9ceb-48b6-84c7-7bebd18f9b2b
 
 ## Notable Features
 - Inline image display with multiplexer support via Kitty Graphics Protocol
-- Incremental chapter search
-- Chapter progress percentage and estimated time left
+- Chapter text search, works across wrapped lines
+- Chapter progress percentage
+- Estimated reading time remaining for latin alphabets (English, Spanish, etc.) and CJK (Chinese, Japanese, etc.)
 - Wide character (e.g. emojis and Japanese text) support
 - Colorful, using the terminal's existing colorscheme
-- Basic HTML text styling and formatting: *italic*, **bold**, centered, and right aligned text
+- Follows EPUB's text styling and formatting: *italic*, **bold**, centered, and right aligned text
 - Mouse support + vim-like keybinds
 - Responsive to window resize
 - Persistent reading progress and last-read book
 - Fast content loading and rendering
 
-## Known Limitations
+## Limitations
 - No annotations or bookmarks
 - No hyperlink support
 - No CSS resolver
-- No MathML support
 - No TOC fragment id support
-- No in-app dictionary
-- No text-to-speech
+- No MathML support
 
 Epubworm uses the simple TinyXML-2 to parse EPUBs, and as such is not very tolerant of malformed EPUB files. If a book crashes the application, converting the EPUB file to AZW3 and back to EPUB is an easy fix (this can be done via Calibre's [ebook-convert](https://manual.calibre-ebook.com/generated/en/ebook-convert.html) or its online hosted version at [CloudConvert](https://cloudconvert.com/)).
 
