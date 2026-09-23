@@ -4,7 +4,13 @@
 </div>
 
 # Overview
-https://github.com/user-attachments/assets/76c2db37-3419-4fe6-8e85-54b3e5678cf4
+https://github.com/user-attachments/assets/04767304-cb46-43b4-bb32-51bb9568c732
+
+https://github.com/user-attachments/assets/6fbc8e57-c077-4800-a909-fdb5c7db7133
+
+https://github.com/user-attachments/assets/ae991d2b-28cf-4dfa-a113-2e2b69845956
+
+https://github.com/user-attachments/assets/27b8c6be-9ceb-48b6-84c7-7bebd18f9b2b
 
 ## Notable Features
 - Inline image display with multiplexer support via Kitty Graphics Protocol
