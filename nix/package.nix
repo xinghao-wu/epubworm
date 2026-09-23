@@ -3,6 +3,7 @@
   stdenv,
   gnumake,
   libiconv,
+  perl,
 }:
 
 stdenv.mkDerivation {
@@ -23,6 +24,7 @@ stdenv.mkDerivation {
   };
 
   nativeBuildInputs = [ gnumake ];
+  nativeCheckInputs = lib.optionals stdenv.hostPlatform.isDarwin [ perl ];
   buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [ libiconv ];
 
   makeFlags = [ "CXX=${stdenv.cc.targetPrefix}c++" ];
