@@ -1238,6 +1238,16 @@ auto contentAlignment() -> void {
   assert(getOccurrences<std::string_view>(tableParsed, tableSeparator) == 3);
   assert(!tableParsed.contains(tableSeparator + tableSeparator));
 
+  XMLDocument tableBlockChapter{};
+  assert(tableBlockChapter.Parse(
+             "<body><table><tr><td><p>one</p></td>"
+             "<td><div><p>two</p></div></td></tr></table></body>")
+         == XML_SUCCESS);
+  std::string tableBlockParsed{};
+  ::parseContentElem(tableBlockChapter.FirstChildElement("body"),
+                     tableBlockParsed, {});
+  assert(tableBlockParsed == "\n\n\none" + tableSeparator + "two\n\n");
+
   std::string tableProcessed{tableParsed};
   ::processContentText(tableProcessed, 55);
   assert(!tableProcessed.contains("\n\n\n"));
