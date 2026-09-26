@@ -326,7 +326,20 @@ auto getTitle(const XMLElement* metadata) -> std::string {
 }
 
 auto getAuthor(const XMLElement* metadata) -> std::string {
-  return metadata->FirstChildElement("dc:creator")->GetText();
+  std::string result{};
+  for (const XMLElement* creator{metadata->FirstChildElement("dc:creator")};
+       creator != nullptr;
+       creator = creator->NextSiblingElement("dc:creator")) {
+    const char* name{creator->GetText()};
+    if (name == nullptr || *name == '\0') {
+      continue;
+    }
+    if (!result.empty()) {
+      result += " & ";
+    }
+    result += name;
+  }
+  return result;
 }
 
 auto getHrefFromID(const XMLElement* manifest, std::string_view id) -> const

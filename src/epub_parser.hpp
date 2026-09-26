@@ -28,6 +28,9 @@ using TocData = std::vector<std::pair<std::string, std::filesystem::path>>;
 [[nodiscard]] auto getTitle(const tinyxml2::XMLElement* metadata)
     -> std::string;
 
+// Returns the text of every `<dc:creator>` element, joined by `" & "` when
+// there are multiple (e.g. `"author1 & author2 & author3"`). Empty creator
+// elements are skipped. Returns an empty string if no creators are found.
 [[nodiscard]] auto getAuthor(const tinyxml2::XMLElement* metadata)
     -> std::string;
 

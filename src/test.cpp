@@ -159,6 +159,26 @@ auto getAuthor() -> void {
 
   assert(::getAuthor(metadataPathsMetadata) == "Epubworm Project");
   assert(::getAuthor(imageElementsMetadata) == "Fixture Workshop");
+
+  XMLDocument multipleCreatorsOPF{};
+  multipleCreatorsOPF.Parse("<package><metadata>"
+                            "<dc:title>Shared Work</dc:title>"
+                            "<dc:creator>Author One</dc:creator>"
+                            "<dc:language>en</dc:language>"
+                            "<dc:creator>Author Two</dc:creator>"
+                            "<dc:creator></dc:creator>"
+                            "<dc:creator>Author Three</dc:creator>"
+                            "</metadata></package>");
+  assert(!multipleCreatorsOPF.Error());
+  assert(::getAuthor(::getMetadata(multipleCreatorsOPF))
+         == "Author One & Author Two & Author Three");
+
+  XMLDocument noCreatorsOPF{};
+  noCreatorsOPF.Parse("<package><metadata>"
+                      "<dc:title>Anonymous Work</dc:title>"
+                      "</metadata></package>");
+  assert(!noCreatorsOPF.Error());
+  assert(::getAuthor(::getMetadata(noCreatorsOPF)).empty());
 }
 
 auto findAndReplaceAll() -> void {
