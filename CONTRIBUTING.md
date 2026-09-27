@@ -33,7 +33,8 @@ make
 
 ## Clang Tools
 
-The project uses `clang-tidy` and `clang-format`.
+The project uses `clang-tidy` and `clang-format`. CI runs both from LLVM 22;
+other versions may format or lint slightly differently.
 
 ## Project Structure
 
