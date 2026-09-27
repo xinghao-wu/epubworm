@@ -40,6 +40,9 @@ jobs:
       - name: Tap repository
         run: brew tap xinghao-wu/epubworm "file://$GITHUB_WORKSPACE"
 
+      - name: Trust tap
+        run: brew trust xinghao-wu/epubworm
+
       - name: Check formula style
         run: brew style xinghao-wu/epubworm/epubworm
 
