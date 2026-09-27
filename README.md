@@ -14,16 +14,12 @@ https://github.com/user-attachments/assets/27b8c6be-9ceb-48b6-84c7-7bebd18f9b2b
 
 ## Notable Features
 - Inline image display with multiplexer support via Kitty Graphics Protocol
-- Text styling and formatting, with CSS resolution: *italic*, **bold**, <ins>underlined</ins>, centered, and right aligned text
-- Chapter text search, works across wrapped lines
+- Text styling and formatting, with CSS resolution: *italic*, **bold**, <ins>underlined</ins>, centered text
+- Text search working across wrapped lines
 - Chapter progress percentage
-- Estimated reading time remaining for latin alphabets (English, Spanish, etc.) and CJK (Chinese, Japanese, etc.)
+- Estimated reading time remaining for latin and CJK alphabets
 - Wide character (e.g. emojis and Japanese text) support
-- Colorful, using the terminal's existing colorscheme
-- Mouse support + vim-like keybinds
-- Responsive to window resize
-- Persistent reading progress and last-read book
-- Fast content loading and rendering
+- Mouse support
 
 ## Limitations
 - No annotations or bookmarks
