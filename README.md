@@ -206,6 +206,7 @@ set -g default-terminal "tmux-256color"
 # Allows escape sequences to pass through tmux to the terminal emulator
 set -g allow-passthrough on
 ```
+Reload it with `tmux source-file ~/.tmux.conf`, or restart tmux.
 
 ### Byobu (tmux backend)
 Make sure your `~/.byobu/.tmux.conf` contains the following:
