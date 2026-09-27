@@ -14,7 +14,7 @@ https://github.com/user-attachments/assets/27b8c6be-9ceb-48b6-84c7-7bebd18f9b2b
 
 ## Notable Features
 - Inline image display with multiplexer support via Kitty Graphics Protocol
-- Text styling and formatting, with CSS resolution: *italic*, **bold**, <u>underlined</u>, centered, and right aligned text
+- Text styling and formatting, with CSS resolution: *italic*, **bold**, <ins>underlined</ins>, centered, and right aligned text
 - Chapter text search, works across wrapped lines
 - Chapter progress percentage
 - Estimated reading time remaining for latin alphabets (English, Spanish, etc.) and CJK (Chinese, Japanese, etc.)
