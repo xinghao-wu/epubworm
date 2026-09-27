@@ -31,6 +31,12 @@ make test
 make
 ```
 
+## Tests
+
+`make test` runs every self-verifying test. Tests that write artifacts to
+`test_outputs/` for manual inspection are not run by default; call them from
+`src/test_main.cpp` to run them.
+
 ## Clang Tools
 
 The project uses `clang-tidy` and `clang-format`. CI runs both from LLVM 22;
