@@ -1,4 +1,5 @@
 #include "test.hpp"
+#include "css.hpp"
 #include "data_management.hpp"
 #include "epub_parser.hpp"
 #include "row_col_diacritics.hpp"
@@ -34,6 +35,7 @@ const fs::path metadataPathsRootAbs{epubsAbs / "metadata_paths"};
 const fs::path nonlinearSpineRootAbs{epubsAbs / "nonlinear_spine"};
 const fs::path imageElementsRootAbs{epubsAbs / "image_elements"};
 const fs::path nestedNavigationRootAbs{epubsAbs / "nested_navigation"};
+const fs::path cssClassesRootAbs{epubsAbs / "css_classes"};
 
 const fs::path testOutputsAbs{projectRootAbs / "test_outputs"};
 
@@ -63,6 +65,7 @@ auto unzip() -> void {
   const fs::path nonlinearSpineZippedAbs{epubsAbs / "nonlinear_spine.epub"};
   const fs::path imageElementsZippedAbs{epubsAbs / "image_elements.epub"};
   const fs::path nestedNavigationZippedAbs{epubsAbs / "nested_navigation.epub"};
+  const fs::path cssClassesZippedAbs{epubsAbs / "css_classes.epub"};
 
   try {
     ::unzip("/bad archive path", testOutputsAbs);
@@ -87,6 +90,7 @@ auto unzip() -> void {
   ::unzip(imageElementsZippedAbs, testOutputsAbs / "unzip_image_elements");
   ::unzip(nestedNavigationZippedAbs,
           testOutputsAbs / "unzip_nested_navigation");
+  ::unzip(cssClassesZippedAbs, testOutputsAbs / "unzip_css_classes");
   boldColorIfTerm(stdout, yellowFG);
   std::cout << "`test::unzip()` success cases need verification, "
                "check `test_outputs/` to verify correct result\n";
@@ -987,8 +991,13 @@ auto styleEachLineIndividually() -> void {
   assert(getOccurrences<std::string_view>(underlined, esc + underline) == 2);
   assert(getOccurrences<std::string_view>(underlined, esc + resetUnderline)
          == 2);
+  // `centerOnScreen()` pads lines by the real terminal's width (none when
+  // stdin isn't a terminal), so allow leading spaces after the newline.
   assert(underlined.contains(esc + underline + "one two" + esc + resetUnderline
-                             + '\n' + esc + underline));
+                             + '\n'));
+  const std::size_t underlinedNewline{underlined.find('\n')};
+  assert(underlined.find_first_not_of(' ', underlinedNewline + 1)
+         == underlined.find(esc + underline, underlinedNewline + 1));
 
   std::string centeredUnderlined{centerAlignBegin + esc + underline
                                  + "one two three" + esc + resetUnderline
@@ -1312,7 +1321,11 @@ auto contentAlignment() -> void {
   ::processContentText(styledTableProcessed, 55);
   assert(!styledTableProcessed.contains(rightAlignBegin));
   assert(!styledTableProcessed.contains(rightAlignEnd));
-  assert(getOccurrences<std::string_view>(styledTableProcessed, "\n") == 6);
+  // Block separators stay outside the wrapping `<strong><em>` style codes.
+  assert(styledTableParsed.starts_with("\n\n" + esc + bold + esc + italic));
+  assert(styledTableParsed.ends_with(esc + resetItalic + esc + resetBold
+                                     + "\n\n"));
+  assert(getOccurrences<std::string_view>(styledTableProcessed, "\n") == 8);
 
   XMLDocument styledRule{};
   assert(styledRule.Parse("<body><em><code><hr/></code></em></body>")
@@ -1914,5 +1927,196 @@ auto getLastRead() -> void {
     assert(std::string_view{e.what()}
            == "`<last-read>` element missing `id` attribute");
   }
+}
+
+auto cssParsing() -> void {
+  const CSSDeclarations declarations{::parseCSSDeclarations(
+      "COLOR: red; Font-Weight: 700; font-style: oblique 10deg;"
+      "font-family: \"a;b\"; text-decoration: underline line-through;"
+      "text-align: CENTER")};
+  assert(declarations.bold.value == true);
+  assert(declarations.italic.value == true);
+  assert(declarations.underline.value == true);
+  assert(declarations.alignment.value == CSSAlignment::center);
+  assert(!declarations.bold.important);
+
+  assert(::parseCSSDeclarations("font-weight: 599").bold.value == false);
+  assert(::parseCSSDeclarations("font-weight: 600").bold.value == true);
+  assert(::parseCSSDeclarations("font-weight: bolder").bold.value == true);
+  assert(::parseCSSDeclarations("font-weight: lighter").bold.value == false);
+  assert(!::parseCSSDeclarations("font-weight: inherit").bold.value);
+  assert(!::parseCSSDeclarations("font-weight: 600px").bold.value);
+  assert(::parseCSSDeclarations("font-style: normal").italic.value == false);
+  assert(::parseCSSDeclarations("text-decoration: none").underline.value
+         == false);
+  assert(
+      !::parseCSSDeclarations("text-decoration: line-through").underline.value);
+  assert(
+      ::parseCSSDeclarations("text-decoration-line: underline").underline.value
+      == true);
+  assert(::parseCSSDeclarations("text-align: start").alignment.value
+         == CSSAlignment::left);
+  assert(::parseCSSDeclarations("text-align: end").alignment.value
+         == CSSAlignment::right);
+  assert(::parseCSSDeclarations("text-align: justify").alignment.value
+         == CSSAlignment::left);
+  assert(!::parseCSSDeclarations("text-align: inherit").alignment.value);
+  assert(!::parseCSSDeclarations("text-align").alignment.value);
+
+  const CSSDeclarations important{::parseCSSDeclarations(
+      "text-align: right ! IMPORTANT; text-align: left; font-style: italic;"
+      "font-style: normal")};
+  assert(important.alignment.value == CSSAlignment::right);
+  assert(important.alignment.important);
+  assert(important.italic.value == false);
+
+  Stylesheet stylesheet{};
+  ::parseStylesheet(
+      "@charset \"UTF-8\";\n"
+      "<!-- /* comment { with braces } .commented { font-weight: bold } */\n"
+      "@media screen { .media { font-weight: bold } .nested { color: red } }\n"
+      "@font-face { font-family: x; src: url(\"a{b}.ttf\") }\n"
+      "P.First.Second , .third,div p, span:hover, #id, *, a[href], .x > .y,"
+      " .ok { font-style: italic }\n"
+      ".content::before { content: \"}\" }\n"
+      "em { font-style: normal } -->\n"
+      ".unterminated { font-weight: bold",
+      stylesheet);
+  assert(stylesheet.rules.size() == 5);
+  assert(stylesheet.rules.at(0).tag == "p");
+  assert((stylesheet.rules.at(0).classes
+          == std::vector<std::string>{"First", "Second"}));
+  assert(stylesheet.rules.at(0).declarations.italic.value == true);
+  assert(stylesheet.rules.at(1).tag.empty());
+  assert(stylesheet.rules.at(1).classes == std::vector<std::string>{"third"});
+  assert(stylesheet.rules.at(2).classes == std::vector<std::string>{"ok"});
+  assert(stylesheet.rules.at(2).declarations.italic.value == true);
+  assert(stylesheet.rules.at(3).tag == "em");
+  assert(stylesheet.rules.at(3).classes.empty());
+  assert(stylesheet.rules.at(3).declarations.italic.value == false);
+  assert(stylesheet.rules.at(4).classes
+         == std::vector<std::string>{"unterminated"});
+  assert(stylesheet.rules.at(4).declarations.bold.value == true);
+}
+
+auto cssResolution() -> void {
+  Stylesheet stylesheet{};
+  ::parseStylesheet(".x { text-align: right; font-weight: bold }"
+                    "p { text-align: center; font-style: italic }"
+                    "p.x { font-weight: normal }"
+                    ".y { font-weight: bold !important }"
+                    ".z { text-decoration: underline }"
+                    ".z { text-decoration: none }",
+                    stylesheet);
+  XMLDocument doc{};
+  assert(doc.Parse("<body><p class='x'>a</p>"
+                   "<p class=' y\tx ' style='font-weight: normal;"
+                   " text-align: left'>b</p>"
+                   "<span class='z'>c</span><span class='Z'>d</span>"
+                   "<div style='text-align: center !important'>e</div></body>")
+         == XML_SUCCESS);
+  const XMLElement* elem{doc.FirstChildElement("body")->FirstChildElement()};
+
+  const CSSDeclarations first{::resolveCSS(stylesheet, elem)};
+  assert(first.alignment.value == CSSAlignment::right);
+  assert(first.bold.value == false);
+  assert(first.italic.value == true);
+  assert(!first.underline.value);
+
+  elem = elem->NextSiblingElement();
+  const CSSDeclarations second{::resolveCSS(stylesheet, elem)};
+  assert(second.bold.value == true);
+  assert(second.bold.important);
+  assert(second.alignment.value == CSSAlignment::left);
+
+  elem = elem->NextSiblingElement();
+  assert(::resolveCSS(stylesheet, elem).underline.value == false);
+  elem = elem->NextSiblingElement();
+  assert(!::resolveCSS(stylesheet, elem).underline.value);
+  elem = elem->NextSiblingElement();
+  const CSSDeclarations fifth{::resolveCSS({}, elem)};
+  assert(fifth.alignment.value == CSSAlignment::center);
+  assert(fifth.alignment.important);
+
+  Stylesheet contentStylesheet{};
+  ::parseStylesheet(
+      ".center { text-align: right } .b { font-weight: bold }"
+      ".n { font-weight: normal } .u { text-decoration: underline }"
+      ".ctr { text-align: center }",
+      contentStylesheet);
+  XMLDocument chapter{};
+  assert(chapter.Parse(
+             "<body><p class='center'>css wins</p>"
+             "<p class='b'>outer <span class='n'>inner</span>, <strong "
+             "class='n'>strong</strong>, <a class='u'>link</a>, <span "
+             "style='font-style: italic'>inline</span></p>"
+             "<h2 class='n u'>head <span class='u'>x</span></h2>"
+             "<section class='ctr'>sect</section>"
+             "<table><tr class='b'><td>c1</td><td>c2</td></tr></table>"
+             "<p><span style='font-weight: bold'>no sheet</span></p></body>")
+         == XML_SUCCESS);
+  std::string parsed{};
+  ::parseContentElem(chapter.FirstChildElement("body"), parsed, {},
+                     contentStylesheet);
+  const std::string separator{esc + resetBold + esc + cyanFG + " | " + esc
+                              + bold + esc + resetFG};
+  const std::string expected{
+      std::string{"\n\n"} + rightAlignBegin + "css wins" + rightAlignEnd
+      + "\n\n" + "\n\n" + esc + bold + "outer " + esc + resetBold + "inner"
+      + esc + bold + ", " + esc + resetBold + "strong" + esc + bold + ", " + esc
+      + underline + "link" + esc + resetUnderline + ", " + esc + italic
+      + "inline" + esc + resetItalic + esc + resetBold + "\n\n" + "\n\n"
+      + centerAlignBegin + esc + bold + esc + magentaFG + "head x" + esc
+      + resetBold + esc + resetFG + centerAlignEnd + "\n\n" + "\n\n"
+      + centerAlignBegin + "sect" + centerAlignEnd + "\n\n" + "\n\n" + "\n"
+      + esc + bold + "c1" + separator + "c2" + esc + resetBold + "\n\n" + "\n\n"
+      + esc + bold + "no sheet" + esc + resetBold + "\n\n"};
+  assert(parsed == expected);
+
+  // Style codes from elements wrapping blocks must stay next to the text, not
+  // between block separators, so separators can be trimmed and collapsed.
+  XMLDocument wrapper{};
+  assert(wrapper.Parse("<body><div class='b'><div><p>Chapter 2</p></div>"
+                       "<h1>Warder</h1></div><p>text</p></body>")
+         == XML_SUCCESS);
+  std::string wrapperParsed{};
+  ::parseContentElem(wrapper.FirstChildElement("body"), wrapperParsed, {},
+                     contentStylesheet);
+  const std::string expectedWrapper{
+      std::string{"\n\n\n\n\n\n"} + esc + bold + "Chapter 2\n\n\n\n\n\n"
+      + centerAlignBegin + esc + underline + esc + magentaFG + "Warder" + esc
+      + resetUnderline + esc + resetFG + centerAlignEnd + esc + resetBold
+      + "\n\n\n\n\n\ntext\n\n"};
+  assert(wrapperParsed == expectedWrapper);
+
+  // Elements with nothing visible get no style codes at all.
+  Stylesheet italicStylesheet{};
+  ::parseStylesheet(".quote { font-style: italic }", italicStylesheet);
+  XMLDocument empty{};
+  assert(empty.Parse("<body><p class='quote'> </p><p class='quote'/></body>")
+         == XML_SUCCESS);
+  std::string emptyParsed{};
+  ::parseContentElem(empty.FirstChildElement("body"), emptyParsed, {},
+                     italicStylesheet);
+  assert(!emptyParsed.contains(esc));
+}
+
+auto cssChapter() -> void {
+  std::string parsed{};
+  ::parseChapter(cssClassesRootAbs / "OEBPS/Text/chapter.xhtml", parsed);
+  assert(parsed.contains(centerAlignBegin + "Centered by class."
+                         + centerAlignEnd));
+  assert(parsed.contains(std::string{"\n\nPlain "} + esc + bold + "bold" + esc
+                         + resetBold + " and " + esc + italic + "italic" + esc
+                         + resetItalic + " and " + esc + bold + esc + underline
+                         + "underlined bold" + esc + resetBold + esc
+                         + resetUnderline + ".\n\n"));
+  assert(parsed.contains(rightAlignBegin + "Right by tag and class."
+                         + rightAlignEnd));
+  assert(parsed.contains(centerAlignBegin + "Centered div." + centerAlignEnd));
+  assert(parsed.contains("\n\nLeft despite heuristic class.\n\n"));
+  assert(parsed.contains(std::string{"\n\nUnbolded, not bold, "} + esc + italic
+                         + "oblique" + esc + resetItalic + ", " + esc
+                         + underline + "embedded" + esc + resetUnderline));
 }
 } // namespace test

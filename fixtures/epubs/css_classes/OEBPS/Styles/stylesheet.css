@@ -1,0 +1,51 @@
+@charset "UTF-8";
+/* Class names mimic calibre's generated output. */
+@font-face {
+  font-family: "Fixture Serif";
+  src: url(../Fonts/serif.ttf);
+}
+@media amzn-kf8 {
+  .calibre3 {
+    font-weight: bold;
+  }
+}
+@page {
+  margin: 5pt;
+}
+.calibre {
+  display: block;
+  font-size: 1em;
+  text-align: justify;
+}
+.calibre1 {
+  margin: 0 0 1em;
+  text-align: center;
+}
+.calibre2 {
+  font-weight: bold;
+}
+.calibre3 {
+  font-style: italic;
+}
+.calibre4 {
+  text-decoration: underline;
+  font-weight: 700;
+}
+p.calibre5 {
+  text-align: right;
+}
+.calibre5 {
+  text-align: center;
+}
+.calibre6 {
+  font-weight: normal;
+}
+.center {
+  text-align: left;
+}
+div .calibre7, span:first-child, #calibre_link-1, a[href] {
+  font-weight: bold;
+}
+.calibre8, .calibre9 {
+  font-style: oblique;
+}

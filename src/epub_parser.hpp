@@ -1,5 +1,6 @@
 #pragma once
 
+#include "css.hpp"
 #include "tinyxml2/tinyxml2.hpp"
 #include <filesystem>
 #include <string>
@@ -75,12 +76,17 @@ auto collectNavPoints(const tinyxml2::XMLElement* parent, TocData& tocData,
 // `<center>`, `<image/>`, and `<img/>` will be handled, all other elements
 // will be ignored and traversed through. Semantic alignment classes, inline
 // `text-align`, and legacy `align` attributes are preserved as internal layout
-// markers.
+// markers. Bold, italic, underline, and text alignment from `stylesheet` rules
+// and inline `style` attributes are applied to every element except headings
+// and `<hr/>`, overriding built-in tag styling and alignment heuristics.
 auto parseContentElem(const tinyxml2::XMLElement* parent, std::string& out,
-                      const std::filesystem::path& chapterAbs) -> void;
+                      const std::filesystem::path& chapterAbs,
+                      const Stylesheet& stylesheet = {}) -> void;
 
 // Parse chapter content xhtml file using `parseContentElem()`,
 // appending result to `out`.
+// Stylesheets from `<link rel="stylesheet">` and `<style>` elements in the
+// chapter's `<head>` are applied, missing stylesheets are ignored.
 // Chapter's extraneous leading and trailing newlines, spaces, and non-breaking
 // spaces are deleted. A red foreground colored `"---\n"` is appended to
 // chapter text.

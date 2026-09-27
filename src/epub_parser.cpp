@@ -1,11 +1,16 @@
 #include "epub_parser.hpp"
+#include "css.hpp"
 #include "percent_encoding_decode.hpp"
 #include "tinyxml2/tinyxml2.hpp"
 #include "tui.hpp"
 #include <algorithm>
+#include <concepts>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
+#include <ios>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 #include <string_view>
@@ -121,47 +126,23 @@ auto getClassAlignment(const XMLElement* elem) -> TextAlignment {
   return TextAlignment::inherit;
 }
 
-auto getInlineStyleAlignment(const XMLElement* elem) -> TextAlignment {
-  const char* styleAttr{elem->Attribute("style")};
-  if (styleAttr == nullptr) {
-    return TextAlignment::inherit;
+auto toTextAlignment(CSSAlignment alignment) -> TextAlignment {
+  switch (alignment) {
+  case CSSAlignment::left:
+    return TextAlignment::left;
+  case CSSAlignment::center:
+    return TextAlignment::center;
+  case CSSAlignment::right:
+    return TextAlignment::right;
   }
-
-  TextAlignment result{TextAlignment::inherit};
-  bool importantResult{false};
-  std::string_view declarations{styleAttr};
-  while (!declarations.empty()) {
-    const std::size_t declarationEnd{declarations.find(';')};
-    const std::string_view declaration{declarations.substr(0, declarationEnd)};
-    const std::size_t colon{declaration.find(':')};
-    if (colon != std::string_view::npos
-        && lowerASCII(trim(declaration.substr(0, colon))) == "text-align") {
-      std::string value{lowerASCII(trim(declaration.substr(colon + 1)))};
-      constexpr std::string_view important{"!important"};
-      bool isImportant{false};
-      if (value.ends_with(important)) {
-        value = trim(
-            std::string_view{value}.substr(0, value.size() - important.size()));
-        isImportant = true;
-      }
-      const TextAlignment alignment{parseAlignmentValue(value)};
-      if (alignment != TextAlignment::inherit
-          && (isImportant || !importantResult)) {
-        result = alignment;
-        importantResult = isImportant;
-      }
-    }
-
-    if (declarationEnd == std::string_view::npos) {
-      break;
-    }
-    declarations.remove_prefix(declarationEnd + 1);
-  }
-  return result;
+  return TextAlignment::inherit;
 }
 
-auto getElementAlignment(const XMLElement* elem, TextAlignment inherited)
-    -> TextAlignment {
+// Precedence, lowest to highest: semantic class name heuristics, `<center>`
+// and legacy `align` attribute, then CSS (stylesheet rules and inline style,
+// already cascaded in `css`).
+auto getElementAlignment(const XMLElement* elem, TextAlignment inherited,
+                         const CSSDeclarations& css) -> TextAlignment {
   TextAlignment result{getClassAlignment(elem)};
   if (std::string_view{elem->Name()} == "center") {
     result = TextAlignment::center;
@@ -172,9 +153,8 @@ auto getElementAlignment(const XMLElement* elem, TextAlignment inherited)
       result = attrAlignment;
     }
   }
-  const TextAlignment styleAlignment{getInlineStyleAlignment(elem)};
-  if (styleAlignment != TextAlignment::inherit) {
-    result = styleAlignment;
+  if (css.alignment.value.has_value()) {
+    result = toTextAlignment(*css.alignment.value);
   }
   return result == TextAlignment::inherit ? inherited : result;
 }
@@ -256,6 +236,18 @@ struct TextStyle {
   bool lockDescendantStyles{};
 };
 
+// CSS is applied after an element's built-in tag styling, so author styles
+// override it, as in browsers. Locked (heading) styles ignore CSS.
+auto applyCSSStyle(TextStyle style, const CSSDeclarations& css) -> TextStyle {
+  if (style.lockDescendantStyles) {
+    return style;
+  }
+  style.bold = css.bold.value.value_or(style.bold);
+  style.italic = css.italic.value.value_or(style.italic);
+  style.underline = css.underline.value.value_or(style.underline);
+  return style;
+}
+
 auto appendStyleTransition(std::string& out, const TextStyle& current,
                            const TextStyle& next) -> void {
   if (current.lockDescendantStyles && next.lockDescendantStyles) {
@@ -295,8 +287,43 @@ auto getTableCellSeparator(const TextStyle& style) -> std::string {
   return separator;
 }
 
+// Style `appendContent()`'s output with `inner`, transitioning from and back
+// to `outer`. The opening transition is placed after the content's leading
+// whitespace and the closing transition before its trailing whitespace, so
+// style codes don't split up block separators and source indentation (which
+// would stop them from being trimmed or collapsed). Content without anything
+// visible gets no transitions.
+auto appendStyled(std::string& out, const TextStyle& outer,
+                  const TextStyle& inner,
+                  const std::invocable auto& appendContent) -> void {
+  const std::size_t contentBegin{out.size()};
+  appendContent();
+  std::string opening{};
+  appendStyleTransition(opening, outer, inner);
+  if (opening.empty()) {
+    return;
+  }
+
+  std::size_t textBegin{contentBegin};
+  while (textBegin < out.size() && isHTMLWhitespace(out[textBegin])) {
+    ++textBegin;
+  }
+  std::size_t textEnd{out.size()};
+  while (textEnd > textBegin && isHTMLWhitespace(out[textEnd - 1])) {
+    --textEnd;
+  }
+  if (textBegin == textEnd) {
+    return;
+  }
+  std::string closing{};
+  appendStyleTransition(closing, inner, outer);
+  out.insert(textEnd, closing);
+  out.insert(textBegin, opening);
+}
+
 auto parseContentElemImpl(const XMLElement* parent, std::string& out,
                           const fs::path& chapterAbs,
+                          const Stylesheet& stylesheet,
                           TextAlignment inheritedAlignment, TextStyle style,
                           bool insideTableCell) -> void;
 } // namespace
@@ -432,6 +459,7 @@ auto getTOC(const fs::path& tocAbs) -> TocData {
 namespace {
 auto parseContentElemImpl(const XMLElement* parent, std::string& out,
                           const fs::path& chapterAbs,
+                          const Stylesheet& stylesheet,
                           TextAlignment inheritedAlignment, TextStyle style,
                           bool insideTableCell) -> void {
   for (const XMLNode* childNode{parent->FirstChild()}; childNode != nullptr;
@@ -441,8 +469,9 @@ auto parseContentElemImpl(const XMLElement* parent, std::string& out,
     }
     if (const XMLElement* childElem = childNode->ToElement()) {
       const std::string_view name{childElem->Name()};
+      const CSSDeclarations css{resolveCSS(stylesheet, childElem)};
       const TextAlignment childAlignment{
-          getElementAlignment(childElem, inheritedAlignment)};
+          getElementAlignment(childElem, inheritedAlignment, css)};
       const bool isBlock{isBlockElement(name)};
       if (isBlock && !insideTableCell) {
         out += "\n\n";
@@ -451,26 +480,29 @@ auto parseContentElemImpl(const XMLElement* parent, std::string& out,
       if (name == "b" || name == "strong") {
         TextStyle childStyle{style};
         childStyle.bold = true;
-        appendStyleTransition(out, style, childStyle);
-        parseContentElemImpl(childElem, out, chapterAbs, childAlignment,
-                             childStyle, insideTableCell);
-        appendStyleTransition(out, childStyle, style);
+        childStyle = applyCSSStyle(childStyle, css);
+        appendStyled(out, style, childStyle, [&]() -> void {
+          parseContentElemImpl(childElem, out, chapterAbs, stylesheet,
+                               childAlignment, childStyle, insideTableCell);
+        });
       }
       else if (name == "i" || name == "em") {
         TextStyle childStyle{style};
         childStyle.italic = true;
-        appendStyleTransition(out, style, childStyle);
-        parseContentElemImpl(childElem, out, chapterAbs, childAlignment,
-                             childStyle, insideTableCell);
-        appendStyleTransition(out, childStyle, style);
+        childStyle = applyCSSStyle(childStyle, css);
+        appendStyled(out, style, childStyle, [&]() -> void {
+          parseContentElemImpl(childElem, out, chapterAbs, stylesheet,
+                               childAlignment, childStyle, insideTableCell);
+        });
       }
       else if (name == "code") {
         TextStyle childStyle{style};
         childStyle.foreground = greenFG;
-        appendStyleTransition(out, style, childStyle);
-        parseContentElemImpl(childElem, out, chapterAbs, childAlignment,
-                             childStyle, insideTableCell);
-        appendStyleTransition(out, childStyle, style);
+        childStyle = applyCSSStyle(childStyle, css);
+        appendStyled(out, style, childStyle, [&]() -> void {
+          parseContentElemImpl(childElem, out, chapterAbs, stylesheet,
+                               childAlignment, childStyle, insideTableCell);
+        });
       }
       else if (name == "br") {
         out += '\n';
@@ -496,8 +528,9 @@ auto parseContentElemImpl(const XMLElement* parent, std::string& out,
         childStyle.lockDescendantStyles = true;
         out += centerAlignBegin;
         appendStyleTransition(out, style, childStyle);
-        parseContentElemImpl(childElem, out, chapterAbs, TextAlignment::center,
-                             childStyle, insideTableCell);
+        parseContentElemImpl(childElem, out, chapterAbs, stylesheet,
+                             TextAlignment::center, childStyle,
+                             insideTableCell);
         appendStyleTransition(out, childStyle, style);
         out += centerAlignEnd;
       }
@@ -507,17 +540,18 @@ auto parseContentElemImpl(const XMLElement* parent, std::string& out,
         if (name == "pre") {
           childStyle.foreground = greenFG;
         }
+        childStyle = applyCSSStyle(childStyle, css);
         const bool markAlignment{childAlignment != TextAlignment::left
                                  && hasTextContent(childElem)
                                  && !hasAlignmentBlockDescendant(childElem)};
         if (markAlignment) {
           appendAlignmentBegin(out, childAlignment);
         }
-        appendStyleTransition(out, style, childStyle);
-        const std::size_t contentBegin{out.size()};
-        parseContentElemImpl(childElem, out, chapterAbs, childAlignment,
-                             childStyle, insideTableCell);
         if (name == "pre") {
+          appendStyleTransition(out, style, childStyle);
+          const std::size_t contentBegin{out.size()};
+          parseContentElemImpl(childElem, out, chapterAbs, stylesheet,
+                               childAlignment, childStyle, insideTableCell);
           std::size_t styleEnd{out.size()};
           while (styleEnd > contentBegin
                  && isHTMLWhitespace(out[styleEnd - 1])) {
@@ -528,22 +562,28 @@ auto parseContentElemImpl(const XMLElement* parent, std::string& out,
           out.insert(styleEnd, styleTransition);
         }
         else {
-          appendStyleTransition(out, childStyle, style);
+          appendStyled(out, style, childStyle, [&]() -> void {
+            parseContentElemImpl(childElem, out, chapterAbs, stylesheet,
+                                 childAlignment, childStyle, insideTableCell);
+          });
         }
         if (markAlignment) {
           appendAlignmentEnd(out, childAlignment);
         }
       }
       else if (name == "tr") {
+        const TextStyle childStyle{applyCSSStyle(style, css)};
         out += '\n';
-        const std::size_t contentBegin{out.size()};
-        parseContentElemImpl(childElem, out, chapterAbs, childAlignment, style,
-                             insideTableCell);
-        const std::string separator{getTableCellSeparator(style)};
-        if (out.size() >= contentBegin + separator.size()
-            && out.ends_with(separator)) {
-          out.resize(out.size() - separator.size());
-        }
+        appendStyled(out, style, childStyle, [&]() -> void {
+          const std::size_t contentBegin{out.size()};
+          parseContentElemImpl(childElem, out, chapterAbs, stylesheet,
+                               childAlignment, childStyle, insideTableCell);
+          const std::string separator{getTableCellSeparator(childStyle)};
+          if (out.size() >= contentBegin + separator.size()
+              && out.ends_with(separator)) {
+            out.resize(out.size() - separator.size());
+          }
+        });
       }
       else if (name == "td" || name == "th") {
         if (!childElem->NoChildren()) {
@@ -551,10 +591,11 @@ auto parseContentElemImpl(const XMLElement* parent, std::string& out,
           if (name == "th") {
             childStyle.bold = true;
           }
-          appendStyleTransition(out, style, childStyle);
-          parseContentElemImpl(childElem, out, chapterAbs, childAlignment,
-                               childStyle, true);
-          appendStyleTransition(out, childStyle, style);
+          childStyle = applyCSSStyle(childStyle, css);
+          appendStyled(out, style, childStyle, [&]() -> void {
+            parseContentElemImpl(childElem, out, chapterAbs, stylesheet,
+                                 childAlignment, childStyle, true);
+          });
           out += getTableCellSeparator(style);
         }
       }
@@ -562,9 +603,12 @@ auto parseContentElemImpl(const XMLElement* parent, std::string& out,
                && childAlignment != TextAlignment::left
                && hasTextContent(childElem)
                && !hasAlignmentBlockDescendant(childElem)) {
+        const TextStyle childStyle{applyCSSStyle(style, css)};
         appendAlignmentBegin(out, childAlignment);
-        parseContentElemImpl(childElem, out, chapterAbs, childAlignment, style,
-                             insideTableCell);
+        appendStyled(out, style, childStyle, [&]() -> void {
+          parseContentElemImpl(childElem, out, chapterAbs, stylesheet,
+                               childAlignment, childStyle, insideTableCell);
+        });
         appendAlignmentEnd(out, childAlignment);
       }
       else if (name == "image" || name == "img") {
@@ -593,8 +637,11 @@ auto parseContentElemImpl(const XMLElement* parent, std::string& out,
         }
       }
       else {
-        parseContentElemImpl(childElem, out, chapterAbs, childAlignment, style,
-                             insideTableCell);
+        const TextStyle childStyle{applyCSSStyle(style, css)};
+        appendStyled(out, style, childStyle, [&]() -> void {
+          parseContentElemImpl(childElem, out, chapterAbs, stylesheet,
+                               childAlignment, childStyle, insideTableCell);
+        });
       }
 
       if (isBlock && !insideTableCell) {
@@ -606,11 +653,75 @@ auto parseContentElemImpl(const XMLElement* parent, std::string& out,
 } // namespace
 
 auto parseContentElem(const XMLElement* parent, std::string& out,
-                      const fs::path& chapterAbs) -> void {
-  parseContentElemImpl(parent, out, chapterAbs,
-                       getElementAlignment(parent, TextAlignment::left), {},
-                       false);
+                      const fs::path& chapterAbs, const Stylesheet& stylesheet)
+    -> void {
+  parseContentElemImpl(parent, out, chapterAbs, stylesheet,
+                       getElementAlignment(parent, TextAlignment::left,
+                                           resolveCSS(stylesheet, parent)),
+                       {}, false);
 }
+
+namespace {
+auto loadChapterStylesheet(const XMLElement* head, const fs::path& chapterAbs)
+    -> Stylesheet {
+  Stylesheet result{};
+  if (head == nullptr) {
+    return result;
+  }
+  for (const XMLElement* elem{head->FirstChildElement()}; elem != nullptr;
+       elem = elem->NextSiblingElement()) {
+    const std::string_view name{elem->Name()};
+    if (name == "style") {
+      if (const char* text{elem->GetText()}) {
+        parseStylesheet(text, result);
+      }
+      continue;
+    }
+    if (name != "link") {
+      continue;
+    }
+    const char* rel{elem->Attribute("rel")};
+    const char* href{elem->Attribute("href")};
+    if (rel == nullptr || href == nullptr) {
+      continue;
+    }
+    bool isStylesheet{false};
+    bool isAlternate{false};
+    std::string_view relTokens{rel};
+    while (!relTokens.empty()) {
+      relTokens = trim(relTokens);
+      const std::size_t tokenEnd{relTokens.find_first_of(" \t\n\r\f")};
+      const std::string token{lowerASCII(relTokens.substr(0, tokenEnd))};
+      isStylesheet = isStylesheet || token == "stylesheet";
+      isAlternate = isAlternate || token == "alternate";
+      if (tokenEnd == std::string_view::npos) {
+        break;
+      }
+      relTokens.remove_prefix(tokenEnd);
+    }
+    if (!isStylesheet || isAlternate) {
+      continue;
+    }
+
+    std::string hrefRel{href};
+    if (hrefRel.contains('#')) {
+      hrefRel.resize(hrefRel.find('#'));
+    }
+    decodePercentEncoding(hrefRel);
+    // Missing or unreadable stylesheets are silently ignored,
+    // like missing images.
+    std::ifstream file{(chapterAbs.parent_path() / hrefRel).lexically_normal(),
+                       std::ios::binary};
+    if (!file) {
+      continue;
+    }
+    const std::string css{std::istreambuf_iterator<char>{file},
+                          std::istreambuf_iterator<char>{}};
+    parseStylesheet(css, result);
+  }
+  return result;
+}
+} // namespace
 
 auto parseChapter(const fs::path& chapterAbs, std::string& out) -> void {
   XMLDocument chapter{};
@@ -620,11 +731,13 @@ auto parseChapter(const fs::path& chapterAbs, std::string& out) -> void {
     throw std::runtime_error{chapter.ErrorStr()};
   }
 
-  const XMLElement* const body{
-      chapter.FirstChildElement("html")->FirstChildElement("body")};
+  const XMLElement* const html{chapter.FirstChildElement("html")};
+  const XMLElement* const body{html->FirstChildElement("body")};
+  const Stylesheet stylesheet{
+      loadChapterStylesheet(html->FirstChildElement("head"), chapterAbs)};
 
   const std::size_t chapterBegin{out.size()};
-  parseContentElem(body, out, chapterAbs);
+  parseContentElem(body, out, chapterAbs, stylesheet);
 
   constexpr std::string_view nonBreakingSpace{"\xC2\xA0"};
   std::size_t firstContent{chapterBegin};

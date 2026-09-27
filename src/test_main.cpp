@@ -30,6 +30,9 @@ auto main() -> int {
     test::styleEachLineIndividually();
     test::headingColors();
     test::contentAlignment();
+    test::cssParsing();
+    test::cssResolution();
+    test::cssChapter();
     test::initConf();
     test::initLibrary();
     test::readConfig();

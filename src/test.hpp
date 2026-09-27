@@ -78,6 +78,14 @@ auto displayEpub() -> void;
 
 auto styleEachLineIndividually() -> void;
 
+// Also exercises `mergeCSSDeclarations()`.
+auto cssParsing() -> void;
+
+auto cssResolution() -> void;
+
+// Also exercises `loadChapterStylesheet()`.
+auto cssChapter() -> void;
+
 auto headingColors() -> void;
 
 auto contentAlignment() -> void;
