@@ -217,6 +217,7 @@ set -g default-terminal "tmux-256color"
 # Allows escape sequences to pass through Byobu to the terminal emulator
 set -g allow-passthrough on
 ```
+Restart Byobu for the change to take effect.
 </details>
 
 # Inspiration
