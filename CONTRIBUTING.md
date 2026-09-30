@@ -33,9 +33,9 @@ make
 
 ## Tests
 
-`make test` runs every self-verifying test. Tests that write artifacts to
-`test_outputs/` for manual inspection are not run by default; call them from
-`src/test_main.cpp` to run them.
+`make test` builds and runs the self-verifying tests. Non-self-validating tests
+write artifacts to `test_outputs/` for manual inspection; to run one, add a
+call to it in `src/test_main.cpp`.
 
 ## Clang Tools
 
