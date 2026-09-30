@@ -211,6 +211,8 @@ auto parseSimpleSelector(std::string_view selector) -> std::optional<CSSRule> {
   return rule;
 }
 
+// Add one rule per selector in a comma separated list, all sharing `body`'s
+// declarations. Unsupported selectors are skipped individually.
 auto addRules(std::string_view selectors, std::string_view body,
               Stylesheet& out) -> void {
   const CSSDeclarations declarations{parseCSSDeclarations(body)};
