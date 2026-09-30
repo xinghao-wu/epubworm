@@ -170,6 +170,8 @@ auto parseTextAlign(std::string_view value) -> std::optional<CSSAlignment> {
   return std::nullopt;
 }
 
+// Apply a parsed value unless it would override an `!important` one with a
+// non-important declaration. Unparseable values leave `property` untouched.
 template <typename T>
 auto setProperty(CSSProperty<T>& property, std::optional<T> value,
                  bool important) -> void {
