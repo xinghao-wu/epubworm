@@ -84,6 +84,8 @@ auto findBlockEnd(std::string_view str, std::size_t open) -> std::size_t {
   return std::string_view::npos;
 }
 
+// Remove `/* ... */` comments, leaving quoted strings untouched. An
+// unterminated comment swallows the rest of the input, as browsers do.
 auto stripComments(std::string_view css) -> std::string {
   std::string result{};
   result.reserve(css.size());
