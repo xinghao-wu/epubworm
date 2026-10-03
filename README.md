@@ -196,7 +196,6 @@ Unsupporting terminals will work without images displayed.
 <details><summary>Click to expand</summary>
 
 Epubworm can display images in tmux and Byobu's tmux backend. GNU Screen support is coming soon.
-After editing the config below, restart the multiplexer (or reload its config) so the settings apply.
 
 ### tmux
 Make sure your `~/.tmux.conf` contains the following:
