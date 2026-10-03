@@ -84,8 +84,8 @@ auto findBlockEnd(std::string_view str, std::size_t open) -> std::size_t {
   return std::string_view::npos;
 }
 
-// Remove `/* ... */` comments, leaving quoted strings untouched. An
-// unterminated comment swallows the rest of the input, as browsers do.
+// Remove `/* ... */` comments outside quoted strings. An unterminated
+// comment runs to the end of the input.
 auto stripComments(std::string_view css) -> std::string {
   std::string result{};
   result.reserve(css.size());
@@ -170,8 +170,7 @@ auto parseTextAlign(std::string_view value) -> std::optional<CSSAlignment> {
   return std::nullopt;
 }
 
-// Apply a parsed value unless it would override an `!important` one with a
-// non-important declaration. Unparseable values leave `property` untouched.
+// Apply a parsed value unless an earlier `!important` declaration wins.
 template <typename T>
 auto setProperty(CSSProperty<T>& property, std::optional<T> value,
                  bool important) -> void {
@@ -211,8 +210,7 @@ auto parseSimpleSelector(std::string_view selector) -> std::optional<CSSRule> {
   return rule;
 }
 
-// Add one rule per selector in a comma separated list, all sharing `body`'s
-// declarations. Unsupported selectors are skipped individually.
+// One rule per supported selector in the list, sharing `body`'s declarations.
 auto addRules(std::string_view selectors, std::string_view body,
               Stylesheet& out) -> void {
   const CSSDeclarations declarations{parseCSSDeclarations(body)};
