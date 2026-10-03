@@ -27,8 +27,6 @@ struct CSSProperty {
   bool important{};
 };
 
-// Only the properties Epubworm can render; anything else is dropped while
-// parsing.
 struct CSSDeclarations {
   CSSProperty<bool> bold{};
   CSSProperty<bool> italic{};
