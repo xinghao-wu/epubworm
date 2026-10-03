@@ -19,8 +19,6 @@ enum class CSSAlignment : std::uint8_t {
   right,
 };
 
-// A declared value and whether it was marked `!important`. `value` is empty
-// when the property wasn't declared at all.
 template <typename T>
 struct CSSProperty {
   std::optional<T> value{};
