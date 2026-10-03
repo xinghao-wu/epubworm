@@ -196,6 +196,7 @@ Unsupporting terminals will work without images displayed.
 <details><summary>Click to expand</summary>
 
 Epubworm can display images in tmux and Byobu's tmux backend. GNU Screen support is coming soon.
+After editing the config below, restart the multiplexer (or reload its config) so the settings apply.
 
 ### tmux
 Make sure your `~/.tmux.conf` contains the following:
@@ -206,7 +207,6 @@ set -g default-terminal "tmux-256color"
 # Allows escape sequences to pass through tmux to the terminal emulator
 set -g allow-passthrough on
 ```
-Reload it with `tmux source-file ~/.tmux.conf`, or restart tmux.
 
 ### Byobu (tmux backend)
 Make sure your `~/.byobu/.tmux.conf` contains the following:
@@ -217,7 +217,6 @@ set -g default-terminal "tmux-256color"
 # Allows escape sequences to pass through Byobu to the terminal emulator
 set -g allow-passthrough on
 ```
-Restart Byobu for the change to take effect.
 </details>
 
 # Inspiration
