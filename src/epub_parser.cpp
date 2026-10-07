@@ -388,6 +388,8 @@ auto getSpine(const XMLDocument& opf) -> std::vector<fs::path> {
       opf.FirstChildElement("package")->FirstChildElement("manifest")};
   std::vector<fs::path> result{};
 
+  // The TOC isn't an `<itemref>`, it's referenced by the spine's `toc`
+  // attribute, so it's resolved separately and placed first.
   const char* tocID{spine->Attribute("toc")};
   std::string tocHref{getHrefFromID(manifest, tocID)};
   decodePercentEncoding(tocHref);
