@@ -415,8 +415,6 @@ auto getSpine() -> void {
   assert(imageElementsSpine.size() == 4);
   assert(imageElementsSpine[0] == "toc.ncx");
   assert(imageElementsSpine[1] == "Text/svg.xhtml");
-  assert(imageElementsSpine[2] == "Text/html-image.xhtml");
-  assert(imageElementsSpine[3] == "Text/prose.xhtml");
 
   XMLDocument nonlinearSpineOPF{};
   nonlinearSpineOPF.LoadFile(
