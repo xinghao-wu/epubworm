@@ -426,8 +426,9 @@ auto collectNavPoints(const XMLElement* parent, TocData& tocData,
         navPoint->FirstChildElement("content")->Attribute("src")};
     decodePercentEncoding(srcFilePathRel);
     // Strip the fragment identifier, chapters are only navigable by file.
-    if (srcFilePathRel.contains('#')) {
-      srcFilePathRel.resize(srcFilePathRel.find('#'));
+    if (const std::size_t fragmentBegin{srcFilePathRel.find('#')};
+        fragmentBegin != std::string::npos) {
+      srcFilePathRel.resize(fragmentBegin);
     }
 
     // Keep only the first nav point pointing at each file.
