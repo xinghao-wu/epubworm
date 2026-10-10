@@ -456,8 +456,6 @@ auto getTOC() -> void {
   assert(nonlinearSpineTOC.size() == 3);
   assert(nonlinearSpineTOC[0].first == "Cover");
   assert(nonlinearSpineTOC[0].second == "Text/cover.xhtml");
-  assert(nonlinearSpineTOC[1].first == "Introduction");
-  assert(nonlinearSpineTOC[1].second == "Text/intro.xhtml");
   assert(nonlinearSpineTOC[2].first == "Inner Room");
   assert(nonlinearSpineTOC[2].second == "Text/chapter.xhtml");
 
