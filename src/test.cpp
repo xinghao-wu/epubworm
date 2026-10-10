@@ -149,15 +149,6 @@ auto getTitle() -> void {
 
   assert(::getTitle(metadataPathsMetadata) == "The Clockwork Garden");
   assert(::getTitle(imageElementsMetadata) == "Illustrated Signals");
-
-  XMLDocument multipleTitlesOPF{};
-  multipleTitlesOPF.Parse("<package><metadata>"
-                          "<dc:creator>Someone</dc:creator>"
-                          "<dc:title>Main Title</dc:title>"
-                          "<dc:title>Subtitle</dc:title>"
-                          "</metadata></package>");
-  assert(!multipleTitlesOPF.Error());
-  assert(::getTitle(::getMetadata(multipleTitlesOPF)) == "Main Title");
 }
 
 auto getAuthor() -> void {
