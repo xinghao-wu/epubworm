@@ -23,11 +23,12 @@ using TocData = std::vector<std::pair<std::string, std::filesystem::path>>;
 [[nodiscard]] auto getOPFRel(const std::filesystem::path& epubRootAbs)
     -> std::filesystem::path;
 
-// Returns the opf's `<metadata>` element.
+// Returns the `<metadata>` child of the opf's `<package>` element.
 [[nodiscard]] auto getMetadata(const tinyxml2::XMLDocument& opf)
     -> const tinyxml2::XMLElement*;
 
-// Returns the text of the first `<dc:title>` element.
+// Returns the text of the first `<dc:title>` element, any later titles
+// (e.g. subtitles) are ignored.
 [[nodiscard]] auto getTitle(const tinyxml2::XMLElement* metadata)
     -> std::string;
 
