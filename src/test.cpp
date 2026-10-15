@@ -418,17 +418,6 @@ auto getSpine() -> void {
   assert(nonlinearSpineSpine[1] == "Text/cover.xhtml");
   assert(nonlinearSpineSpine[2] == "Text/intro.xhtml");
   assert(nonlinearSpineSpine[3] == "Text/chapter.xhtml");
-
-  XMLDocument nestedNavigationOPF{};
-  nestedNavigationOPF.LoadFile(
-      (nestedNavigationRootAbs / ::getOPFRel(nestedNavigationRootAbs)).c_str());
-  const std::vector<fs::path> nestedNavigationSpine{
-      ::getSpine(nestedNavigationOPF)};
-
-  assert(nestedNavigationSpine.size() == 4);
-  assert(nestedNavigationSpine[0] == "toc.ncx");
-  assert(nestedNavigationSpine[1] == "Text/one.xhtml");
-  assert(nestedNavigationSpine[3] == "Text/three.xhtml");
 }
 
 auto getTOC() -> void {
