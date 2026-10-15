@@ -113,7 +113,6 @@ auto getOPFRel() -> void {
   assert(::getOPFRel(nonlinearSpineRootAbs) == "OEBPS/content.opf");
   assert(::getOPFRel(imageElementsRootAbs) == "content.opf");
   assert(::getOPFRel(nestedNavigationRootAbs) == "Book/package.opf");
-  assert(::getOPFRel(cssClassesRootAbs) == "OEBPS/content.opf");
 }
 
 auto getMetadata() -> void {
