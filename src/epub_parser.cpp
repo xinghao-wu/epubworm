@@ -424,9 +424,8 @@ auto collectNavPoints(const XMLElement* parent, TocData& tocData,
     std::string srcFilePathRel{
         navPoint->FirstChildElement("content")->Attribute("src")};
     decodePercentEncoding(srcFilePathRel);
-    if (const std::size_t fragmentBegin{srcFilePathRel.find('#')};
-        fragmentBegin != std::string::npos) {
-      srcFilePathRel.resize(fragmentBegin);
+    if (srcFilePathRel.contains('#')) {
+      srcFilePathRel.resize(srcFilePathRel.find('#'));
     }
 
     const fs::path srcPathRel{srcFilePathRel};
