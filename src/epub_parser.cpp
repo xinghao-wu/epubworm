@@ -382,9 +382,10 @@ auto getHrefFromID(const XMLElement* manifest, std::string_view id) -> const
 }
 
 auto getSpine(const XMLDocument& opf) -> std::vector<fs::path> {
-  const XMLElement* package{opf.FirstChildElement("package")};
-  const XMLElement* spine{package->FirstChildElement("spine")};
-  const XMLElement* manifest{package->FirstChildElement("manifest")};
+  const XMLElement* spine{
+      opf.FirstChildElement("package")->FirstChildElement("spine")};
+  const XMLElement* manifest{
+      opf.FirstChildElement("package")->FirstChildElement("manifest")};
   std::vector<fs::path> result{};
 
   const char* tocID{spine->Attribute("toc")};
