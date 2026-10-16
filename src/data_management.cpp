@@ -341,7 +341,7 @@ auto deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs)
     return std::unexpected{LibraryUpdateError::notFoundOrAmbiguous};
   }
 
-  const char* const id{epubElem->Attribute("id")};
+  const std::string id{epubElem->Attribute("id")};
   EpubInfo info{getEpubInfo(id, shareAbs)};
 
   // Delete the extracted epub directory.
