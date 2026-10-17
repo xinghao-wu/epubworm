@@ -36,6 +36,9 @@ constexpr std::string_view mascot{R"(        ||
           '-._.--'
 )"};
 
+constexpr std::string_view idNotFoundMessage{
+    "epub with provided id hash not found, or the prefix is ambiguous"};
+
 enum class CliCommand : std::uint8_t {
   invalid,
   help,
@@ -252,8 +255,7 @@ auto dispatchCli(int argc, char** argv) -> int {
     const std::expected<EpubInfo, LibraryUpdateError> removed{
         deleteFromLibrary(argv[2], shareAbs)};
     if (!removed.has_value()) {
-      displayError("epub with provided id hash not found, or the prefix "
-                   "is ambiguous");
+      displayError(idNotFoundMessage);
       return 1;
     }
 
@@ -277,8 +279,7 @@ auto dispatchCli(int argc, char** argv) -> int {
     return 0;
   case CliCommand::open:
     if (!readEpubInLibrary(argv[2], shareAbs, conf.lineLength)) {
-      displayError("epub with provided id hash not found, or the prefix "
-                   "is ambiguous");
+      displayError(idNotFoundMessage);
       return 1;
     }
     return 0;
