@@ -13,6 +13,7 @@ auto main() -> int {
     test::getTitle();
     test::getAuthor();
     test::findAndReplaceAll();
+    test::decodePercentEncoding();
     test::wrapForTmuxPassthrough();
     test::wrapLines();
     test::imageEscCodes();

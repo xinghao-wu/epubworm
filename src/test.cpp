@@ -2,6 +2,7 @@
 #include "css.hpp"
 #include "data_management.hpp"
 #include "epub_parser.hpp"
+#include "percent_encoding_decode.hpp"
 #include "row_col_diacritics.hpp"
 #include "single_instance.hpp"
 #include "tinyxml2/tinyxml2.hpp"
@@ -194,6 +195,20 @@ auto findAndReplaceAll() -> void {
   std::string noTarget{"am I the fairest of them all?"};
   ::findAndReplaceAll(noTarget, "target", "mirror");
   assert(noTarget == "am I the fairest of them all?");
+}
+
+auto decodePercentEncoding() -> void {
+  std::string spaces{"Text/chapter%201%20part%202.xhtml"};
+  ::decodePercentEncoding(spaces);
+  assert(spaces == "Text/chapter 1 part 2.xhtml");
+
+  std::string reserved{"a%23b%3Fc%26d%2Fe"};
+  ::decodePercentEncoding(reserved);
+  assert(reserved == "a#b?c&d/e");
+
+  std::string latin1{"caf%E9"};
+  ::decodePercentEncoding(latin1);
+  assert(latin1 == "café");
 }
 
 auto wrapForTmuxPassthrough() -> void {
