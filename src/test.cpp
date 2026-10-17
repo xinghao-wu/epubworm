@@ -209,6 +209,14 @@ auto decodePercentEncoding() -> void {
   std::string latin1{"caf%E9"};
   ::decodePercentEncoding(latin1);
   assert(latin1 == "café");
+
+  std::string unencoded{"Text/chapter1.xhtml"};
+  ::decodePercentEncoding(unencoded);
+  assert(unencoded == "Text/chapter1.xhtml");
+
+  std::string unknownEscape{"100%ZZ"};
+  ::decodePercentEncoding(unknownEscape);
+  assert(unknownEscape == "100%ZZ");
 }
 
 auto wrapForTmuxPassthrough() -> void {
