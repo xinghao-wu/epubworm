@@ -8,7 +8,9 @@
 // that could not be completed.
 auto dispatchCli(int argc, char** argv) -> int;
 
-// Helper for `displayHelp()`
+// Helper for `displayHelp()`.
+// Prints `left`, pads with spaces up to the description column, then prints
+// `right` and a newline. No padding is added if `left` reaches the column.
 auto printAligned(std::string_view left, std::string_view right) -> void;
 
 // Prints the program's help text to stdout.
