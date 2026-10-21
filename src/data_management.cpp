@@ -175,8 +175,6 @@ auto getUnambiguousEpubIdPrefix(const XMLElement* libraryRoot,
       continue;
     }
 
-    // The prefix must extend one past the longest run shared with any other
-    // id, capped at the full id length.
     std::size_t commonLength{};
     while (commonLength < id.size() && commonLength < epubId.size()
            && id[commonLength] == epubId[commonLength]) {
