@@ -16,10 +16,6 @@
 using namespace tinyxml2;
 namespace fs = std::filesystem;
 
-namespace {
-constexpr std::string_view extractedEpubsRel{"epubworm/extracted_epubs"};
-} // namespace
-
 auto unzip(const fs::path& archiveAbs, const fs::path& destinationAbs) -> void {
   miniz_cpp::zip_file archive{archiveAbs.string()};
   archive.extractall(destinationAbs.string());
@@ -133,7 +129,7 @@ auto getTruncatedSHA256Sum(const fs::path& fileAbs) -> std::string {
 }
 
 auto getEpubInfo(std::string_view id, const fs::path& shareAbs) -> EpubInfo {
-  const fs::path epubRootAbs{shareAbs / extractedEpubsRel / id};
+  const fs::path epubRootAbs{shareAbs / "epubworm/extracted_epubs" / id};
   const fs::path opfAbs{epubRootAbs / getOPFRel(epubRootAbs)};
   XMLDocument opf{};
   opf.LoadFile(opfAbs.c_str());
@@ -215,7 +211,8 @@ auto queryEpubElem(const XMLElement* epub, const fs::path& shareAbs)
 
   if (const char* const openedChapter{epub->Attribute("opened-chapter")};
       openedChapter != nullptr && openedChapter[0] != '\0') {
-    prog.chapterAbs = shareAbs / extractedEpubsRel / id / openedChapter;
+    prog.chapterAbs =
+        shareAbs / "epubworm/extracted_epubs" / id / openedChapter;
   }
 
   return {id, prog};
@@ -235,7 +232,7 @@ auto writeProgress(XMLElement* epub, const EpubProg& prog,
     return;
   }
 
-  const fs::path epubRootAbs{shareAbs / extractedEpubsRel / id};
+  const fs::path epubRootAbs{shareAbs / "epubworm/extracted_epubs" / id};
   const fs::path openedChapter{prog.chapterAbs.lexically_relative(epubRootAbs)};
   epub->SetAttribute("opened-chapter", openedChapter.string().c_str());
 }
@@ -294,7 +291,7 @@ auto addToLibrary(const fs::path& zippedEpubAbs, const fs::path& shareAbs)
   }
 
   // Extract epub to its directory.
-  const fs::path extractDest{shareAbs / extractedEpubsRel / id};
+  const fs::path extractDest{shareAbs / "epubworm/extracted_epubs" / id};
   fs::create_directories(extractDest);
   unzip(zippedEpubAbs, extractDest);
   EpubInfo info{getEpubInfo(id, shareAbs)};
@@ -345,7 +342,7 @@ auto deleteFromLibrary(std::string_view idPrefix, const fs::path& shareAbs)
   EpubInfo info{getEpubInfo(id, shareAbs)};
 
   // Delete the extracted epub directory.
-  fs::remove_all(shareAbs / extractedEpubsRel / id);
+  fs::remove_all(shareAbs / "epubworm/extracted_epubs" / id);
 
   // Reset `<last-read>` if it referenced the removed epub.
   if (const char* const lastReadId{lastRead->Attribute("id")};
@@ -387,7 +384,7 @@ auto readEpubInLibrary(std::string_view idPrefix, const fs::path& shareAbs,
   }
 
   const auto [id, iniProg]{queryEpubElem(epubElem, shareAbs)};
-  const fs::path epubRootAbs{shareAbs / extractedEpubsRel / id};
+  const fs::path epubRootAbs{shareAbs / "epubworm/extracted_epubs" / id};
 
   enableRawMode();
   const EpubProg exitProg{displayEpub(iniProg, epubRootAbs, desiredMaxLen)};
