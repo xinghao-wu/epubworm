@@ -30,15 +30,12 @@ enum class LibraryUpdateError : std::uint8_t {
 auto unzip(const std::filesystem::path& archiveAbs,
            const std::filesystem::path& destinationAbs) -> void;
 
-// Creates a config xml file at `configFileAbs` containing the declaration and
-// an empty root elem `<conf>`, creating parent directories as needed.
-// Throws `std::runtime_error` if the file cannot be saved.
+// Initialize a config xml file at `configFileAbs`,
+// writing the declaration and root elem `<conf>`.
 auto initConf(const std::filesystem::path& configFileAbs) -> void;
 
-// Creates a library xml file at `libraryFileAbs` containing the declaration,
-// root elem `<library>`, and a `<last-read>` child with a blank `id`, creating
-// parent directories as needed.
-// Throws `std::runtime_error` if the file cannot be saved.
+// Initialize a library xml file `libraryFileAbs`,
+// writing the declaration and root elem `<library>`.
 auto initLibrary(const std::filesystem::path& libraryFileAbs) -> void;
 
 // Parse a config xml file and return the found options.
