@@ -204,8 +204,6 @@ auto dispatchCli(int argc, char** argv) -> int {
   case CliCommand::add: {
     std::vector<std::expected<EpubInfo, LibraryUpdateError>> results{};
     results.reserve(static_cast<std::size_t>(argc - 2));
-    // Stop at the first failure, but defer rethrowing it until the epubs that
-    // were processed before it have been reported.
     std::exception_ptr addError{};
     for (int i{2}; i < argc; ++i) {
       try {
