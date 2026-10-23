@@ -191,7 +191,11 @@ auto dispatchCli(int argc, char** argv) -> int {
                                + XMLDocument::ErrorIDToName(library.ErrorID())};
     }
     const std::string id{getLastRead(library)};
-    if (id.empty() || !readEpubInLibrary(id, shareAbs, conf.lineLength)) {
+    if (id.empty()) {
+      displayError("no last-read epub, or its no longer in library");
+      return 1;
+    }
+    if (!readEpubInLibrary(id, shareAbs, conf.lineLength)) {
       displayError("no last-read epub, or its no longer in library");
       return 1;
     }
