@@ -15,8 +15,6 @@ auto getAuthor() -> void;
 
 auto findAndReplaceAll() -> void;
 
-auto decodePercentEncoding() -> void;
-
 auto wrapForTmuxPassthrough() -> void;
 
 auto wrapLines() -> void;
