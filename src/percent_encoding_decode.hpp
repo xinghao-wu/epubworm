@@ -4,10 +4,6 @@
 #include <string>
 
 // Decode percent (url) encoding, needed for file paths extracted from epubs.
-// Only the escapes listed below are decoded; others are left untouched.
-// Replacements run in table order, so `%25` decoding to `%` can form an escape
-// that a later entry then decodes again.
-// Bytes above `%7F` are mapped as Latin-1, not as UTF-8 sequences.
 constexpr auto decodePercentEncoding(std::string& str) -> void {
   if (!str.contains('%')) {
     return;
