@@ -209,6 +209,8 @@ auto displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols)
   if (rows == 0 || cols == 0) {
     winsize winInfo{};
     ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
+    // Some terminals don't report pixel dimensions, so the image's native
+    // size can't be mapped to cells. Fall back to a fixed placement size.
     if (winInfo.ws_xpixel == 0 || winInfo.ws_ypixel == 0) {
       rows = 35;
       cols = 60;
