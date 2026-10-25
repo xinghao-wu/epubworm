@@ -175,6 +175,10 @@ auto displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
                            + std::to_string(idGreen) + ';'
                            + std::to_string(idBlue) + 'm'};
 
+  // The image id travels in the foreground color, and each row starts with a
+  // diacritic giving its row index. Kitty infers the column of the following
+  // placeholders, but iTerm2 needs explicit row, column, and high id byte
+  // diacritics on every cell.
   for (int r{0}; r < rows; ++r) {
     out += esc + idInFG;
     if (forITerm2) {
