@@ -132,7 +132,8 @@ auto loadImg(const std::filesystem::path& imgAbs, std::uint32_t id, int rows,
 // Display a loaded image (existing virtual placement)
 // using `rows` * `cols` special unicode characters.
 // Appends unicode characters (the image) to `out`.
-// `id` must be an integer between 1 and 2^24 - 1, inclusive.
+// `id` must be an integer between 1 and 2^24 - 1, inclusive, since it is
+// encoded as a 24-bit truecolor foreground.
 // `forITerm2` enables its more explicit placeholder encoding workaround.
 // Throws `std::runtime_error` if `id` is not in valid range.
 auto displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
