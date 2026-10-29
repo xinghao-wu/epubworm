@@ -41,6 +41,8 @@ SingleInstanceLock::SingleInstanceLock(const fs::path& lockAbs) {
       continue;
     }
     close(fd);
+    // Another instance holds the lock. Leave `lockFd` unset rather than
+    // treating this as an error.
     if (error == EWOULDBLOCK) {
       return;
     }
