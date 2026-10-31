@@ -2215,17 +2215,17 @@ auto getTOCStatusLine(int screenCols, std::string_view title) -> std::string {
 }
 
 auto inTmuxSession() -> bool {
-  const char* const tmux{std::getenv("TMUX")};
+  const char* tmux{std::getenv("TMUX")};
   if (tmux != nullptr && *tmux != '\0') {
     return true;
   }
 
-  const char* const termProgram{std::getenv("TERM_PROGRAM")};
+  const char* termProgram{std::getenv("TERM_PROGRAM")};
   return termProgram != nullptr && std::string_view{termProgram} == "tmux";
 }
 
 auto inITerm2Session() -> bool {
-  const char* const termProgram{std::getenv("TERM_PROGRAM")};
+  const char* termProgram{std::getenv("TERM_PROGRAM")};
   if (termProgram != nullptr && *termProgram != '\0') {
     const std::string_view termProgramView{termProgram};
     if (termProgramView == "iTerm.app") {
@@ -2236,7 +2236,7 @@ auto inITerm2Session() -> bool {
     }
   }
 
-  const char* const lcTerminal{std::getenv("LC_TERMINAL")};
+  const char* lcTerminal{std::getenv("LC_TERMINAL")};
   return lcTerminal != nullptr && std::string_view{lcTerminal} == "iTerm2";
 }
 
