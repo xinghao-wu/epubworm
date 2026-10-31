@@ -1269,6 +1269,8 @@ auto popLastSearchWord(std::string& str) -> void {
     const std::size_t len{searchWhitespaceLen(text, begin)};
     return len == text.size() - begin ? len : 0;
   };
+  // Strip trailing whitespace first, then remove code points until the
+  // preceding whitespace or the start of the query is reached.
   while (!str.empty()) {
     const std::size_t whitespaceLen{trailingWhitespaceLen(str)};
     if (whitespaceLen == 0) {
