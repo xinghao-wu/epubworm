@@ -1420,9 +1420,6 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
         static_cast<double>(screenTopLine - 1) / scrollableLines, 0.0, 1.0);
   }
   const int percent{static_cast<int>(std::lround(progress * 100))};
-  // Estimate the unread share of the chapter by line count, then turn the
-  // matching share of words and CJK characters into a fast-to-slow range of
-  // minutes.
   const int remainingLines{
       std::clamp(chapterLines - screenTopLine + 1, 0, chapterLines)};
   const double remainingFraction{
