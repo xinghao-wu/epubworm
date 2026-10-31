@@ -2144,9 +2144,6 @@ auto getTOCStatusLine(int screenCols, std::string_view title) -> std::string {
   constexpr int leftPrefixCols{2};
   const int contentAvailableCols{std::max(availableCols - leftPrefixCols, 0)};
   int rightCols{getVisualLen(right)};
-  // The title needs at least one column plus the spacing around the middle
-  // rule. Otherwise only the right label is drawn, trimmed from its left edge
-  // if necessary.
   const bool showTitle{!wideTitle.empty()
                        && contentAvailableCols >= rightCols + 5};
   if (!showTitle && rightCols > contentAvailableCols) {
