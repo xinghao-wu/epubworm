@@ -1070,6 +1070,7 @@ auto buildChapterSearchIndex(std::string_view chapter) -> ChapterSearchIndex {
     const bool imageLine{renderedLine.contains(imgCellPlaceholder)};
     const bool forcedWrap{renderedLine.contains(forcedWrapMarker)};
 
+    // Image lines hold only placeholder cells, so they contribute no text.
     if (!imageLine) {
       bool lineHasSearchText{false};
       for (std::size_t pos{lineBegin}; pos < lineEnd;) {
