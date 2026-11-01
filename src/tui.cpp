@@ -1064,7 +1064,6 @@ auto buildChapterSearchIndex(std::string_view chapter) -> ChapterSearchIndex {
     const bool imageLine{renderedLine.contains(imgCellPlaceholder)};
     const bool forcedWrap{renderedLine.contains(forcedWrapMarker)};
 
-    // Image lines hold only placeholder cells, so they contribute no text.
     if (!imageLine) {
       bool lineHasSearchText{false};
       for (std::size_t pos{lineBegin}; pos < lineEnd;) {
@@ -1263,8 +1262,6 @@ auto popLastSearchWord(std::string& str) -> void {
     const std::size_t len{searchWhitespaceLen(text, begin)};
     return len == text.size() - begin ? len : 0;
   };
-  // Strip trailing whitespace first, then remove code points until the
-  // preceding whitespace or the start of the query is reached.
   while (!str.empty()) {
     const std::size_t whitespaceLen{trailingWhitespaceLen(str)};
     if (whitespaceLen == 0) {
