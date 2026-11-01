@@ -265,6 +265,23 @@ auto stripImportant(std::string_view& value) -> bool {
   value = trim(value.substr(0, bang));
   return true;
 }
+
+auto applyDeclaration(CSSDeclarations& declarations, std::string_view property,
+                      std::string_view value, bool important) -> void {
+  if (property == "font-weight") {
+    setProperty(declarations.bold, parseFontWeight(value), important);
+  }
+  else if (property == "font-style") {
+    setProperty(declarations.italic, parseFontStyle(value), important);
+  }
+  else if (property == "text-decoration"
+           || property == "text-decoration-line") {
+    setProperty(declarations.underline, parseTextDecoration(value), important);
+  }
+  else if (property == "text-align") {
+    setProperty(declarations.alignment, parseTextAlign(value), important);
+  }
+}
 } // namespace
 
 auto mergeCSSDeclarations(CSSDeclarations& base, const CSSDeclarations& overlay)
@@ -289,20 +306,7 @@ auto parseCSSDeclarations(std::string_view declarations) -> CSSDeclarations {
       std::string_view rawValue{trim(declaration.substr(colon + 1))};
       const bool important{stripImportant(rawValue)};
       const std::string value{lowerASCII(rawValue)};
-
-      if (property == "font-weight") {
-        setProperty(result.bold, parseFontWeight(value), important);
-      }
-      else if (property == "font-style") {
-        setProperty(result.italic, parseFontStyle(value), important);
-      }
-      else if (property == "text-decoration"
-               || property == "text-decoration-line") {
-        setProperty(result.underline, parseTextDecoration(value), important);
-      }
-      else if (property == "text-align") {
-        setProperty(result.alignment, parseTextAlign(value), important);
-      }
+      applyDeclaration(result, property, value, important);
     }
 
     if (declarationEnd == std::string_view::npos) {
