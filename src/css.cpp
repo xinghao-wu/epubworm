@@ -254,6 +254,17 @@ auto matches(const CSSRule& rule, std::string_view tag,
     return std::ranges::contains(classes, std::string_view{cls});
   });
 }
+
+// Strip a trailing `!important` from `value`, returning whether it was present.
+auto stripImportant(std::string_view& value) -> bool {
+  const std::size_t bang{value.rfind('!')};
+  if (bang == std::string_view::npos
+      || lowerASCII(trim(value.substr(bang + 1))) != "important") {
+    return false;
+  }
+  value = trim(value.substr(0, bang));
+  return true;
+}
 } // namespace
 
 auto mergeCSSDeclarations(CSSDeclarations& base, const CSSDeclarations& overlay)
@@ -276,13 +287,7 @@ auto parseCSSDeclarations(std::string_view declarations) -> CSSDeclarations {
       const std::string property{
           lowerASCII(trim(declaration.substr(0, colon)))};
       std::string_view rawValue{trim(declaration.substr(colon + 1))};
-      bool important{false};
-      const std::size_t bang{rawValue.rfind('!')};
-      if (bang != std::string_view::npos
-          && lowerASCII(trim(rawValue.substr(bang + 1))) == "important") {
-        important = true;
-        rawValue = trim(rawValue.substr(0, bang));
-      }
+      const bool important{stripImportant(rawValue)};
       const std::string value{lowerASCII(rawValue)};
 
       if (property == "font-weight") {
