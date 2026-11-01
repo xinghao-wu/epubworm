@@ -12,8 +12,6 @@
 namespace fs = std::filesystem;
 
 SingleInstanceLock::SingleInstanceLock(const fs::path& lockAbs) {
-  // The fallback path lives in a shared temp directory, so refuse to follow
-  // symlinks and only accept a regular file owned by us.
   const int fd{open(lockAbs.c_str(), O_RDWR | O_CREAT | O_CLOEXEC | O_NOFOLLOW,
                     S_IRUSR | S_IWUSR)};
   if (fd == -1) {
@@ -41,8 +39,6 @@ SingleInstanceLock::SingleInstanceLock(const fs::path& lockAbs) {
       continue;
     }
     close(fd);
-    // Another instance holds the lock. Leave `lockFd` unset rather than
-    // treating this as an error.
     if (error == EWOULDBLOCK) {
       return;
     }
