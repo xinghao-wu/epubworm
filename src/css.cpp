@@ -299,6 +299,18 @@ auto skipAtRule(std::string_view css, std::size_t pos) -> std::size_t {
   }
   return blockEnd + 1;
 }
+
+// HTML comment delimiters are allowed (and ignored) in `<style>` text.
+// Returns the length of the delimiter `css` starts with, or 0 if none.
+auto htmlCommentDelimiterLength(std::string_view css) -> std::size_t {
+  if (css.starts_with("<!--")) {
+    return 4;
+  }
+  if (css.starts_with("-->")) {
+    return 3;
+  }
+  return 0;
+}
 } // namespace
 
 auto mergeCSSDeclarations(CSSDeclarations& base, const CSSDeclarations& overlay)
@@ -346,13 +358,9 @@ auto parseStylesheet(std::string_view rawCSS, Stylesheet& out) -> void {
     if (rest.empty()) {
       break;
     }
-    // HTML comment delimiters are allowed (and ignored) in `<style>` text.
-    if (rest.starts_with("<!--")) {
-      pos += 4;
-      continue;
-    }
-    if (rest.starts_with("-->")) {
-      pos += 3;
+    const std::size_t delimiterLength{htmlCommentDelimiterLength(rest)};
+    if (delimiterLength != 0) {
+      pos += delimiterLength;
       continue;
     }
 
