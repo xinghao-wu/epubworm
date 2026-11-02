@@ -282,6 +282,23 @@ auto applyDeclaration(CSSDeclarations& declarations, std::string_view property,
     setProperty(declarations.alignment, parseTextAlign(value), important);
   }
 }
+
+// `pos` is the index of an `@`. Returns the index just past the at-rule's
+// terminating `;` or block, or `npos` if the at-rule is unterminated.
+auto skipAtRule(std::string_view css, std::size_t pos) -> std::size_t {
+  const std::size_t end{findUnquoted(css, pos, ";{")};
+  if (end == std::string_view::npos) {
+    return std::string_view::npos;
+  }
+  if (css[end] == ';') {
+    return end + 1;
+  }
+  const std::size_t blockEnd{findBlockEnd(css, end)};
+  if (blockEnd == std::string_view::npos) {
+    return std::string_view::npos;
+  }
+  return blockEnd + 1;
+}
 } // namespace
 
 auto mergeCSSDeclarations(CSSDeclarations& base, const CSSDeclarations& overlay)
@@ -340,19 +357,10 @@ auto parseStylesheet(std::string_view rawCSS, Stylesheet& out) -> void {
     }
 
     if (rest.front() == '@') {
-      const std::size_t end{findUnquoted(css, pos, ";{")};
-      if (end == std::string_view::npos) {
+      pos = skipAtRule(css, pos);
+      if (pos == std::string_view::npos) {
         break;
       }
-      if (css[end] == ';') {
-        pos = end + 1;
-        continue;
-      }
-      const std::size_t blockEnd{findBlockEnd(css, end)};
-      if (blockEnd == std::string_view::npos) {
-        break;
-      }
-      pos = blockEnd + 1;
       continue;
     }
 
