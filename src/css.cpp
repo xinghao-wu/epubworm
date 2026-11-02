@@ -311,6 +311,11 @@ auto htmlCommentDelimiterLength(std::string_view css) -> std::size_t {
   }
   return 0;
 }
+
+// Number of classes, then whether a tag is present.
+auto ruleSpecificity(const CSSRule* rule) -> std::pair<std::size_t, bool> {
+  return {rule->classes.size(), !rule->tag.empty()};
+}
 } // namespace
 
 auto mergeCSSDeclarations(CSSDeclarations& base, const CSSDeclarations& overlay)
@@ -406,10 +411,7 @@ auto resolveCSS(const Stylesheet& stylesheet, const XMLElement* elem)
     }
   }
   // Stable, so equal specificity rules keep source order.
-  std::ranges::stable_sort(matched, {}, [](const CSSRule* rule) -> auto {
-    // Number of classes, then whether a tag is present.
-    return std::pair{rule->classes.size(), !rule->tag.empty()};
-  });
+  std::ranges::stable_sort(matched, {}, ruleSpecificity);
   for (const CSSRule* rule : matched) {
     mergeCSSDeclarations(result, rule->declarations);
   }
