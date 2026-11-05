@@ -1504,6 +1504,17 @@ auto readConfig() -> void {
   ::initConf(configFileAbs);
   assert(::readConfig(configFileAbs).lineLength == 55);
 
+  ::setConfigLineLength(configFileAbs, 72);
+  assert(::readConfig(configFileAbs).lineLength == 72);
+  try {
+    ::setConfigLineLength(configFileAbs, 0);
+    assert(false);
+  }
+  catch (const std::invalid_argument& e) {
+    assert(std::string_view{e.what()} == "line length must be positive");
+  }
+  assert(::readConfig(configFileAbs).lineLength == 72);
+
   fs::remove_all(tmpConfigAbs);
 }
 
