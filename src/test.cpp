@@ -449,14 +449,18 @@ auto getTOC() -> void {
   assert(nestedNavigationTOC[2].second == "Text/three.xhtml");
 }
 
-auto stripSoftHyphens() -> void {
+auto stripInvisibleBreaks() -> void {
   std::string str{"hy\u00ADphen\u00ADation"};
-  ::stripSoftHyphens(str);
+  ::stripInvisibleBreaks(str);
   assert(str == "hyphenation");
 
-  std::string plain{"no soft hyphens"};
-  ::stripSoftHyphens(plain);
-  assert(plain == "no soft hyphens");
+  std::string zeroWidth{"long\u200Bword\u200B"};
+  ::stripInvisibleBreaks(zeroWidth);
+  assert(zeroWidth == "longword");
+
+  std::string plain{"no invisible breaks"};
+  ::stripInvisibleBreaks(plain);
+  assert(plain == "no invisible breaks");
 }
 
 auto parseChapter() -> void {

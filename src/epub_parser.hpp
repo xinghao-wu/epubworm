@@ -102,6 +102,6 @@ auto dumpEpub(const std::filesystem::path& epubRootAbs, std::string& out)
 // and escaped tab characters `(\t)` into four spaces.
 auto expandEllipsesAndTabs(std::string& str) -> void;
 
-// Remove soft hyphens (U+00AD) from `str`. Terminals render them
-// inconsistently, sometimes as a visible hyphen in the middle of a line.
-auto stripSoftHyphens(std::string& str) -> void;
+// Remove soft hyphens (U+00AD) and zero-width spaces (U+200B) from `str`.
+// Terminals render them inconsistently, sometimes as visible glyphs.
+auto stripInvisibleBreaks(std::string& str) -> void;
