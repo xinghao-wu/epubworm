@@ -123,6 +123,7 @@ auto getClassAlignment(const XMLElement* elem) -> TextAlignment {
     classes.remove_prefix(tokenEnd + 1);
   }
 
+  // When classes conflict, prefer left, then right, then center.
   if (leftFound) {
     return TextAlignment::left;
   }
