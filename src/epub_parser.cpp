@@ -802,3 +802,7 @@ auto expandEllipsesAndTabs(std::string& str) -> void {
   findAndReplaceAll(str, "…", "...");
   findAndReplaceAll(str, "\t", "    ");
 }
+
+auto stripSoftHyphens(std::string& str) -> void {
+  findAndReplaceAll(str, "\u00AD", "");
+}

@@ -101,3 +101,7 @@ auto dumpEpub(const std::filesystem::path& epubRootAbs, std::string& out)
 // In `str`, expand the ugly unicode ellipses (…) into three normal dots (...)
 // and escaped tab characters `(\t)` into four spaces.
 auto expandEllipsesAndTabs(std::string& str) -> void;
+
+// Remove soft hyphens (U+00AD) from `str`. Terminals render them
+// inconsistently, sometimes as a visible hyphen in the middle of a line.
+auto stripSoftHyphens(std::string& str) -> void;
