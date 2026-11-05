@@ -16,6 +16,30 @@
 using namespace tinyxml2;
 namespace fs = std::filesystem;
 
+namespace {
+auto loadConfRoot(XMLDocument& configDoc, const fs::path& configFileAbs)
+    -> XMLElement* {
+  configDoc.LoadFile(configFileAbs.c_str());
+  if (configDoc.Error()) {
+    throw std::runtime_error{configDoc.ErrorStr()};
+  }
+
+  XMLElement* const rootElem{configDoc.FirstChildElement("conf")};
+  if (rootElem == nullptr) {
+    throw std::runtime_error{"root element `<conf>` missing in config file"};
+  }
+  return rootElem;
+}
+
+auto saveConfDoc(XMLDocument& configDoc, const fs::path& configFileAbs)
+    -> void {
+  if (configDoc.SaveFile(configFileAbs.c_str()) != XML_SUCCESS) {
+    throw std::runtime_error{std::string{"error saving conf file: "}
+                             + XMLDocument::ErrorIDToName(configDoc.ErrorID())};
+  }
+}
+} // namespace
+
 auto unzip(const fs::path& archiveAbs, const fs::path& destinationAbs) -> void {
   miniz_cpp::zip_file archive{archiveAbs.string()};
   archive.extractall(destinationAbs.string());
@@ -52,16 +76,7 @@ auto initLibrary(const fs::path& libraryFileAbs) -> void {
 
 auto readConfig(const fs::path& configFileAbs) -> ConfOpts {
   XMLDocument configDoc{};
-  configDoc.LoadFile(configFileAbs.c_str());
-
-  if (configDoc.Error()) {
-    throw std::runtime_error{configDoc.ErrorStr()};
-  }
-
-  XMLElement* const rootElem{configDoc.FirstChildElement("conf")};
-  if (rootElem == nullptr) {
-    throw std::runtime_error{"root element `<conf>` missing in config file"};
-  }
+  XMLElement* const rootElem{loadConfRoot(configDoc, configFileAbs)};
 
   // Write a default value for unfound options to support adding future
   // conf options without making users edit config file every time.
@@ -80,10 +95,7 @@ auto readConfig(const fs::path& configFileAbs) -> ConfOpts {
     throw std::runtime_error{"conf option `<line-length>` has invalid value"};
   }
 
-  if (configDoc.SaveFile(configFileAbs.c_str()) != XML_SUCCESS) {
-    throw std::runtime_error{std::string{"error saving conf file: "}
-                             + XMLDocument::ErrorIDToName(configDoc.ErrorID())};
-  }
+  saveConfDoc(configDoc, configFileAbs);
 
   return {.lineLength = chars};
 }
@@ -94,15 +106,7 @@ auto setConfigLineLength(const fs::path& configFileAbs, int chars) -> void {
   }
 
   XMLDocument configDoc{};
-  configDoc.LoadFile(configFileAbs.c_str());
-  if (configDoc.Error()) {
-    throw std::runtime_error{configDoc.ErrorStr()};
-  }
-
-  XMLElement* const rootElem{configDoc.FirstChildElement("conf")};
-  if (rootElem == nullptr) {
-    throw std::runtime_error{"root element `<conf>` missing in config file"};
-  }
+  XMLElement* const rootElem{loadConfRoot(configDoc, configFileAbs)};
 
   XMLElement* lineLength{rootElem->FirstChildElement("line-length")};
   if (lineLength == nullptr) {
@@ -111,10 +115,7 @@ auto setConfigLineLength(const fs::path& configFileAbs, int chars) -> void {
   }
   lineLength->SetAttribute("chars", chars);
 
-  if (configDoc.SaveFile(configFileAbs.c_str()) != XML_SUCCESS) {
-    throw std::runtime_error{std::string{"error saving conf file: "}
-                             + XMLDocument::ErrorIDToName(configDoc.ErrorID())};
-  }
+  saveConfDoc(configDoc, configFileAbs);
 }
 
 auto getTruncatedSHA256Sum(const fs::path& fileAbs) -> std::string {
