@@ -19,6 +19,7 @@ auto main() -> int {
     test::imageChannels();
     test::getSpine();
     test::getTOC();
+    test::stripSoftHyphens();
     test::utf8ToWide();
     test::wideToUTF8();
     test::collapseConsecutiveNewlines();

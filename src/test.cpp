@@ -449,6 +449,16 @@ auto getTOC() -> void {
   assert(nestedNavigationTOC[2].second == "Text/three.xhtml");
 }
 
+auto stripSoftHyphens() -> void {
+  std::string str{"hy\u00ADphen\u00ADation"};
+  ::stripSoftHyphens(str);
+  assert(str == "hyphenation");
+
+  std::string plain{"no soft hyphens"};
+  ::stripSoftHyphens(plain);
+  assert(plain == "no soft hyphens");
+}
+
 auto parseChapter() -> void {
 
   std::string result{};
