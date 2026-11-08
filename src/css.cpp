@@ -266,6 +266,8 @@ auto stripImportant(std::string_view& value) -> bool {
   return true;
 }
 
+// Apply a single declaration to `declarations`. Unsupported properties and
+// unparseable values are ignored.
 auto applyDeclaration(CSSDeclarations& declarations, std::string_view property,
                       std::string_view value, bool important) -> void {
   if (property == "font-weight") {
