@@ -36,8 +36,6 @@ auto getTOC() -> void;
 // TODO: Make this self-validating.
 // non-self-validating
 // Also exercises `parseContentElem()`.
-auto stripInvisibleBreaks() -> void;
-
 auto parseChapter() -> void;
 
 // non-self-validating

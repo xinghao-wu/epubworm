@@ -812,8 +812,3 @@ auto expandEllipsesAndTabs(std::string& str) -> void {
   findAndReplaceAll(str, "…", "...");
   findAndReplaceAll(str, "\t", "    ");
 }
-
-auto stripInvisibleBreaks(std::string& str) -> void {
-  findAndReplaceAll(str, "\u00AD", "");
-  findAndReplaceAll(str, "\u200B", "");
-}
