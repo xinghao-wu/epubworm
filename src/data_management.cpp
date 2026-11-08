@@ -17,6 +17,8 @@ using namespace tinyxml2;
 namespace fs = std::filesystem;
 
 namespace {
+// Load the config file into `configDoc` and return its `<conf>` root element,
+// throwing if the file can't be parsed or the root is missing.
 auto loadConfRoot(XMLDocument& configDoc, const fs::path& configFileAbs)
     -> XMLElement* {
   configDoc.LoadFile(configFileAbs.c_str());
@@ -31,6 +33,7 @@ auto loadConfRoot(XMLDocument& configDoc, const fs::path& configFileAbs)
   return rootElem;
 }
 
+// Write `configDoc` back to the config file, throwing on failure.
 auto saveConfDoc(XMLDocument& configDoc, const fs::path& configFileAbs)
     -> void {
   if (configDoc.SaveFile(configFileAbs.c_str()) != XML_SUCCESS) {
