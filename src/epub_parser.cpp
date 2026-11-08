@@ -74,6 +74,8 @@ auto parseAlignmentValue(std::string_view value) -> TextAlignment {
   return TextAlignment::inherit;
 }
 
+// Class names that publishers commonly use to center a block, matched against
+// a single lowercase class token. Scene break ornaments are centered as well.
 auto isCenterClass(std::string_view token) -> bool {
   return token == "center" || token == "centerp" || token == "centered"
          || token == "centre" || token == "centred" || token == "text-center"
