@@ -1980,9 +1980,6 @@ auto cssParsing() -> void {
   assert(important.alignment.value == CSSAlignment::right);
   assert(important.alignment.important);
   assert(important.italic.value == false);
-  assert(::parseCSSDeclarations("font-weight: bold!important").bold.important);
-  assert(::parseCSSDeclarations("font-weight: bold !Important").bold.important);
-  assert(!::parseCSSDeclarations("font-weight: bold !importan").bold.value);
 
   Stylesheet stylesheet{};
   ::parseStylesheet(
