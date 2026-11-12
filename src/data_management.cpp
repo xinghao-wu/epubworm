@@ -54,7 +54,10 @@ auto initConf(const fs::path& configFileAbs) -> void {
   configDoc.InsertEndChild(configDoc.NewElement("conf"));
 
   fs::create_directories(configFileAbs.parent_path());
-  saveConfDoc(configDoc, configFileAbs);
+  if (configDoc.SaveFile(configFileAbs.c_str()) != XML_SUCCESS) {
+    throw std::runtime_error{std::string{"error saving conf file: "}
+                             + XMLDocument::ErrorIDToName(configDoc.ErrorID())};
+  }
 }
 
 auto initLibrary(const fs::path& libraryFileAbs) -> void {
