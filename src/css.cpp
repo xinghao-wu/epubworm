@@ -273,11 +273,6 @@ auto applyDeclaration(CSSDeclarations& declarations, std::string_view property,
     setProperty(declarations.alignment, parseTextAlign(value), important);
   }
 }
-
-// Number of classes, then whether a tag is present.
-auto ruleSpecificity(const CSSRule* rule) -> std::pair<std::size_t, bool> {
-  return {rule->classes.size(), !rule->tag.empty()};
-}
 } // namespace
 
 auto mergeCSSDeclarations(CSSDeclarations& base, const CSSDeclarations& overlay)
@@ -392,7 +387,10 @@ auto resolveCSS(const Stylesheet& stylesheet, const XMLElement* elem)
     }
   }
   // Stable, so equal specificity rules keep source order.
-  std::ranges::stable_sort(matched, {}, ruleSpecificity);
+  std::ranges::stable_sort(matched, {}, [](const CSSRule* rule) -> auto {
+    // Number of classes, then whether a tag is present.
+    return std::pair{rule->classes.size(), !rule->tag.empty()};
+  });
   for (const CSSRule* rule : matched) {
     mergeCSSDeclarations(result, rule->declarations);
   }
