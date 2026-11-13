@@ -74,30 +74,6 @@ auto parseAlignmentValue(std::string_view value) -> TextAlignment {
   return TextAlignment::inherit;
 }
 
-// Class names that publishers commonly use to center a block, matched against
-// a single lowercase class token. Scene break ornaments are centered as well.
-auto isCenterClass(std::string_view token) -> bool {
-  return token == "center" || token == "centerp" || token == "centered"
-         || token == "centre" || token == "centred" || token == "text-center"
-         || token == "align-center" || token == "align-center-rw"
-         || token == "has-text-align-center" || token == "separator"
-         || token == "ornamental-break" || token == "ornamental-break-as-text"
-         || hasNumericSuffix(token, "center")
-         || hasNumericSuffix(token, "centre");
-}
-
-auto isRightClass(std::string_view token) -> bool {
-  return token == "right" || token == "rightp" || token == "right-aligned"
-         || token == "text-right" || token == "align-right"
-         || hasNumericSuffix(token, "right");
-}
-
-auto isLeftClass(std::string_view token) -> bool {
-  return token == "left" || token == "text-left" || token == "align-left"
-         || token == "justify" || token == "justified"
-         || token == "text-justify" || token == "align-justify";
-}
-
 auto getClassAlignment(const XMLElement* elem) -> TextAlignment {
   const char* classAttr{elem->Attribute("class")};
   if (classAttr == nullptr) {
@@ -115,9 +91,22 @@ auto getClassAlignment(const XMLElement* elem) -> TextAlignment {
     const std::size_t tokenEnd{classes.find_first_of(" \t\n\r\f")};
     const std::string token{lowerASCII(classes.substr(0, tokenEnd))};
 
-    centerFound = centerFound || isCenterClass(token);
-    rightFound = rightFound || isRightClass(token);
-    leftFound = leftFound || isLeftClass(token);
+    centerFound = centerFound || token == "center" || token == "centerp"
+                  || token == "centered" || token == "centre"
+                  || token == "centred" || token == "text-center"
+                  || token == "align-center" || token == "align-center-rw"
+                  || token == "has-text-align-center" || token == "separator"
+                  || token == "ornamental-break"
+                  || token == "ornamental-break-as-text"
+                  || hasNumericSuffix(token, "center")
+                  || hasNumericSuffix(token, "centre");
+    rightFound = rightFound || token == "right" || token == "rightp"
+                 || token == "right-aligned" || token == "text-right"
+                 || token == "align-right" || hasNumericSuffix(token, "right");
+    leftFound = leftFound || token == "left" || token == "text-left"
+                || token == "align-left" || token == "justify"
+                || token == "justified" || token == "text-justify"
+                || token == "align-justify";
 
     if (tokenEnd == std::string_view::npos) {
       break;
@@ -125,7 +114,6 @@ auto getClassAlignment(const XMLElement* elem) -> TextAlignment {
     classes.remove_prefix(tokenEnd + 1);
   }
 
-  // When classes conflict, prefer left, then right, then center.
   if (leftFound) {
     return TextAlignment::left;
   }
