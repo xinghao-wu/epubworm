@@ -254,25 +254,6 @@ auto matches(const CSSRule& rule, std::string_view tag,
     return std::ranges::contains(classes, std::string_view{cls});
   });
 }
-
-// Apply a single declaration to `declarations`. Unsupported properties and
-// unparseable values are ignored.
-auto applyDeclaration(CSSDeclarations& declarations, std::string_view property,
-                      std::string_view value, bool important) -> void {
-  if (property == "font-weight") {
-    setProperty(declarations.bold, parseFontWeight(value), important);
-  }
-  else if (property == "font-style") {
-    setProperty(declarations.italic, parseFontStyle(value), important);
-  }
-  else if (property == "text-decoration"
-           || property == "text-decoration-line") {
-    setProperty(declarations.underline, parseTextDecoration(value), important);
-  }
-  else if (property == "text-align") {
-    setProperty(declarations.alignment, parseTextAlign(value), important);
-  }
-}
 } // namespace
 
 auto mergeCSSDeclarations(CSSDeclarations& base, const CSSDeclarations& overlay)
@@ -303,7 +284,20 @@ auto parseCSSDeclarations(std::string_view declarations) -> CSSDeclarations {
         rawValue = trim(rawValue.substr(0, bang));
       }
       const std::string value{lowerASCII(rawValue)};
-      applyDeclaration(result, property, value, important);
+
+      if (property == "font-weight") {
+        setProperty(result.bold, parseFontWeight(value), important);
+      }
+      else if (property == "font-style") {
+        setProperty(result.italic, parseFontStyle(value), important);
+      }
+      else if (property == "text-decoration"
+               || property == "text-decoration-line") {
+        setProperty(result.underline, parseTextDecoration(value), important);
+      }
+      else if (property == "text-align") {
+        setProperty(result.alignment, parseTextAlign(value), important);
+      }
     }
 
     if (declarationEnd == std::string_view::npos) {
