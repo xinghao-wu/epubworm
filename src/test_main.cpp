@@ -24,6 +24,7 @@ auto main() -> int {
     test::collapseConsecutiveNewlines();
     test::findNth();
     test::execute();
+    test::getChapterReadingStats();
     test::getChapterProgressIndicator();
     test::chapterSearch();
     test::tocDataToString();
