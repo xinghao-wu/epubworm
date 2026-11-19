@@ -638,30 +638,62 @@ auto getChapterProgressIndicator() -> void {
            + " · " + esc + blueFG + time + esc + resetFG + " ─";
   };
 
-  assert(
-      ::getChapterProgressIndicator(1, 10, 100, 10, englishStats, "Test Title")
-      == expected(100, 4, 6, 100));
-  assert(
-      ::getChapterProgressIndicator(1, 10, 100, 110, englishStats, "Test Title")
-      == expected(0, 4, 6, 100));
-  assert(::getChapterProgressIndicator(10, 10, 100, 110, englishStats,
-                                       "Test Title")
-         == expected(9, 3, 6, 100));
-  assert(::getChapterProgressIndicator(96, 10, 100, 110, englishStats,
-                                       "Test Title")
-         == expected(95, 1, 1, 100));
-  assert(::getChapterProgressIndicator(101, 10, 100, 110, englishStats,
-                                       "Test Title")
-         == expected(100, 1, 1, 100));
-  assert(
-      ::getChapterProgressIndicator(4, 10, 100, 210, englishStats, "Test Title")
-      == expected(2, 4, 6, 100));
-  assert(::getChapterProgressIndicator(-10, 10, 100, 110, englishStats,
-                                       "Test Title")
-         == expected(0, 4, 6, 100));
-  assert(::getChapterProgressIndicator(200, 10, 100, 110, englishStats,
-                                       "Test Title")
-         == expected(100, 0, 0, 100));
+  struct ProgressCase {
+    int screenTopLine{};
+    int chapterLines{};
+    int percent{};
+    int minMinutes{};
+    int maxMinutes{};
+  };
+  constexpr std::array<ProgressCase, 8> progressCases{{
+      {.screenTopLine = 1,
+       .chapterLines = 10,
+       .percent = 100,
+       .minMinutes = 4,
+       .maxMinutes = 6},
+      {.screenTopLine = 1,
+       .chapterLines = 110,
+       .percent = 0,
+       .minMinutes = 4,
+       .maxMinutes = 6},
+      {.screenTopLine = 10,
+       .chapterLines = 110,
+       .percent = 9,
+       .minMinutes = 3,
+       .maxMinutes = 6},
+      {.screenTopLine = 96,
+       .chapterLines = 110,
+       .percent = 95,
+       .minMinutes = 1,
+       .maxMinutes = 1},
+      {.screenTopLine = 101,
+       .chapterLines = 110,
+       .percent = 100,
+       .minMinutes = 1,
+       .maxMinutes = 1},
+      {.screenTopLine = 4,
+       .chapterLines = 210,
+       .percent = 2,
+       .minMinutes = 4,
+       .maxMinutes = 6},
+      {.screenTopLine = -10,
+       .chapterLines = 110,
+       .percent = 0,
+       .minMinutes = 4,
+       .maxMinutes = 6},
+      {.screenTopLine = 200,
+       .chapterLines = 110,
+       .percent = 100,
+       .minMinutes = 0,
+       .maxMinutes = 0},
+  }};
+  for (const ProgressCase& progressCase : progressCases) {
+    assert(::getChapterProgressIndicator(progressCase.screenTopLine, 10, 100,
+                                         progressCase.chapterLines,
+                                         englishStats, "Test Title")
+           == expected(progressCase.percent, progressCase.minMinutes,
+                       progressCase.maxMinutes, 100));
+  }
   assert(
       ::getChapterProgressIndicator(1, 10, 5, 110, englishStats, "Test Title")
       == esc + resetFG + "─ " + esc + blueFG + 't' + esc + resetFG + " ─");
