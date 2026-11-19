@@ -111,6 +111,32 @@ constexpr auto isCJKReadingCharacter(std::uint32_t codePoint) -> bool {
 }
 } // namespace
 
+auto inTmuxSession() -> bool {
+  const char* tmux{std::getenv("TMUX")};
+  if (tmux != nullptr && *tmux != '\0') {
+    return true;
+  }
+
+  const char* termProgram{std::getenv("TERM_PROGRAM")};
+  return termProgram != nullptr && std::string_view{termProgram} == "tmux";
+}
+
+auto inITerm2Session() -> bool {
+  const char* termProgram{std::getenv("TERM_PROGRAM")};
+  if (termProgram != nullptr && *termProgram != '\0') {
+    const std::string_view termProgramView{termProgram};
+    if (termProgramView == "iTerm.app") {
+      return true;
+    }
+    if (termProgramView != "tmux") {
+      return false;
+    }
+  }
+
+  const char* lcTerminal{std::getenv("LC_TERMINAL")};
+  return lcTerminal != nullptr && std::string_view{lcTerminal} == "iTerm2";
+}
+
 auto loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols)
     -> void {
   if (id == 0) {
@@ -2202,32 +2228,6 @@ auto tocDataToString(const TocData& data, std::string& str) -> void {
   str += esc + resetBold;
   str += centerAlignEnd;
   str += '\n';
-}
-
-auto inTmuxSession() -> bool {
-  const char* tmux{std::getenv("TMUX")};
-  if (tmux != nullptr && *tmux != '\0') {
-    return true;
-  }
-
-  const char* termProgram{std::getenv("TERM_PROGRAM")};
-  return termProgram != nullptr && std::string_view{termProgram} == "tmux";
-}
-
-auto inITerm2Session() -> bool {
-  const char* termProgram{std::getenv("TERM_PROGRAM")};
-  if (termProgram != nullptr && *termProgram != '\0') {
-    const std::string_view termProgramView{termProgram};
-    if (termProgramView == "iTerm.app") {
-      return true;
-    }
-    if (termProgramView != "tmux") {
-      return false;
-    }
-  }
-
-  const char* lcTerminal{std::getenv("LC_TERMINAL")};
-  return lcTerminal != nullptr && std::string_view{lcTerminal} == "iTerm2";
 }
 
 auto displayTOC(const TocData& tocData, std::string_view title,
