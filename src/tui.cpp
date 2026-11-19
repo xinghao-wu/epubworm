@@ -1627,6 +1627,62 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
   return esc + resetFG + wideToUTF8(status);
 }
 
+auto getTOCStatusLine(int screenCols, std::string_view title) -> std::string {
+  const std::wstring wideTitle{utf8ToWide(title)};
+  const std::wstring fullRight{L"Table of Contents ─"};
+  std::wstring right{fullRight};
+
+  const int availableCols{std::max(screenCols, 0)};
+  constexpr int leftPrefixCols{2};
+  const int contentAvailableCols{std::max(availableCols - leftPrefixCols, 0)};
+  int rightCols{getVisualLen(right)};
+  const bool showTitle{!wideTitle.empty()
+                       && contentAvailableCols >= rightCols + 5};
+  if (!showTitle) {
+    fitStatusTail(right, rightCols, contentAvailableCols);
+  }
+
+  std::wstring fittedTitle{};
+  int titleCols{};
+  int middleRuleCols{};
+  if (showTitle) {
+    const int titleAvailableCols{contentAvailableCols - rightCols - 4};
+    fittedTitle = fitStatusText(wideTitle, titleAvailableCols);
+    titleCols = getVisualLen(fittedTitle);
+    middleRuleCols = contentAvailableCols - titleCols - rightCols - 2;
+  }
+
+  std::wstring status{L"─ "};
+  if (!fittedTitle.empty()) {
+    status += L"\033[33m";
+    status += fittedTitle;
+    status += L"\033[39m ";
+    status.append(static_cast<std::size_t>(middleRuleCols), L'─');
+    status += L' ';
+  }
+
+  const std::size_t rightOffset{fullRight.size() - right.size()};
+  const std::size_t textEnd{fullRight.size() - 2};
+  if (rightOffset < textEnd) {
+    const std::size_t visibleTextChars{
+        std::min(right.size(), textEnd - rightOffset)};
+    status += L"\033[35m";
+    status += right.substr(0, visibleTextChars);
+    status += L"\033[39m";
+    status += right.substr(visibleTextChars);
+  }
+  else {
+    status += right;
+  }
+  if (fittedTitle.empty()) {
+    status.append(
+        static_cast<std::size_t>(std::max(contentAvailableCols - rightCols, 0)),
+        L'─');
+  }
+
+  return esc + resetFG + wideToUTF8(status);
+}
+
 auto displayChapter(const fs::path& chapterAbs, std::string_view title,
                     double iniProg, int desiredMaxLen)
     -> std::pair<ChapterExit, double> {
@@ -2146,62 +2202,6 @@ auto tocDataToString(const TocData& data, std::string& str) -> void {
   str += esc + resetBold;
   str += centerAlignEnd;
   str += '\n';
-}
-
-auto getTOCStatusLine(int screenCols, std::string_view title) -> std::string {
-  const std::wstring wideTitle{utf8ToWide(title)};
-  const std::wstring fullRight{L"Table of Contents ─"};
-  std::wstring right{fullRight};
-
-  const int availableCols{std::max(screenCols, 0)};
-  constexpr int leftPrefixCols{2};
-  const int contentAvailableCols{std::max(availableCols - leftPrefixCols, 0)};
-  int rightCols{getVisualLen(right)};
-  const bool showTitle{!wideTitle.empty()
-                       && contentAvailableCols >= rightCols + 5};
-  if (!showTitle) {
-    fitStatusTail(right, rightCols, contentAvailableCols);
-  }
-
-  std::wstring fittedTitle{};
-  int titleCols{};
-  int middleRuleCols{};
-  if (showTitle) {
-    const int titleAvailableCols{contentAvailableCols - rightCols - 4};
-    fittedTitle = fitStatusText(wideTitle, titleAvailableCols);
-    titleCols = getVisualLen(fittedTitle);
-    middleRuleCols = contentAvailableCols - titleCols - rightCols - 2;
-  }
-
-  std::wstring status{L"─ "};
-  if (!fittedTitle.empty()) {
-    status += L"\033[33m";
-    status += fittedTitle;
-    status += L"\033[39m ";
-    status.append(static_cast<std::size_t>(middleRuleCols), L'─');
-    status += L' ';
-  }
-
-  const std::size_t rightOffset{fullRight.size() - right.size()};
-  const std::size_t textEnd{fullRight.size() - 2};
-  if (rightOffset < textEnd) {
-    const std::size_t visibleTextChars{
-        std::min(right.size(), textEnd - rightOffset)};
-    status += L"\033[35m";
-    status += right.substr(0, visibleTextChars);
-    status += L"\033[39m";
-    status += right.substr(visibleTextChars);
-  }
-  else {
-    status += right;
-  }
-  if (fittedTitle.empty()) {
-    status.append(
-        static_cast<std::size_t>(std::max(contentAvailableCols - rightCols, 0)),
-        L'─');
-  }
-
-  return esc + resetFG + wideToUTF8(status);
 }
 
 auto inTmuxSession() -> bool {
