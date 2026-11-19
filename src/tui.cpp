@@ -1397,6 +1397,51 @@ auto getChapterReadingStats(std::string_view chapter) -> ChapterReadingStats {
   return stats;
 }
 
+namespace {
+// Keep the trailing characters of `text` that fit within `maxCols`, updating
+// `textCols` to the visual width of what remains.
+auto fitStatusTail(std::wstring& text, int& textCols, int maxCols) -> void {
+  if (textCols <= maxCols) {
+    return;
+  }
+  std::wstring fitted{};
+  textCols = 0;
+  for (auto it{text.rbegin()}; it != text.rend(); ++it) {
+    const int chCols{std::max(wcwidth(*it), 0)};
+    if (textCols + chCols > maxCols) {
+      break;
+    }
+    fitted.insert(fitted.begin(), *it);
+    textCols += chCols;
+  }
+  text = std::move(fitted);
+}
+
+// Truncate `text` to at most `maxCols` columns, ending truncated text with an
+// ellipsis.
+auto fitStatusText(std::wstring_view text, int maxCols) -> std::wstring {
+  if (maxCols <= 0) {
+    return {};
+  }
+  if (getVisualLen(text) <= maxCols) {
+    return std::wstring{text};
+  }
+  std::wstring fitted{};
+  int fittedCols{};
+  const int textCols{maxCols - 1};
+  for (const wchar_t ch : text) {
+    const int chCols{std::max(wcwidth(ch), 0)};
+    if (fittedCols + chCols > textCols) {
+      break;
+    }
+    fitted += ch;
+    fittedCols += chCols;
+  }
+  fitted += L'…';
+  return fitted;
+}
+} // namespace
+
 auto getChapterProgressIndicator(int screenTopLine, int screenRows,
                                  int screenCols, int chapterLines,
                                  const ChapterReadingStats& chapterReadingStats,
@@ -1444,32 +1489,17 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
   constexpr int leftPrefixCols{2};
   const int contentAvailableCols{std::max(availableCols - leftPrefixCols, 0)};
   int rightCols{getVisualLen(right)};
-  const auto fitRight = [&](int maxCols) -> void {
-    if (rightCols <= maxCols) {
-      return;
-    }
-    std::wstring fittedRight{};
-    rightCols = 0;
-    for (auto it{right.rbegin()}; it != right.rend(); ++it) {
-      const int chCols{std::max(wcwidth(*it), 0)};
-      if (rightCols + chCols > maxCols) {
-        break;
-      }
-      fittedRight.insert(fittedRight.begin(), *it);
-      rightCols += chCols;
-    }
-    right = std::move(fittedRight);
-  };
 
   bool showTitle{!wideTitle.empty() && contentAvailableCols >= rightCols + 5};
   if (searchActive && !wideTitle.empty() && contentAvailableCols >= 5) {
     const int titleReservation{std::min(getVisualLen(wideTitle),
                                         std::max(contentAvailableCols / 2, 1))};
-    fitRight(std::max(contentAvailableCols - titleReservation - 4, 0));
+    fitStatusTail(right, rightCols,
+                  std::max(contentAvailableCols - titleReservation - 4, 0));
     showTitle = true;
   }
   else if (!showTitle) {
-    fitRight(contentAvailableCols);
+    fitStatusTail(right, rightCols, contentAvailableCols);
   }
 
   std::wstring fittedTitle{};
@@ -1477,27 +1507,6 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
   int middleRuleCols{};
   std::size_t fittedQueryEnd{};
   std::size_t fittedMatchInfoBegin{};
-  const auto fitText = [](std::wstring_view text, int maxCols) -> std::wstring {
-    if (maxCols <= 0) {
-      return {};
-    }
-    if (getVisualLen(text) <= maxCols) {
-      return std::wstring{text};
-    }
-    std::wstring fitted{};
-    int fittedCols{};
-    const int textCols{maxCols - 1};
-    for (const wchar_t ch : text) {
-      const int chCols{std::max(wcwidth(ch), 0)};
-      if (fittedCols + chCols > textCols) {
-        break;
-      }
-      fitted += ch;
-      fittedCols += chCols;
-    }
-    fitted += L'…';
-    return fitted;
-  };
   if (showTitle) {
     const int titleAvailableCols{contentAvailableCols - rightCols - 4};
     const bool titleTruncated{getVisualLen(wideTitle) > titleAvailableCols};
@@ -1508,19 +1517,19 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
       if (matchInfoCols + separatorCols + 1 <= titleAvailableCols) {
         const int queryCols{titleAvailableCols - matchInfoCols - separatorCols};
         fittedTitle = L"/";
-        fittedTitle += fitText(wideQuery, queryCols - 1);
+        fittedTitle += fitStatusText(wideQuery, queryCols - 1);
         fittedQueryEnd = fittedTitle.size();
         fittedTitle += L" · ";
         fittedMatchInfoBegin = fittedTitle.size();
         fittedTitle += wideMatchInfo;
       }
       else {
-        fittedTitle = fitText(wideMatchInfo, titleAvailableCols);
+        fittedTitle = fitStatusText(wideMatchInfo, titleAvailableCols);
         fittedMatchInfoBegin = 0;
       }
     }
     else {
-      fittedTitle = fitText(wideTitle, titleAvailableCols);
+      fittedTitle = fitStatusText(wideTitle, titleAvailableCols);
       fittedQueryEnd = std::min(queryEnd, fittedTitle.size());
       fittedMatchInfoBegin = std::min(matchInfoBegin, fittedTitle.size());
     }
@@ -2137,18 +2146,8 @@ auto getTOCStatusLine(int screenCols, std::string_view title) -> std::string {
   int rightCols{getVisualLen(right)};
   const bool showTitle{!wideTitle.empty()
                        && contentAvailableCols >= rightCols + 5};
-  if (!showTitle && rightCols > contentAvailableCols) {
-    std::wstring fittedRight{};
-    rightCols = 0;
-    for (auto it{right.rbegin()}; it != right.rend(); ++it) {
-      const int chCols{std::max(wcwidth(*it), 0)};
-      if (rightCols + chCols > contentAvailableCols) {
-        break;
-      }
-      fittedRight.insert(fittedRight.begin(), *it);
-      rightCols += chCols;
-    }
-    right = std::move(fittedRight);
+  if (!showTitle) {
+    fitStatusTail(right, rightCols, contentAvailableCols);
   }
 
   std::wstring fittedTitle{};
@@ -2156,21 +2155,8 @@ auto getTOCStatusLine(int screenCols, std::string_view title) -> std::string {
   int middleRuleCols{};
   if (showTitle) {
     const int titleAvailableCols{contentAvailableCols - rightCols - 4};
-    const bool titleTruncated{getVisualLen(wideTitle) > titleAvailableCols};
-    const int titleTextAvailableCols{titleAvailableCols
-                                     - static_cast<int>(titleTruncated)};
-    for (const wchar_t ch : wideTitle) {
-      const int chCols{std::max(wcwidth(ch), 0)};
-      if (titleCols + chCols > titleTextAvailableCols) {
-        break;
-      }
-      fittedTitle += ch;
-      titleCols += chCols;
-    }
-    if (titleTruncated) {
-      fittedTitle += L'…';
-      ++titleCols;
-    }
+    fittedTitle = fitStatusText(wideTitle, titleAvailableCols);
+    titleCols = getVisualLen(fittedTitle);
     middleRuleCols = contentAvailableCols - titleCols - rightCols - 2;
   }
 
