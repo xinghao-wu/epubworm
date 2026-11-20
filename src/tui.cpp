@@ -768,6 +768,41 @@ auto rightJustify(std::string_view prefix, std::string_view postfix,
   alignMarkedText(prefix, postfix, str, maxLen, MarkedAlignment::right);
 }
 
+namespace {
+// Translate an SGR mouse report, without its leading escape, into a key and
+// the row and column the mouse action happened at.
+auto parseMouseSequence(const std::string& seq) -> std::tuple<Key, int, int> {
+  assert(seq.find_first_of("mM") == seq.size() - 1
+         && "received incomplete or multiple mouse actions");
+
+  const std::size_t firstSemicolonIndex{findNth(seq, ";", 1)};
+  const std::size_t secSemicolonIndex{findNth(seq, ";", 2)};
+  const int action{std::stoi(seq.substr(2, firstSemicolonIndex - 2))};
+  const int col{std::stoi(seq.substr(
+      firstSemicolonIndex + 1, secSemicolonIndex - firstSemicolonIndex - 1))};
+  const int row{std::stoi(seq.substr(
+      secSemicolonIndex + 1, seq.find_first_of("mM") - secSemicolonIndex - 1))};
+
+  if (seq.back() == 'm') {
+    if (action == 0) {
+      return {specKey::leftClickRelease, row, col};
+    }
+    if (action == 2) {
+      return {specKey::rightClickRelease, row, col};
+    }
+  }
+  if (seq.back() == 'M') {
+    if (action == 64) {
+      return {specKey::wheelUp, row, col};
+    }
+    if (action == 65) {
+      return {specKey::wheelDown, row, col};
+    }
+  }
+  return {specKey::unknown, row, col};
+}
+} // namespace
+
 auto readRawInput() -> std::tuple<Key, int, int> {
   ssize_t err{};
   char startCh{};
@@ -839,35 +874,7 @@ exit_loop:
   }
 
   if (seq.starts_with("[<")) {
-    assert(seq.find_first_of("mM") == seq.size() - 1
-           && "received incomplete or multiple mouse actions");
-
-    const std::size_t firstSemicolonIndex{findNth(seq, ";", 1)};
-    const std::size_t secSemicolonIndex{findNth(seq, ";", 2)};
-    const int action{std::stoi(seq.substr(2, firstSemicolonIndex - 2))};
-    const int col{std::stoi(seq.substr(
-        firstSemicolonIndex + 1, secSemicolonIndex - firstSemicolonIndex - 1))};
-    const int row{
-        std::stoi(seq.substr(secSemicolonIndex + 1,
-                             seq.find_first_of("mM") - secSemicolonIndex - 1))};
-
-    if (seq.back() == 'm') {
-      if (action == 0) {
-        return {specKey::leftClickRelease, row, col};
-      }
-      if (action == 2) {
-        return {specKey::rightClickRelease, row, col};
-      }
-    }
-    if (seq.back() == 'M') {
-      if (action == 64) {
-        return {specKey::wheelUp, row, col};
-      }
-      if (action == 65) {
-        return {specKey::wheelDown, row, col};
-      }
-    }
-    return {specKey::unknown, row, col};
+    return parseMouseSequence(seq);
   }
   return {specKey::unknown, 0, 0};
 }
