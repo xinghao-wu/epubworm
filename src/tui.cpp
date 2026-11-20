@@ -221,14 +221,19 @@ auto displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
 }
 
 namespace {
-// Get the rows and columns showing `imgAbs` at its original size, shrunk to
-// fit the window while keeping its aspect ratio if needed. Falls back to a
-// fixed size when the terminal doesn't report its pixel dimensions.
-auto fitImageToWindow(const fs::path& imgAbs) -> std::pair<int, int> {
+struct ImageCells {
+  int rows{};
+  int cols{};
+};
+
+// Get the cells showing `imgAbs` at its original size, shrunk to fit the
+// window while keeping its aspect ratio if needed. Falls back to a fixed size
+// when the terminal doesn't report its pixel dimensions.
+auto fitImageToWindow(const fs::path& imgAbs) -> ImageCells {
   winsize winInfo{};
   ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
   if (winInfo.ws_xpixel == 0 || winInfo.ws_ypixel == 0) {
-    return {35, 60};
+    return {.rows = 35, .cols = 60};
   }
 
   const int cellXPix{winInfo.ws_xpixel / winInfo.ws_col};
@@ -247,12 +252,14 @@ auto fitImageToWindow(const fs::path& imgAbs) -> std::pair<int, int> {
   const double colShrinkMultiplier{maxCols / static_cast<double>(colsDesired)};
 
   if (rowShrinkMultiplier >= 1 && colShrinkMultiplier >= 1) {
-    return {rowsDesired, colsDesired};
+    return {.rows = rowsDesired, .cols = colsDesired};
   }
   if (rowShrinkMultiplier < colShrinkMultiplier) {
-    return {maxRows, static_cast<int>(rowShrinkMultiplier * colsDesired) + 1};
+    return {.rows = maxRows,
+            .cols = static_cast<int>(rowShrinkMultiplier * colsDesired) + 1};
   }
-  return {static_cast<int>(colShrinkMultiplier * rowsDesired) + 1, maxCols};
+  return {.rows = static_cast<int>(colShrinkMultiplier * rowsDesired) + 1,
+          .cols = maxCols};
 }
 } // namespace
 
@@ -265,7 +272,9 @@ auto displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols)
   const std::uint32_t id{std::uniform_int_distribution{minID, maxID}(s_rng)};
 
   if (rows == 0 || cols == 0) {
-    std::tie(rows, cols) = fitImageToWindow(imgAbs);
+    const ImageCells fittedCells{fitImageToWindow(imgAbs)};
+    rows = fittedCells.rows;
+    cols = fittedCells.cols;
   }
   loadImg(imgAbs, id, rows, cols);
   displayLoadedImg(id, rows, cols, out, inITerm2Session());
