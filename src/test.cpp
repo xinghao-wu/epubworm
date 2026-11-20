@@ -209,30 +209,44 @@ auto wrapForTmuxPassthrough() -> void {
 }
 
 auto wrapLines() -> void {
-  std::string breakable{"one two three"};
-  ::wrapLines(breakable, 7);
-  assert(breakable == "one two\nthree");
-
-  std::string unbreakable{"abcdefghij"};
-  ::wrapLines(unbreakable, 4);
-  assert(unbreakable == "abcd\nefgh\nij");
-
-  std::string markedUnbreakable{"abcdefghij"};
-  ::wrapLines(markedUnbreakable, 4, true);
-  assert(markedUnbreakable
-         == "abcd" + forcedWrapMarker + "\nefgh" + forcedWrapMarker + "\nij");
-
-  std::string longFirstWord{"abcdefgh ij"};
-  ::wrapLines(longFirstWord, 4);
-  assert(longFirstWord == "abcd\nefgh\nij");
-
-  std::string utf8Unbreakable{"春夏秋冬"};
-  ::wrapLines(utf8Unbreakable, 4);
-  assert(utf8Unbreakable == "春夏\n秋冬");
-
-  std::string styled{esc + cyanFG + "abcdefgh" + esc + resetFG};
-  ::wrapLines(styled, 4);
-  assert(styled == esc + cyanFG + "abcd\nefgh" + esc + resetFG);
+  struct WrapCase {
+    std::string input{};
+    int maxLen{};
+    bool markForcedWraps{};
+    std::string expected{};
+  };
+  const std::array<WrapCase, 6> wrapCases{{
+      {.input = "one two three",
+       .maxLen = 7,
+       .markForcedWraps = false,
+       .expected = "one two\nthree"},
+      {.input = "abcdefghij",
+       .maxLen = 4,
+       .markForcedWraps = false,
+       .expected = "abcd\nefgh\nij"},
+      {.input = "abcdefghij",
+       .maxLen = 4,
+       .markForcedWraps = true,
+       .expected =
+           "abcd" + forcedWrapMarker + "\nefgh" + forcedWrapMarker + "\nij"},
+      {.input = "abcdefgh ij",
+       .maxLen = 4,
+       .markForcedWraps = false,
+       .expected = "abcd\nefgh\nij"},
+      {.input = "春夏秋冬",
+       .maxLen = 4,
+       .markForcedWraps = false,
+       .expected = "春夏\n秋冬"},
+      {.input = esc + cyanFG + "abcdefgh" + esc + resetFG,
+       .maxLen = 4,
+       .markForcedWraps = false,
+       .expected = esc + cyanFG + "abcd\nefgh" + esc + resetFG},
+  }};
+  for (const WrapCase& wrapCase : wrapCases) {
+    std::string wrapped{wrapCase.input};
+    ::wrapLines(wrapped, wrapCase.maxLen, wrapCase.markForcedWraps);
+    assert(wrapped == wrapCase.expected);
+  }
 
   std::string imageLine{};
   ::displayLoadedImg(0x010203, 1, 8, imageLine, false);
