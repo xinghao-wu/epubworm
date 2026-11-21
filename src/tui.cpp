@@ -1837,6 +1837,82 @@ auto displayChapter(const fs::path& chapterAbs, std::string_view title,
     }
   };
 
+  const auto runSearchPrompt = [&](double prog) -> void {
+    int restoreTopLine{screenTopLine};
+    int restoreBotLine{screenBotLine};
+    const auto firstMatchFromRestorePosition = [&]() -> std::size_t {
+      const auto match{std::ranges::find_if(
+          searchMatches, [&](const ChapterSearchMatch& candidate) -> bool {
+            return candidate.line >= restoreTopLine;
+          })};
+      return match == searchMatches.end()
+                 ? 0
+                 : static_cast<std::size_t>(match - searchMatches.begin());
+    };
+    const auto selectPendingMatch = [&](bool keepSelected) -> void {
+      selectedMatch = firstMatchFromRestorePosition();
+      showSelectedMatchIfOffscreen();
+      if (!keepSelected) {
+        selectedMatch.reset();
+      }
+    };
+    const auto pendingMatchInfo = [](std::size_t matchCount) -> std::string {
+      return std::to_string(matchCount)
+             + (matchCount == 1 ? " match" : " matches");
+    };
+    const auto redrawLiveSearch = [&](std::string_view query,
+                                      bool wasResized) -> int {
+      if (wasResized) {
+        setUpDisplayChapter(chapterAbs, prog, desiredMaxLen, winInfo, chapter,
+                            chapterLines, screenRows, screenTopLine,
+                            screenBotLine);
+        searchIndex = buildChapterSearchIndex(chapter);
+        restoreTopLine = screenTopLine;
+        restoreBotLine = screenBotLine;
+      }
+      searchQuery = query;
+      searchMatches = findChapterSearchMatches(searchIndex, searchQuery);
+      if (normalizeSearchQuery(searchQuery).empty()) {
+        searchMatches.clear();
+        selectedMatch.reset();
+        searchMatchInfo = pendingMatchInfo(0);
+        screenTopLine = restoreTopLine;
+        screenBotLine = restoreBotLine;
+      }
+      else if (searchMatches.empty()) {
+        selectedMatch.reset();
+        searchMatchInfo = pendingMatchInfo(0);
+        screenTopLine = restoreTopLine;
+        screenBotLine = restoreBotLine;
+      }
+      else {
+        selectPendingMatch(false);
+        searchMatchInfo = pendingMatchInfo(searchMatches.size());
+      }
+      int searchCursorCol{};
+      redrawScreen(&searchCursorCol);
+      return searchCursorCol;
+    };
+    const std::optional<std::string> query{
+        readSearchQuery("", winInfo, redrawLiveSearch)};
+    if (!query || normalizeSearchQuery(*query).empty()) {
+      searchQuery.clear();
+      searchMatches.clear();
+      selectedMatch.reset();
+      searchMatchInfo.clear();
+      screenTopLine = restoreTopLine;
+      screenBotLine = restoreBotLine;
+      return;
+    }
+    if (searchMatches.empty()) {
+      selectedMatch.reset();
+      searchMatchInfo = "[0/0]";
+    }
+    else {
+      selectPendingMatch(true);
+    }
+  };
+
   while (true) {
     redrawScreen();
     const double prog{static_cast<double>(screenTopLine) / chapterLines};
@@ -1854,83 +1930,9 @@ auto displayChapter(const fs::path& chapterAbs, std::string_view title,
       }
 
       switch (translatedInputKey) {
-      case '/': {
-        int restoreTopLine{screenTopLine};
-        int restoreBotLine{screenBotLine};
-        const auto firstMatchFromRestorePosition = [&]() -> std::size_t {
-          const auto match{std::ranges::find_if(
-              searchMatches, [&](const ChapterSearchMatch& candidate) -> bool {
-                return candidate.line >= restoreTopLine;
-              })};
-          return match == searchMatches.end()
-                     ? 0
-                     : static_cast<std::size_t>(match - searchMatches.begin());
-        };
-        const auto selectPendingMatch = [&](bool keepSelected) -> void {
-          selectedMatch = firstMatchFromRestorePosition();
-          showSelectedMatchIfOffscreen();
-          if (!keepSelected) {
-            selectedMatch.reset();
-          }
-        };
-        const auto pendingMatchInfo =
-            [](std::size_t matchCount) -> std::string {
-          return std::to_string(matchCount)
-                 + (matchCount == 1 ? " match" : " matches");
-        };
-        const auto redrawLiveSearch = [&](std::string_view query,
-                                          bool wasResized) -> int {
-          if (wasResized) {
-            setUpDisplayChapter(chapterAbs, prog, desiredMaxLen, winInfo,
-                                chapter, chapterLines, screenRows,
-                                screenTopLine, screenBotLine);
-            searchIndex = buildChapterSearchIndex(chapter);
-            restoreTopLine = screenTopLine;
-            restoreBotLine = screenBotLine;
-          }
-          searchQuery = query;
-          searchMatches = findChapterSearchMatches(searchIndex, searchQuery);
-          if (normalizeSearchQuery(searchQuery).empty()) {
-            searchMatches.clear();
-            selectedMatch.reset();
-            searchMatchInfo = pendingMatchInfo(0);
-            screenTopLine = restoreTopLine;
-            screenBotLine = restoreBotLine;
-          }
-          else if (searchMatches.empty()) {
-            selectedMatch.reset();
-            searchMatchInfo = pendingMatchInfo(0);
-            screenTopLine = restoreTopLine;
-            screenBotLine = restoreBotLine;
-          }
-          else {
-            selectPendingMatch(false);
-            searchMatchInfo = pendingMatchInfo(searchMatches.size());
-          }
-          int searchCursorCol{};
-          redrawScreen(&searchCursorCol);
-          return searchCursorCol;
-        };
-        const std::optional<std::string> query{
-            readSearchQuery("", winInfo, redrawLiveSearch)};
-        if (!query || normalizeSearchQuery(*query).empty()) {
-          searchQuery.clear();
-          searchMatches.clear();
-          selectedMatch.reset();
-          searchMatchInfo.clear();
-          screenTopLine = restoreTopLine;
-          screenBotLine = restoreBotLine;
-          goto redraw_screen;
-        }
-        if (searchMatches.empty()) {
-          selectedMatch.reset();
-          searchMatchInfo = "[0/0]";
-        }
-        else {
-          selectPendingMatch(true);
-        }
+      case '/':
+        runSearchPrompt(prog);
         goto redraw_screen;
-      }
       case 'n':
         if (searchMatches.empty()) {
           break;
