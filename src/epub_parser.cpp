@@ -390,6 +390,16 @@ auto getHrefFromID(const XMLElement* manifest, std::string_view id) -> const
                            "found in `<manifest>`"};
 }
 
+namespace {
+// Look up a manifest item's href by ID with its percent-encoding decoded.
+auto getDecodedHrefFromID(const XMLElement* manifest, const char* id)
+    -> std::string {
+  std::string href{getHrefFromID(manifest, id)};
+  decodePercentEncoding(href);
+  return href;
+}
+} // namespace
+
 auto getSpine(const XMLDocument& opf) -> std::vector<fs::path> {
   const XMLElement* spine{
       opf.FirstChildElement("package")->FirstChildElement("spine")};
@@ -398,16 +408,13 @@ auto getSpine(const XMLDocument& opf) -> std::vector<fs::path> {
   std::vector<fs::path> result{};
 
   const char* tocID{spine->Attribute("toc")};
-  std::string tocHref{getHrefFromID(manifest, tocID)};
-  decodePercentEncoding(tocHref);
-  result.emplace_back(tocHref);
+  result.emplace_back(getDecodedHrefFromID(manifest, tocID));
 
   for (const XMLElement* itemref{spine->FirstChildElement("itemref")};
        itemref != nullptr; itemref = itemref->NextSiblingElement("itemref")) {
 
     const char* idref{itemref->Attribute("idref")};
-    std::string href{getHrefFromID(manifest, idref)};
-    decodePercentEncoding(href);
+    const std::string href{getDecodedHrefFromID(manifest, idref)};
 
     const char* linear{itemref->Attribute("linear")};
     if (linear != nullptr && std::string_view{linear} == "no") {
