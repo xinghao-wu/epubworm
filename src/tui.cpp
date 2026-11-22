@@ -2275,6 +2275,57 @@ auto tocDataToString(const TocData& data, std::string& str) -> void {
   str += '\n';
 }
 
+namespace {
+// Byte ranges of the selected nav point and of the visible lines of a TOC
+// string, with the selection centered on screen where possible.
+struct TOCView {
+  std::size_t selectionBeginIndex{};
+  std::size_t selectionEndIndex{};
+  std::size_t dispBeginIndex{};
+  std::size_t dispEndIndex{};
+};
+
+auto getTOCView(std::string_view tocStr, std::ptrdiff_t navPointCount,
+                int selectedNavPointIndex, int tocLines, int screenRows)
+    -> TOCView {
+  TOCView view{};
+  if (selectedNavPointIndex != 0) {
+    view.selectionBeginIndex =
+        findNth(tocStr, "\n\n", selectedNavPointIndex) + 2;
+  }
+  if (selectedNavPointIndex == navPointCount - 1) {
+    view.selectionEndIndex = tocStr.rfind('\n', tocStr.rfind('\n') - 1) - 1;
+  }
+  else {
+    view.selectionEndIndex =
+        findNth(tocStr, "\n\n", selectedNavPointIndex + 1) - 1;
+  }
+  const int selectionBeginLine{
+      getOccurrences<std::string_view>(
+          tocStr.substr(0, view.selectionBeginIndex + 1), "\n")
+      + 1};
+  const int selectionEndLine{
+      getOccurrences<std::string_view>(
+          tocStr.substr(0, view.selectionEndIndex + 1), "\n")
+      + 1};
+  const int selectionLines{selectionEndLine - selectionBeginLine + 1};
+  const int nonSelectionLines{screenRows - selectionLines};
+
+  int screenTopLine{selectionBeginLine - (nonSelectionLines / 2)};
+  snapTopLineToBound(screenTopLine);
+  int screenBotLine{calcBotLineFromTopLine(screenTopLine, screenRows)};
+  snapBotLineToBound(screenBotLine, tocLines);
+  screenTopLine = calcTopLineFromBotLine(screenBotLine, screenRows);
+  snapTopLineToBound(screenTopLine);
+
+  if (screenTopLine != 1) {
+    view.dispBeginIndex = findNth(tocStr, "\n", screenTopLine - 1) + 1;
+  }
+  view.dispEndIndex = findNth(tocStr, "\n", screenBotLine) - 1;
+  return view;
+}
+} // namespace
+
 auto displayTOC(const TocData& tocData, std::string_view title,
                 int desiredMaxLen, int selectedNavPointIndex) -> fs::path {
   std::cout << esc << hideCursor << std::flush;
@@ -2290,51 +2341,16 @@ auto displayTOC(const TocData& tocData, std::string_view title,
       throw std::logic_error{"selected nav point out of bounds"};
     }
 
-    std::size_t selectionBeginIndex{};
-    if (selectedNavPointIndex != 0) {
-      selectionBeginIndex = findNth(tocStr, "\n\n", selectedNavPointIndex) + 2;
-    }
-    std::size_t selectionEndIndex{};
-    if (selectedNavPointIndex == std::ssize(tocData) - 1) {
-      selectionEndIndex = tocStr.rfind('\n', tocStr.rfind('\n') - 1) - 1;
-    }
-    else {
-      selectionEndIndex =
-          findNth(tocStr, "\n\n", selectedNavPointIndex + 1) - 1;
-    }
-    const int selectionBeginLine{
-        getOccurrences<std::string_view>(
-            std::string_view{tocStr}.substr(0, selectionBeginIndex + 1), "\n")
-        + 1};
-    const int selectionEndLine{
-        getOccurrences<std::string_view>(
-            std::string_view{tocStr}.substr(0, selectionEndIndex + 1), "\n")
-        + 1};
-    const int selectionLines{selectionEndLine - selectionBeginLine + 1};
-    const int nonSelectionLines{screenRows - selectionLines};
-
-    int screenTopLine{selectionBeginLine - (nonSelectionLines / 2)};
-    snapTopLineToBound(screenTopLine);
-    int screenBotLine{calcBotLineFromTopLine(screenTopLine, screenRows)};
-    snapBotLineToBound(screenBotLine, tocLines);
-    screenTopLine = calcTopLineFromBotLine(screenBotLine, screenRows);
-    snapTopLineToBound(screenTopLine);
-
-    std::size_t dispBeginIndex{};
-    if (screenTopLine == 1) {
-      dispBeginIndex = 0;
-    }
-    else {
-      dispBeginIndex = findNth(tocStr, "\n", screenTopLine - 1) + 1;
-    }
-    const std::size_t dispEndIndex{findNth(tocStr, "\n", screenBotLine) - 1};
-
+    const TOCView view{getTOCView(tocStr, std::ssize(tocData),
+                                  selectedNavPointIndex, tocLines, screenRows)};
     const std::string_view dispBeforeSelection{std::string_view{tocStr}.substr(
-        dispBeginIndex, selectionBeginIndex - dispBeginIndex)};
+        view.dispBeginIndex, view.selectionBeginIndex - view.dispBeginIndex)};
     const std::string_view dispSelection{std::string_view{tocStr}.substr(
-        selectionBeginIndex, selectionEndIndex - selectionBeginIndex + 1)};
+        view.selectionBeginIndex,
+        view.selectionEndIndex - view.selectionBeginIndex + 1)};
     const std::string_view dispAfterSelection{std::string_view{tocStr}.substr(
-        selectionEndIndex + 1, dispEndIndex - selectionEndIndex)};
+        view.selectionEndIndex + 1,
+        view.dispEndIndex - view.selectionEndIndex)};
 
     eraseScreen();
     std::cout << dispBeforeSelection;
