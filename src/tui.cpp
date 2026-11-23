@@ -1441,49 +1441,6 @@ auto getChapterReadingStats(std::string_view chapter) -> ChapterReadingStats {
 }
 
 namespace {
-// Keep the trailing characters of `text` that fit within `maxCols`, updating
-// `textCols` to the visual width of what remains.
-auto fitStatusTail(std::wstring& text, int& textCols, int maxCols) -> void {
-  if (textCols <= maxCols) {
-    return;
-  }
-  std::wstring fitted{};
-  textCols = 0;
-  for (auto it{text.rbegin()}; it != text.rend(); ++it) {
-    const int chCols{std::max(wcwidth(*it), 0)};
-    if (textCols + chCols > maxCols) {
-      break;
-    }
-    fitted.insert(fitted.begin(), *it);
-    textCols += chCols;
-  }
-  text = std::move(fitted);
-}
-
-// Truncate `text` to at most `maxCols` columns, ending truncated text with an
-// ellipsis.
-auto fitStatusText(std::wstring_view text, int maxCols) -> std::wstring {
-  if (maxCols <= 0) {
-    return {};
-  }
-  if (getVisualLen(text) <= maxCols) {
-    return std::wstring{text};
-  }
-  std::wstring fitted{};
-  int fittedCols{};
-  const int textCols{maxCols - 1};
-  for (const wchar_t ch : text) {
-    const int chCols{std::max(wcwidth(ch), 0)};
-    if (fittedCols + chCols > textCols) {
-      break;
-    }
-    fitted += ch;
-    fittedCols += chCols;
-  }
-  fitted += L'…';
-  return fitted;
-}
-
 struct ReadingTimeEstimate {
   int minMinutes{};
   int maxMinutes{};
@@ -1545,17 +1502,32 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
   constexpr int leftPrefixCols{2};
   const int contentAvailableCols{std::max(availableCols - leftPrefixCols, 0)};
   int rightCols{getVisualLen(right)};
+  const auto fitRight = [&](int maxCols) -> void {
+    if (rightCols <= maxCols) {
+      return;
+    }
+    std::wstring fittedRight{};
+    rightCols = 0;
+    for (auto it{right.rbegin()}; it != right.rend(); ++it) {
+      const int chCols{std::max(wcwidth(*it), 0)};
+      if (rightCols + chCols > maxCols) {
+        break;
+      }
+      fittedRight.insert(fittedRight.begin(), *it);
+      rightCols += chCols;
+    }
+    right = std::move(fittedRight);
+  };
 
   bool showTitle{!wideTitle.empty() && contentAvailableCols >= rightCols + 5};
   if (searchActive && !wideTitle.empty() && contentAvailableCols >= 5) {
     const int titleReservation{std::min(getVisualLen(wideTitle),
                                         std::max(contentAvailableCols / 2, 1))};
-    fitStatusTail(right, rightCols,
-                  std::max(contentAvailableCols - titleReservation - 4, 0));
+    fitRight(std::max(contentAvailableCols - titleReservation - 4, 0));
     showTitle = true;
   }
   else if (!showTitle) {
-    fitStatusTail(right, rightCols, contentAvailableCols);
+    fitRight(contentAvailableCols);
   }
 
   std::wstring fittedTitle{};
@@ -1563,6 +1535,27 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
   int middleRuleCols{};
   std::size_t fittedQueryEnd{};
   std::size_t fittedMatchInfoBegin{};
+  const auto fitText = [](std::wstring_view text, int maxCols) -> std::wstring {
+    if (maxCols <= 0) {
+      return {};
+    }
+    if (getVisualLen(text) <= maxCols) {
+      return std::wstring{text};
+    }
+    std::wstring fitted{};
+    int fittedCols{};
+    const int textCols{maxCols - 1};
+    for (const wchar_t ch : text) {
+      const int chCols{std::max(wcwidth(ch), 0)};
+      if (fittedCols + chCols > textCols) {
+        break;
+      }
+      fitted += ch;
+      fittedCols += chCols;
+    }
+    fitted += L'…';
+    return fitted;
+  };
   if (showTitle) {
     const int titleAvailableCols{contentAvailableCols - rightCols - 4};
     const bool titleTruncated{getVisualLen(wideTitle) > titleAvailableCols};
@@ -1573,19 +1566,19 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
       if (matchInfoCols + separatorCols + 1 <= titleAvailableCols) {
         const int queryCols{titleAvailableCols - matchInfoCols - separatorCols};
         fittedTitle = L"/";
-        fittedTitle += fitStatusText(wideQuery, queryCols - 1);
+        fittedTitle += fitText(wideQuery, queryCols - 1);
         fittedQueryEnd = fittedTitle.size();
         fittedTitle += L" · ";
         fittedMatchInfoBegin = fittedTitle.size();
         fittedTitle += wideMatchInfo;
       }
       else {
-        fittedTitle = fitStatusText(wideMatchInfo, titleAvailableCols);
+        fittedTitle = fitText(wideMatchInfo, titleAvailableCols);
         fittedMatchInfoBegin = 0;
       }
     }
     else {
-      fittedTitle = fitStatusText(wideTitle, titleAvailableCols);
+      fittedTitle = fitText(wideTitle, titleAvailableCols);
       fittedQueryEnd = std::min(queryEnd, fittedTitle.size());
       fittedMatchInfoBegin = std::min(matchInfoBegin, fittedTitle.size());
     }
