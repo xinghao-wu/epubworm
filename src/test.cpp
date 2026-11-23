@@ -611,7 +611,7 @@ auto execute() -> void {
   assert(largeOutput == expectedLargeOutput);
 }
 
-auto getChapterReadingStats() -> void {
+auto getChapterProgressIndicator() -> void {
   const auto assertStats = [](std::string_view chapter, int words,
                               int cjkCharacters) -> void {
     const ChapterReadingStats stats{::getChapterReadingStats(chapter)};
@@ -632,9 +632,7 @@ auto getChapterReadingStats() -> void {
   assertStats("cafe\u0301 noir", 2, 0);
   assertStats("は\u3099", 0, 1);
   assertStats(esc + yellowFG + "styled 世界" + esc + resetFG, 1, 2);
-}
 
-auto getChapterProgressIndicator() -> void {
   const ChapterReadingStats englishStats{.words = 1000};
 
   const auto expected = [](int percent, int minMinutes, int maxMinutes,

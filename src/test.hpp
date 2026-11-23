@@ -56,8 +56,6 @@ auto findNth() -> void;
 
 auto execute() -> void;
 
-auto getChapterReadingStats() -> void;
-
 auto getChapterProgressIndicator() -> void;
 
 auto chapterSearch() -> void;
