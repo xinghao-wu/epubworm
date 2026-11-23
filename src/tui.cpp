@@ -1707,8 +1707,18 @@ auto getTOCStatusLine(int screenCols, std::string_view title) -> std::string {
   int rightCols{getVisualLen(right)};
   const bool showTitle{!wideTitle.empty()
                        && contentAvailableCols >= rightCols + 5};
-  if (!showTitle) {
-    fitStatusTail(right, rightCols, contentAvailableCols);
+  if (!showTitle && rightCols > contentAvailableCols) {
+    std::wstring fittedRight{};
+    rightCols = 0;
+    for (auto it{right.rbegin()}; it != right.rend(); ++it) {
+      const int chCols{std::max(wcwidth(*it), 0)};
+      if (rightCols + chCols > contentAvailableCols) {
+        break;
+      }
+      fittedRight.insert(fittedRight.begin(), *it);
+      rightCols += chCols;
+    }
+    right = std::move(fittedRight);
   }
 
   std::wstring fittedTitle{};
@@ -1716,8 +1726,21 @@ auto getTOCStatusLine(int screenCols, std::string_view title) -> std::string {
   int middleRuleCols{};
   if (showTitle) {
     const int titleAvailableCols{contentAvailableCols - rightCols - 4};
-    fittedTitle = fitStatusText(wideTitle, titleAvailableCols);
-    titleCols = getVisualLen(fittedTitle);
+    const bool titleTruncated{getVisualLen(wideTitle) > titleAvailableCols};
+    const int titleTextAvailableCols{titleAvailableCols
+                                     - static_cast<int>(titleTruncated)};
+    for (const wchar_t ch : wideTitle) {
+      const int chCols{std::max(wcwidth(ch), 0)};
+      if (titleCols + chCols > titleTextAvailableCols) {
+        break;
+      }
+      fittedTitle += ch;
+      titleCols += chCols;
+    }
+    if (titleTruncated) {
+      fittedTitle += L'…';
+      ++titleCols;
+    }
     middleRuleCols = contentAvailableCols - titleCols - rightCols - 2;
   }
 
