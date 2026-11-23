@@ -111,32 +111,6 @@ constexpr auto isCJKReadingCharacter(std::uint32_t codePoint) -> bool {
 }
 } // namespace
 
-auto inTmuxSession() -> bool {
-  const char* tmux{std::getenv("TMUX")};
-  if (tmux != nullptr && *tmux != '\0') {
-    return true;
-  }
-
-  const char* termProgram{std::getenv("TERM_PROGRAM")};
-  return termProgram != nullptr && std::string_view{termProgram} == "tmux";
-}
-
-auto inITerm2Session() -> bool {
-  const char* termProgram{std::getenv("TERM_PROGRAM")};
-  if (termProgram != nullptr && *termProgram != '\0') {
-    const std::string_view termProgramView{termProgram};
-    if (termProgramView == "iTerm.app") {
-      return true;
-    }
-    if (termProgramView != "tmux") {
-      return false;
-    }
-  }
-
-  const char* lcTerminal{std::getenv("LC_TERMINAL")};
-  return lcTerminal != nullptr && std::string_view{lcTerminal} == "iTerm2";
-}
-
 auto loadImg(const fs::path& imgAbs, std::uint32_t id, int rows, int cols)
     -> void {
   if (id == 0) {
@@ -1696,85 +1670,6 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
   return esc + resetFG + wideToUTF8(status);
 }
 
-auto getTOCStatusLine(int screenCols, std::string_view title) -> std::string {
-  const std::wstring wideTitle{utf8ToWide(title)};
-  const std::wstring fullRight{L"Table of Contents ─"};
-  std::wstring right{fullRight};
-
-  const int availableCols{std::max(screenCols, 0)};
-  constexpr int leftPrefixCols{2};
-  const int contentAvailableCols{std::max(availableCols - leftPrefixCols, 0)};
-  int rightCols{getVisualLen(right)};
-  const bool showTitle{!wideTitle.empty()
-                       && contentAvailableCols >= rightCols + 5};
-  if (!showTitle && rightCols > contentAvailableCols) {
-    std::wstring fittedRight{};
-    rightCols = 0;
-    for (auto it{right.rbegin()}; it != right.rend(); ++it) {
-      const int chCols{std::max(wcwidth(*it), 0)};
-      if (rightCols + chCols > contentAvailableCols) {
-        break;
-      }
-      fittedRight.insert(fittedRight.begin(), *it);
-      rightCols += chCols;
-    }
-    right = std::move(fittedRight);
-  }
-
-  std::wstring fittedTitle{};
-  int titleCols{};
-  int middleRuleCols{};
-  if (showTitle) {
-    const int titleAvailableCols{contentAvailableCols - rightCols - 4};
-    const bool titleTruncated{getVisualLen(wideTitle) > titleAvailableCols};
-    const int titleTextAvailableCols{titleAvailableCols
-                                     - static_cast<int>(titleTruncated)};
-    for (const wchar_t ch : wideTitle) {
-      const int chCols{std::max(wcwidth(ch), 0)};
-      if (titleCols + chCols > titleTextAvailableCols) {
-        break;
-      }
-      fittedTitle += ch;
-      titleCols += chCols;
-    }
-    if (titleTruncated) {
-      fittedTitle += L'…';
-      ++titleCols;
-    }
-    middleRuleCols = contentAvailableCols - titleCols - rightCols - 2;
-  }
-
-  std::wstring status{L"─ "};
-  if (!fittedTitle.empty()) {
-    status += L"\033[33m";
-    status += fittedTitle;
-    status += L"\033[39m ";
-    status.append(static_cast<std::size_t>(middleRuleCols), L'─');
-    status += L' ';
-  }
-
-  const std::size_t rightOffset{fullRight.size() - right.size()};
-  const std::size_t textEnd{fullRight.size() - 2};
-  if (rightOffset < textEnd) {
-    const std::size_t visibleTextChars{
-        std::min(right.size(), textEnd - rightOffset)};
-    status += L"\033[35m";
-    status += right.substr(0, visibleTextChars);
-    status += L"\033[39m";
-    status += right.substr(visibleTextChars);
-  }
-  else {
-    status += right;
-  }
-  if (fittedTitle.empty()) {
-    status.append(
-        static_cast<std::size_t>(std::max(contentAvailableCols - rightCols, 0)),
-        L'─');
-  }
-
-  return esc + resetFG + wideToUTF8(status);
-}
-
 auto displayChapter(const fs::path& chapterAbs, std::string_view title,
                     double iniProg, int desiredMaxLen)
     -> std::pair<ChapterExit, double> {
@@ -2296,6 +2191,111 @@ auto tocDataToString(const TocData& data, std::string& str) -> void {
   str += esc + resetBold;
   str += centerAlignEnd;
   str += '\n';
+}
+
+auto getTOCStatusLine(int screenCols, std::string_view title) -> std::string {
+  const std::wstring wideTitle{utf8ToWide(title)};
+  const std::wstring fullRight{L"Table of Contents ─"};
+  std::wstring right{fullRight};
+
+  const int availableCols{std::max(screenCols, 0)};
+  constexpr int leftPrefixCols{2};
+  const int contentAvailableCols{std::max(availableCols - leftPrefixCols, 0)};
+  int rightCols{getVisualLen(right)};
+  const bool showTitle{!wideTitle.empty()
+                       && contentAvailableCols >= rightCols + 5};
+  if (!showTitle && rightCols > contentAvailableCols) {
+    std::wstring fittedRight{};
+    rightCols = 0;
+    for (auto it{right.rbegin()}; it != right.rend(); ++it) {
+      const int chCols{std::max(wcwidth(*it), 0)};
+      if (rightCols + chCols > contentAvailableCols) {
+        break;
+      }
+      fittedRight.insert(fittedRight.begin(), *it);
+      rightCols += chCols;
+    }
+    right = std::move(fittedRight);
+  }
+
+  std::wstring fittedTitle{};
+  int titleCols{};
+  int middleRuleCols{};
+  if (showTitle) {
+    const int titleAvailableCols{contentAvailableCols - rightCols - 4};
+    const bool titleTruncated{getVisualLen(wideTitle) > titleAvailableCols};
+    const int titleTextAvailableCols{titleAvailableCols
+                                     - static_cast<int>(titleTruncated)};
+    for (const wchar_t ch : wideTitle) {
+      const int chCols{std::max(wcwidth(ch), 0)};
+      if (titleCols + chCols > titleTextAvailableCols) {
+        break;
+      }
+      fittedTitle += ch;
+      titleCols += chCols;
+    }
+    if (titleTruncated) {
+      fittedTitle += L'…';
+      ++titleCols;
+    }
+    middleRuleCols = contentAvailableCols - titleCols - rightCols - 2;
+  }
+
+  std::wstring status{L"─ "};
+  if (!fittedTitle.empty()) {
+    status += L"\033[33m";
+    status += fittedTitle;
+    status += L"\033[39m ";
+    status.append(static_cast<std::size_t>(middleRuleCols), L'─');
+    status += L' ';
+  }
+
+  const std::size_t rightOffset{fullRight.size() - right.size()};
+  const std::size_t textEnd{fullRight.size() - 2};
+  if (rightOffset < textEnd) {
+    const std::size_t visibleTextChars{
+        std::min(right.size(), textEnd - rightOffset)};
+    status += L"\033[35m";
+    status += right.substr(0, visibleTextChars);
+    status += L"\033[39m";
+    status += right.substr(visibleTextChars);
+  }
+  else {
+    status += right;
+  }
+  if (fittedTitle.empty()) {
+    status.append(
+        static_cast<std::size_t>(std::max(contentAvailableCols - rightCols, 0)),
+        L'─');
+  }
+
+  return esc + resetFG + wideToUTF8(status);
+}
+
+auto inTmuxSession() -> bool {
+  const char* tmux{std::getenv("TMUX")};
+  if (tmux != nullptr && *tmux != '\0') {
+    return true;
+  }
+
+  const char* termProgram{std::getenv("TERM_PROGRAM")};
+  return termProgram != nullptr && std::string_view{termProgram} == "tmux";
+}
+
+auto inITerm2Session() -> bool {
+  const char* termProgram{std::getenv("TERM_PROGRAM")};
+  if (termProgram != nullptr && *termProgram != '\0') {
+    const std::string_view termProgramView{termProgram};
+    if (termProgramView == "iTerm.app") {
+      return true;
+    }
+    if (termProgramView != "tmux") {
+      return false;
+    }
+  }
+
+  const char* lcTerminal{std::getenv("LC_TERMINAL")};
+  return lcTerminal != nullptr && std::string_view{lcTerminal} == "iTerm2";
 }
 
 namespace {
