@@ -74,28 +74,6 @@ auto parseAlignmentValue(std::string_view value) -> TextAlignment {
   return TextAlignment::inherit;
 }
 
-auto isCenterAlignClass(std::string_view token) -> bool {
-  return token == "center" || token == "centerp" || token == "centered"
-         || token == "centre" || token == "centred" || token == "text-center"
-         || token == "align-center" || token == "align-center-rw"
-         || token == "has-text-align-center" || token == "separator"
-         || token == "ornamental-break" || token == "ornamental-break-as-text"
-         || hasNumericSuffix(token, "center")
-         || hasNumericSuffix(token, "centre");
-}
-
-auto isRightAlignClass(std::string_view token) -> bool {
-  return token == "right" || token == "rightp" || token == "right-aligned"
-         || token == "text-right" || token == "align-right"
-         || hasNumericSuffix(token, "right");
-}
-
-auto isLeftAlignClass(std::string_view token) -> bool {
-  return token == "left" || token == "text-left" || token == "align-left"
-         || token == "justify" || token == "justified"
-         || token == "text-justify" || token == "align-justify";
-}
-
 auto getClassAlignment(const XMLElement* elem) -> TextAlignment {
   const char* classAttr{elem->Attribute("class")};
   if (classAttr == nullptr) {
@@ -113,9 +91,22 @@ auto getClassAlignment(const XMLElement* elem) -> TextAlignment {
     const std::size_t tokenEnd{classes.find_first_of(" \t\n\r\f")};
     const std::string token{lowerASCII(classes.substr(0, tokenEnd))};
 
-    centerFound = centerFound || isCenterAlignClass(token);
-    rightFound = rightFound || isRightAlignClass(token);
-    leftFound = leftFound || isLeftAlignClass(token);
+    centerFound = centerFound || token == "center" || token == "centerp"
+                  || token == "centered" || token == "centre"
+                  || token == "centred" || token == "text-center"
+                  || token == "align-center" || token == "align-center-rw"
+                  || token == "has-text-align-center" || token == "separator"
+                  || token == "ornamental-break"
+                  || token == "ornamental-break-as-text"
+                  || hasNumericSuffix(token, "center")
+                  || hasNumericSuffix(token, "centre");
+    rightFound = rightFound || token == "right" || token == "rightp"
+                 || token == "right-aligned" || token == "text-right"
+                 || token == "align-right" || hasNumericSuffix(token, "right");
+    leftFound = leftFound || token == "left" || token == "text-left"
+                || token == "align-left" || token == "justify"
+                || token == "justified" || token == "text-justify"
+                || token == "align-justify";
 
     if (tokenEnd == std::string_view::npos) {
       break;
