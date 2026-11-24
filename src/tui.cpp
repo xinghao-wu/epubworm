@@ -1433,27 +1433,6 @@ auto getChapterReadingStats(std::string_view chapter) -> ChapterReadingStats {
   return stats;
 }
 
-namespace {
-struct ReadingTimeEstimate {
-  int minMinutes{};
-  int maxMinutes{};
-};
-
-// Estimate how long reading the remaining fraction of a chapter takes, using
-// fast reading speeds for the lower bound and slow ones for the upper bound.
-auto estimateReadingTimeLeft(const ChapterReadingStats& stats,
-                             double remainingFraction) -> ReadingTimeEstimate {
-  const double remainingWords{stats.words * remainingFraction};
-  const double remainingCJKCharacters{stats.cjkCharacters * remainingFraction};
-  return {.minMinutes = static_cast<int>(std::ceil(
-              (remainingWords / fastReadingWordsPerMinute)
-              + (remainingCJKCharacters / fastReadingCJKCharactersPerMinute))),
-          .maxMinutes = static_cast<int>(std::ceil(
-              (remainingWords / slowReadingWordsPerMinute)
-              + (remainingCJKCharacters / slowReadingCJKCharactersPerMinute)))};
-}
-} // namespace
-
 auto getChapterProgressIndicator(int screenTopLine, int screenRows,
                                  int screenCols, int chapterLines,
                                  const ChapterReadingStats& chapterReadingStats,
@@ -1473,8 +1452,15 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
   const double remainingFraction{
       chapterLines == 0 ? 0
                         : static_cast<double>(remainingLines) / chapterLines};
-  const ReadingTimeEstimate timeLeft{
-      estimateReadingTimeLeft(chapterReadingStats, remainingFraction)};
+  const double remainingWords{chapterReadingStats.words * remainingFraction};
+  const double remainingCJKCharacters{chapterReadingStats.cjkCharacters
+                                      * remainingFraction};
+  const int minMinutesLeft{static_cast<int>(std::ceil(
+      (remainingWords / fastReadingWordsPerMinute)
+      + (remainingCJKCharacters / fastReadingCJKCharactersPerMinute)))};
+  const int maxMinutesLeft{static_cast<int>(std::ceil(
+      (remainingWords / slowReadingWordsPerMinute)
+      + (remainingCJKCharacters / slowReadingCJKCharactersPerMinute)))};
 
   const bool searchActive{!searchMatchInfo.empty()};
   const std::wstring wideQuery{utf8ToWide(searchQuery)};
@@ -1485,9 +1471,8 @@ auto getChapterProgressIndicator(int screenTopLine, int screenRows,
   const std::size_t matchInfoBegin{queryEnd + 3};
   const std::wstring progressText{std::to_wstring(percent)
                                   + L"% chapter progress"};
-  const std::wstring timeText{std::to_wstring(timeLeft.minMinutes) + L"-"
-                              + std::to_wstring(timeLeft.maxMinutes)
-                              + L" min left"};
+  const std::wstring timeText{std::to_wstring(minMinutesLeft) + L"-"
+                              + std::to_wstring(maxMinutesLeft) + L" min left"};
   const std::wstring fullRight{progressText + L" · " + timeText + L" ─"};
   std::wstring right{fullRight};
 
