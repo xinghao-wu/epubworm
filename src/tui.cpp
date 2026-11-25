@@ -516,41 +516,6 @@ auto collapseConsecutiveNewlines(std::string& str) -> void {
   str.resize(outputIndex);
 }
 
-namespace {
-// Get the wide index ending the longest prefix of `wideLine` that fits within
-// `maxLen` columns, for lines without a space to break at.
-auto findHardBreakWideIndex(std::wstring_view wideLine, int maxLen)
-    -> std::size_t {
-  std::size_t hardBreakWideIndex{};
-  int hardBreakVisualLen{};
-  for (std::size_t nextWideIndex{1}; nextWideIndex <= wideLine.size();
-       ++nextWideIndex) {
-    const int nextVisualLen{getVisualLen(wideLine.substr(0, nextWideIndex))};
-    if (nextVisualLen <= maxLen) {
-      hardBreakWideIndex = nextWideIndex;
-      hardBreakVisualLen = nextVisualLen;
-    }
-  }
-
-  // A glyph can be wider than maxLen. Include it and any trailing
-  // zero-width characters so wrapping always makes progress.
-  if (hardBreakVisualLen == 0) {
-    int firstGlyphVisualLen{};
-    for (std::size_t nextWideIndex{hardBreakWideIndex + 1};
-         nextWideIndex <= wideLine.size(); ++nextWideIndex) {
-      const int nextVisualLen{getVisualLen(wideLine.substr(0, nextWideIndex))};
-      if (firstGlyphVisualLen == 0 && nextVisualLen > 0) {
-        firstGlyphVisualLen = nextVisualLen;
-      }
-      if (nextVisualLen == firstGlyphVisualLen) {
-        hardBreakWideIndex = nextWideIndex;
-      }
-    }
-  }
-  return hardBreakWideIndex;
-}
-} // namespace
-
 auto wrapLines(std::string& str, int maxLen, bool markForcedWraps) -> void {
   for (std::size_t lineBeginIndex{0}, lineEndIndex{str.find('\n')};
        lineBeginIndex < str.size();
@@ -606,8 +571,35 @@ auto wrapLines(std::string& str, int maxLen, bool markForcedWraps) -> void {
 
     std::size_t lineBreakIndex{};
     if (wideLineBreakIndex == std::string::npos) {
-      const std::size_t hardBreakWideIndex{
-          findHardBreakWideIndex(wideLine, maxLen)};
+      std::size_t hardBreakWideIndex{};
+      int hardBreakVisualLen{};
+      for (std::size_t nextWideIndex{1}; nextWideIndex <= wideLine.size();
+           ++nextWideIndex) {
+        const int nextVisualLen{
+            getVisualLen(std::wstring_view{wideLine}.substr(0, nextWideIndex))};
+        if (nextVisualLen <= maxLen) {
+          hardBreakWideIndex = nextWideIndex;
+          hardBreakVisualLen = nextVisualLen;
+        }
+      }
+
+      // A glyph can be wider than maxLen. Include it and any trailing
+      // zero-width characters so wrapping always makes progress.
+      if (hardBreakVisualLen == 0) {
+        int firstGlyphVisualLen{};
+        for (std::size_t nextWideIndex{hardBreakWideIndex + 1};
+             nextWideIndex <= wideLine.size(); ++nextWideIndex) {
+          const int nextVisualLen{getVisualLen(
+              std::wstring_view{wideLine}.substr(0, nextWideIndex))};
+          if (firstGlyphVisualLen == 0 && nextVisualLen > 0) {
+            firstGlyphVisualLen = nextVisualLen;
+          }
+          if (nextVisualLen == firstGlyphVisualLen) {
+            hardBreakWideIndex = nextWideIndex;
+          }
+        }
+      }
+
       const std::string beginToLineBreak{wideToUTF8(
           std::wstring_view{wideLine}.substr(0, hardBreakWideIndex))};
       lineBreakIndex = lineBeginIndex + beginToLineBreak.size();
