@@ -872,19 +872,18 @@ auto styleEachLineIndividually(std::string& str, std::string_view style,
   }
 }
 
-namespace {
-// Alignment markers are internal layout hints that must not reach the
-// terminal once justification has been applied.
-auto stripAlignmentMarkers(std::string& str) -> void {
+auto processContentText(std::string& str, int maxLen, bool markForcedWraps)
+    -> void {
+  expandEllipsesAndTabs(str);
+  wrapLines(str, maxLen, markForcedWraps);
+  centerJustify(centerAlignBegin, centerAlignEnd, str, maxLen);
+  rightJustify(rightAlignBegin, rightAlignEnd, str, maxLen);
   findAndReplaceAll(str, centerAlignBegin, "");
   findAndReplaceAll(str, centerAlignEnd, "");
   findAndReplaceAll(str, rightAlignBegin, "");
   findAndReplaceAll(str, rightAlignEnd, "");
-}
-
-// Give every line its own copy of each text style spanning it, so any slice
-// of lines renders with the correct styling.
-auto splitStylesAtLineBreaks(std::string& str) -> void {
+  collapseConsecutiveNewlines(str);
+  centerOnScreen(str, maxLen);
   styleEachLineIndividually(str, esc + bold, esc + resetBold);
   styleEachLineIndividually(str, esc + italic, esc + resetItalic);
   styleEachLineIndividually(str, esc + underline, esc + resetUnderline);
@@ -895,19 +894,6 @@ auto splitStylesAtLineBreaks(std::string& str) -> void {
   styleEachLineIndividually(str, esc + blueFG, esc + resetFG);
   styleEachLineIndividually(str, esc + magentaFG, esc + resetFG);
   styleEachLineIndividually(str, esc + lightGrayFG, esc + resetFG);
-}
-} // namespace
-
-auto processContentText(std::string& str, int maxLen, bool markForcedWraps)
-    -> void {
-  expandEllipsesAndTabs(str);
-  wrapLines(str, maxLen, markForcedWraps);
-  centerJustify(centerAlignBegin, centerAlignEnd, str, maxLen);
-  rightJustify(rightAlignBegin, rightAlignEnd, str, maxLen);
-  stripAlignmentMarkers(str);
-  collapseConsecutiveNewlines(str);
-  centerOnScreen(str, maxLen);
-  splitStylesAtLineBreaks(str);
 }
 
 namespace {
