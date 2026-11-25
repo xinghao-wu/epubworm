@@ -194,49 +194,6 @@ auto displayLoadedImg(std::uint32_t id, int rows, int cols, std::string& out,
   }
 }
 
-namespace {
-struct ImageCells {
-  int rows{};
-  int cols{};
-};
-
-// Get the cells showing `imgAbs` at its original size, shrunk to fit the
-// window while keeping its aspect ratio if needed. Falls back to a fixed size
-// when the terminal doesn't report its pixel dimensions.
-auto fitImageToWindow(const fs::path& imgAbs) -> ImageCells {
-  winsize winInfo{};
-  ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
-  if (winInfo.ws_xpixel == 0 || winInfo.ws_ypixel == 0) {
-    return {.rows = 35, .cols = 60};
-  }
-
-  const int cellXPix{winInfo.ws_xpixel / winInfo.ws_col};
-  const int cellYPix{winInfo.ws_ypixel / winInfo.ws_row};
-
-  int imgXPix{};
-  int imgYPix{};
-  int imgChannels{};
-  stbi_info(imgAbs.c_str(), &imgXPix, &imgYPix, &imgChannels);
-
-  const int rowsDesired{(imgYPix / cellYPix) + 1};
-  const int colsDesired{(imgXPix / cellXPix) + 1};
-  const int maxRows{std::max(static_cast<int>(winInfo.ws_row) - 2, 1)};
-  const int maxCols{winInfo.ws_col - (horizontalMarginChars * 2)};
-  const double rowShrinkMultiplier{maxRows / static_cast<double>(rowsDesired)};
-  const double colShrinkMultiplier{maxCols / static_cast<double>(colsDesired)};
-
-  if (rowShrinkMultiplier >= 1 && colShrinkMultiplier >= 1) {
-    return {.rows = rowsDesired, .cols = colsDesired};
-  }
-  if (rowShrinkMultiplier < colShrinkMultiplier) {
-    return {.rows = maxRows,
-            .cols = static_cast<int>(rowShrinkMultiplier * colsDesired) + 1};
-  }
-  return {.rows = static_cast<int>(colShrinkMultiplier * rowsDesired) + 1,
-          .cols = maxCols};
-}
-} // namespace
-
 auto displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols)
     -> void {
   constexpr std::uint32_t minID{1};
@@ -246,9 +203,43 @@ auto displayImg(const fs::path& imgAbs, std::string& out, int rows, int cols)
   const std::uint32_t id{std::uniform_int_distribution{minID, maxID}(s_rng)};
 
   if (rows == 0 || cols == 0) {
-    const ImageCells fittedCells{fitImageToWindow(imgAbs)};
-    rows = fittedCells.rows;
-    cols = fittedCells.cols;
+    winsize winInfo{};
+    ioctl(STDIN_FILENO, TIOCGWINSZ, &winInfo);
+    if (winInfo.ws_xpixel == 0 || winInfo.ws_ypixel == 0) {
+      rows = 35;
+      cols = 60;
+    }
+    else {
+      const int cellXPix{winInfo.ws_xpixel / winInfo.ws_col};
+      const int cellYPix{winInfo.ws_ypixel / winInfo.ws_row};
+
+      int imgXPix{};
+      int imgYPix{};
+      int imgChannels{};
+      stbi_info(imgAbs.c_str(), &imgXPix, &imgYPix, &imgChannels);
+
+      const int rowsDesired{(imgYPix / cellYPix) + 1};
+      const int colsDesired{(imgXPix / cellXPix) + 1};
+      const int maxRows{std::max(static_cast<int>(winInfo.ws_row) - 2, 1)};
+      const int maxCols{winInfo.ws_col - (horizontalMarginChars * 2)};
+      const double rowShrinkMultiplier{maxRows
+                                       / static_cast<double>(rowsDesired)};
+      const double colShrinkMultiplier{maxCols
+                                       / static_cast<double>(colsDesired)};
+      rows = rowsDesired;
+      cols = colsDesired;
+
+      if (rowShrinkMultiplier < 1 || colShrinkMultiplier < 1) {
+        if (rowShrinkMultiplier < colShrinkMultiplier) {
+          rows = maxRows;
+          cols = static_cast<int>(rowShrinkMultiplier * colsDesired) + 1;
+        }
+        else {
+          cols = maxCols;
+          rows = static_cast<int>(colShrinkMultiplier * rowsDesired) + 1;
+        }
+      }
+    }
   }
   loadImg(imgAbs, id, rows, cols);
   displayLoadedImg(id, rows, cols, out, inITerm2Session());
