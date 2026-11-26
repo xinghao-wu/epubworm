@@ -978,37 +978,6 @@ auto normalizeSearchQuery(std::string_view query) -> std::string {
   return normalized;
 }
 
-// Apply a backspace, line or word deletion, or typed byte to the search
-// prompt's query. Returns whether the prompt needs to be redrawn.
-auto applySearchEditKey(Key key, std::string& query, std::string& pendingInput)
-    -> bool {
-  if (key == 8 || key == 127) {
-    if (pendingInput.empty()) {
-      popLastUTF8CodePoint(query);
-    }
-    else {
-      pendingInput.clear();
-    }
-    return true;
-  }
-  if (key == ctrlU) {
-    query.clear();
-    pendingInput.clear();
-    return true;
-  }
-  if (key == ctrlW) {
-    pendingInput.clear();
-    popLastSearchWord(query);
-    return true;
-  }
-  if (key >= std::numeric_limits<signed char>::min() && key <= 255
-      && key != 0) {
-    return appendSearchInputByte(query, pendingInput,
-                                 static_cast<unsigned char>(key));
-  }
-  return false;
-}
-
 template <typename TRedraw>
 auto readSearchQuery(std::string_view previousQuery, winsize& winInfo,
                      TRedraw& redraw) -> std::optional<std::string> {
@@ -1047,8 +1016,34 @@ auto readSearchQuery(std::string_view previousQuery, winsize& winInfo,
       redrawPrompt(true);
       continue;
     }
-    if (applySearchEditKey(key, query, pendingInput)) {
+    if (key == 8 || key == 127) {
+      if (pendingInput.empty()) {
+        popLastUTF8CodePoint(query);
+      }
+      else {
+        pendingInput.clear();
+      }
       redrawPrompt(false);
+      continue;
+    }
+    if (key == ctrlU) {
+      query.clear();
+      pendingInput.clear();
+      redrawPrompt(false);
+      continue;
+    }
+    if (key == ctrlW) {
+      pendingInput.clear();
+      popLastSearchWord(query);
+      redrawPrompt(false);
+      continue;
+    }
+    if (key >= std::numeric_limits<signed char>::min() && key <= 255
+        && key != 0) {
+      if (appendSearchInputByte(query, pendingInput,
+                                static_cast<unsigned char>(key))) {
+        redrawPrompt(false);
+      }
     }
   }
 }
