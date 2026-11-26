@@ -736,12 +736,6 @@ auto getChapterProgressIndicator() -> void {
 }
 
 auto chapterSearch() -> void {
-  const auto assertMatchCount = [](const ChapterSearchIndex& searchIndex,
-                                   std::string_view query,
-                                   std::size_t count) -> void {
-    assert(::findChapterSearchMatches(searchIndex, query).size() == count);
-  };
-
   const std::string chapter{"  Hello " + esc + bold + "World" + esc + resetBold
                             + "\n  next line\n\n  ---\n"};
   const ChapterSearchIndex index{::buildChapterSearchIndex(chapter)};
@@ -752,17 +746,19 @@ auto chapterSearch() -> void {
       ::findChapterSearchMatches(index, "HELLO WORLD")};
   assert(caseInsensitive.size() == 1);
   assert(caseInsensitive.front().line == 1);
-  assertMatchCount(index, "world next", 1);
-  assertMatchCount(index, "missing", 0);
-  assertMatchCount(index, "  \n ", 0);
-  assertMatchCount(index, "---", 0);
+  assert(::findChapterSearchMatches(index, "world next").size() == 1);
+  assert(::findChapterSearchMatches(index, "missing").empty());
+  assert(::findChapterSearchMatches(index, "  \n ").empty());
+  assert(::findChapterSearchMatches(index, "---").empty());
 
   const std::string forcedWrapChapter{"  supercali" + forcedWrapMarker
                                       + "\n  fragilistic\n---\n"};
   const ChapterSearchIndex forcedWrapIndex{
       ::buildChapterSearchIndex(forcedWrapChapter)};
   assert(forcedWrapIndex.text == "supercalifragilistic");
-  assertMatchCount(forcedWrapIndex, "supercalifragilistic", 1);
+  assert(
+      ::findChapterSearchMatches(forcedWrapIndex, "supercalifragilistic").size()
+      == 1);
 
   const std::string highlighted{::highlightSearchMatches(
       chapter, index, caseInsensitive, 0, chapter.size())};
@@ -806,30 +802,36 @@ auto chapterSearch() -> void {
       == 2);
   const std::string unicode{"CAFÉ café\n---\n"};
   const ChapterSearchIndex unicodeIndex{::buildChapterSearchIndex(unicode)};
-  assertMatchCount(unicodeIndex, "CAFÉ", 1);
-  assertMatchCount(unicodeIndex, "café", 1);
+  assert(::findChapterSearchMatches(unicodeIndex, "CAFÉ").size() == 1);
+  assert(::findChapterSearchMatches(unicodeIndex, "café").size() == 1);
 
   const std::string punctuation{"'single' \"double\" plain-word\n"
                                 "‘single’ “double” plain‑word — dash\n---\n"};
   const ChapterSearchIndex punctuationIndex{
       ::buildChapterSearchIndex(punctuation)};
-  assertMatchCount(punctuationIndex, "'single'", 2);
-  assertMatchCount(punctuationIndex, "‘single’", 2);
-  assertMatchCount(punctuationIndex, "\"double\"", 2);
-  assertMatchCount(punctuationIndex, "plain-word", 2);
-  assertMatchCount(punctuationIndex, "- dash", 1);
+  assert(::findChapterSearchMatches(punctuationIndex, "'single'").size() == 2);
+  assert(::findChapterSearchMatches(punctuationIndex, "‘single’").size() == 2);
+  assert(::findChapterSearchMatches(punctuationIndex, "\"double\"").size()
+         == 2);
+  assert(::findChapterSearchMatches(punctuationIndex, "plain-word").size()
+         == 2);
+  assert(::findChapterSearchMatches(punctuationIndex, "- dash").size() == 1);
 
   const std::string nonBreakingSpaces{"first second narrow space\n---\n"};
   const ChapterSearchIndex nonBreakingSpaceIndex{
       ::buildChapterSearchIndex(nonBreakingSpaces)};
-  assertMatchCount(nonBreakingSpaceIndex, "first second", 1);
-  assertMatchCount(nonBreakingSpaceIndex, "narrow space", 1);
+  assert(
+      ::findChapterSearchMatches(nonBreakingSpaceIndex, "first second").size()
+      == 1);
+  assert(
+      ::findChapterSearchMatches(nonBreakingSpaceIndex, "narrow space").size()
+      == 1);
 
   const std::string imageChapter{"before\n" + esc + greenFG + imgCellPlaceholder
                                  + esc + resetFG + "\nafter\n---\n"};
   const ChapterSearchIndex imageIndex{::buildChapterSearchIndex(imageChapter)};
   assert(!imageIndex.text.contains(imgCellPlaceholder));
-  assertMatchCount(imageIndex, "before after", 1);
+  assert(::findChapterSearchMatches(imageIndex, "before after").size() == 1);
 
   std::string utf8Query{"café"};
   ::popLastUTF8CodePoint(utf8Query);
