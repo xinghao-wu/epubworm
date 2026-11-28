@@ -207,7 +207,7 @@ jobs:
               -F force=true
             gh release upload "$tag" release/*.tar.gz --clobber
             gh release edit "$tag" --draft=true
-            gh release edit "$tag" --draft=false --latest
+            gh release edit "$tag" --draft=false --latest --target "$GITHUB_SHA"
           else
             gh release create "$tag" release/*.tar.gz \
               --target "$GITHUB_SHA" \
