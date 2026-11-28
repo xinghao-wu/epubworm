@@ -13,7 +13,7 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   quality:
@@ -206,7 +206,8 @@ jobs:
               -f sha="$GITHUB_SHA" \
               -F force=true
             gh release upload "$tag" release/*.tar.gz --clobber
-            gh release edit "$tag" --latest
+            gh release edit "$tag" --draft=true
+            gh release edit "$tag" --draft=false --latest
           else
             gh release create "$tag" release/*.tar.gz \
               --target "$GITHUB_SHA" \
